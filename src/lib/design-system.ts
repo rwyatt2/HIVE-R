@@ -28,57 +28,24 @@ interface DesignFramework {
 }
 
 // ============================================================================
-// WORLD-CLASS DESIGN PRINCIPLES (Always Applied)
+// WORLD-CLASS DESIGN PRINCIPLES (Loaded from PRINCIPLES.md)
 // ============================================================================
 
-const UNIVERSAL_DESIGN_PRINCIPLES = `
-## 🎯 Universal Design Principles
+function loadPrinciples(): string {
+    const principlesPath = join(__dirname, "../../design-systems/PRINCIPLES.md");
+    if (existsSync(principlesPath)) {
+        return readFileSync(principlesPath, "utf-8");
+    }
+    // Fallback if file not found
+    return `
+## 🎯 Design Principles
 
-### Visual Hierarchy
-- Use size, weight, and color to establish clear hierarchy
-- Most important element should be most prominent
-- Limit to 3 levels of visual importance per screen
-
-### Spacing & Rhythm
-- Use consistent spacing scale (4px base: 4, 8, 12, 16, 24, 32, 48, 64)
-- Group related items closer together
-- More space around more important elements
-
-### Typography
-- Limit to 2 font families maximum (sans + mono)
-- Use font weight and size for hierarchy, not multiple fonts
-- Line height: 1.5 for body, 1.25 for headings
-
-### Color
-- Use semantic colors (success, warning, error, info)
-- Primary color for primary actions only
-- Neutral palette for most UI chrome
-- Ensure 4.5:1 contrast ratio minimum
-
-### Accessibility (Non-Negotiable)
-- All interactive elements keyboard accessible
-- Focus states visible (2px ring, offset)
-- Color never the only indicator
-- Respect prefers-reduced-motion
-- WCAG AA compliance minimum
-
-### Responsive Design
-- Mobile-first approach
-- Touch targets minimum 44x44px
-- Fluid typography where appropriate
-- Breakpoints: 640, 768, 1024, 1280, 1536
-
-### Interaction Patterns
-- Loading states for async operations
-- Hover/focus/active states for all interactives
-- Feedback for all user actions
-- Optimistic UI where safe
-
-### Dark Mode
-- Support dark mode via class or media query
-- Test contrast in both modes
-- Avoid pure black (#000) - use near-black (#0a0a0a)
+See design-systems/PRINCIPLES.md for comprehensive guidelines.
+Covering: Performance, Hierarchy, Typography, Color, Motion, Accessibility, Forms, Errors, Navigation, Content, Mobile, Data Display, i18n, Security UX, and Component Patterns.
 `;
+}
+
+const UNIVERSAL_DESIGN_PRINCIPLES = loadPrinciples();
 
 // ============================================================================
 // FRAMEWORK PRESETS

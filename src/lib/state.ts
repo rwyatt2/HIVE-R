@@ -1,6 +1,8 @@
 import { BaseMessage } from "@langchain/core/messages";
 import { Annotation } from "@langchain/langgraph";
 import type { Artifact } from "./artifacts.js";
+import type { ArtifactStore } from "./artifact-store.js";
+import { createArtifactStore } from "./artifact-store.js";
 
 /**
  * Enhanced Agent State with:
@@ -9,6 +11,7 @@ import type { Artifact } from "./artifacts.js";
  * - Typed artifacts
  * - Agent contribution tracking
  * - Turn counting & retry logic
+ * - Shared Artifact Store (Phase 2)
  */
 export const AgentState = Annotation.Root({
     // Conversation messages
@@ -29,10 +32,16 @@ export const AgentState = Annotation.Root({
         default: () => [],
     }),
 
-    // Typed artifacts produced by agents
+    // Typed artifacts produced by agents (legacy array)
     artifacts: Annotation<Artifact[]>({
         reducer: (x, y) => x.concat(y),
         default: () => [],
+    }),
+
+    // ✅ NEW: Shared Artifact Store (typed access by artifact type)
+    artifactStore: Annotation<ArtifactStore>({
+        reducer: (x, y) => ({ ...x, ...y }),
+        default: () => createArtifactStore(),
     }),
 
     // Current phase of the workflow
@@ -53,25 +62,25 @@ export const AgentState = Annotation.Root({
         default: () => null,
     }),
 
-    // ✅ NEW: Turn counter (prevents infinite loops)
+    // Turn counter (prevents infinite loops)
     turnCount: Annotation<number>({
         reducer: (x, y) => y ?? x + 1,
         default: () => 0,
     }),
 
-    // ✅ NEW: Per-agent retry counts
+    // Per-agent retry counts
     agentRetries: Annotation<Record<string, number>>({
         reducer: (x, y) => ({ ...x, ...y }),
         default: () => ({}),
     }),
 
-    // ✅ NEW: Flag indicating current agent needs to retry
+    // Flag indicating current agent needs to retry
     needsRetry: Annotation<boolean>({
         reducer: (x, y) => y ?? x,
         default: () => false,
     }),
 
-    // ✅ NEW: Last error message for retry context
+    // Last error message for retry context
     lastError: Annotation<string | null>({
         reducer: (x, y) => y ?? x,
         default: () => null,
@@ -79,3 +88,4 @@ export const AgentState = Annotation.Root({
 });
 
 export type AgentStateType = typeof AgentState.State;
+

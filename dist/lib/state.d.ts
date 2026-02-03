@@ -1,4 +1,5 @@
 import { BaseMessage } from "@langchain/core/messages";
+import type { ArtifactStore } from "./artifact-store.js";
 /**
  * Enhanced Agent State with:
  * - Message history
@@ -6,6 +7,7 @@ import { BaseMessage } from "@langchain/core/messages";
  * - Typed artifacts
  * - Agent contribution tracking
  * - Turn counting & retry logic
+ * - Shared Artifact Store (Phase 2)
  */
 export declare const AgentState: import("@langchain/langgraph").AnnotationRoot<{
     messages: import("@langchain/langgraph").BinaryOperatorAggregate<BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[], BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[]>;
@@ -220,6 +222,7 @@ export declare const AgentState: import("@langchain/langgraph").AnnotationRoot<{
         nits: string[];
         praise: string[];
     })[]>;
+    artifactStore: import("@langchain/langgraph").BinaryOperatorAggregate<ArtifactStore, ArtifactStore>;
     phase: import("@langchain/langgraph").BinaryOperatorAggregate<"strategy" | "design" | "build" | "ship", "strategy" | "design" | "build" | "ship">;
     requiresApproval: import("@langchain/langgraph").BinaryOperatorAggregate<boolean, boolean>;
     approvalStatus: import("@langchain/langgraph").BinaryOperatorAggregate<"pending" | "approved" | "rejected" | null, "pending" | "approved" | "rejected" | null>;

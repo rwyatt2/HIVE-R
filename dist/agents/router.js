@@ -47,9 +47,18 @@ const routeSchema = z.object({
     next: z.enum([...HIVE_MEMBERS, "FINISH"]),
     reasoning: z.string().describe("Why this agent was chosen (1-2 sentences)"),
 });
+import { logger } from "../lib/logger.js";
+import { checkTurnLimit, isCircuitOpen, SAFETY_CONFIG } from "../lib/safety.js";
 export const routerNode = async (state) => {
     const messages = state.messages;
     const contributors = state.contributors || [];
+    const turnCount = state.turnCount ?? 0;
+    // ✅ Safety: Check turn limit
+    const turnCheck = checkTurnLimit(turnCount);
+    if (!turnCheck.safe) {
+        logger.safetyTrigger("MAX_TURNS exceeded", { turnCount });
+        return { next: "FINISH" };
+    }
     // ✅ Inject contributor context into router
     const contributorContext = formatContributorContext(contributors);
     const enhancedPrompt = ROUTER_PROMPT + contributorContext;
@@ -59,18 +68,22 @@ export const routerNode = async (state) => {
             new SystemMessage(enhancedPrompt),
             ...messages,
         ]);
-        // Log the reasoning (useful for debugging)
-        console.log(`🎯 Router → ${response.next}: ${response.reasoning}`);
+        // ✅ Safety: Check if target agent's circuit is open
+        if (response.next !== "FINISH" && isCircuitOpen(response.next)) {
+            logger.warn(`Circuit open for ${response.next}, skipping`);
+            // Try to find alternative or finish
+            return { next: "FINISH" };
+        }
+        // ✅ Structured logging
+        logger.routingDecision("Router", response.next, response.reasoning);
         return {
             next: response.next,
+            turnCount: turnCount + 1,
         };
     }
     catch (error) {
-        console.error("❌ Router failed:", error);
-        // Fallback: finish if router fails
-        return {
-            next: "FINISH",
-        };
+        logger.error("Router failed", { error: error.message });
+        return { next: "FINISH" };
     }
 };
 // Re-export for backward compatibility

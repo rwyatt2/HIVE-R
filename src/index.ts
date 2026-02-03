@@ -156,6 +156,68 @@ app.get('/memory/stats', (c) => {
     return c.json(getMemoryStats());
 });
 
+// Import tracing
+import { getTrace, getAllTraces, getTraceSummary, isLangSmithEnabled } from "./lib/tracing.js";
+
+/**
+ * ✅ Get all traces (list view)
+ */
+app.get('/traces', (c) => {
+    const traces = getAllTraces();
+    return c.json({
+        count: traces.length,
+        langsmith: isLangSmithEnabled(),
+        traces: traces.map(t => getTraceSummary(t)),
+    });
+});
+
+/**
+ * ✅ Get specific trace (detail view)
+ */
+app.get('/traces/:threadId', (c) => {
+    const threadId = c.req.param('threadId');
+    const trace = getTrace(threadId);
+
+    if (!trace) {
+        return c.json({ error: "Trace not found" }, 404);
+    }
+
+    return c.json({
+        ...trace,
+        summary: getTraceSummary(trace),
+    });
+});
+
+/**
+ * ✅ State snapshot endpoint (for debugging)
+ * Returns the current conversation state for a thread
+ */
+app.get('/state/:threadId', async (c) => {
+    const threadId = c.req.param('threadId');
+
+    try {
+        const state = await checkpointer.getTuple({
+            configurable: { thread_id: threadId }
+        });
+
+        if (!state) {
+            return c.json({ error: "Thread not found" }, 404);
+        }
+
+        return c.json({
+            threadId,
+            checkpoint: state.checkpoint,
+            metadata: state.metadata,
+            parentConfig: state.parentConfig,
+        });
+    } catch (error) {
+        return c.json({
+            error: "Failed to fetch state",
+            message: (error as Error).message
+        }, 500);
+    }
+});
+
 /**
  * ✅ Memory search endpoint
  */

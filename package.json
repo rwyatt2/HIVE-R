@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "export-tokens": "tsx scripts/export-tokens.ts"
   },
   "repository": {
     "type": "git",

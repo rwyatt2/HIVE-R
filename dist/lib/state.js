@@ -1,5 +1,6 @@
 import { BaseMessage } from "@langchain/core/messages";
 import { Annotation } from "@langchain/langgraph";
+import { createArtifactStore } from "./artifact-store.js";
 /**
  * Enhanced Agent State with:
  * - Message history
@@ -7,6 +8,7 @@ import { Annotation } from "@langchain/langgraph";
  * - Typed artifacts
  * - Agent contribution tracking
  * - Turn counting & retry logic
+ * - Shared Artifact Store (Phase 2)
  */
 export const AgentState = Annotation.Root({
     // Conversation messages
@@ -24,10 +26,15 @@ export const AgentState = Annotation.Root({
         reducer: (x, y) => [...new Set([...x, ...y])],
         default: () => [],
     }),
-    // Typed artifacts produced by agents
+    // Typed artifacts produced by agents (legacy array)
     artifacts: Annotation({
         reducer: (x, y) => x.concat(y),
         default: () => [],
+    }),
+    // ✅ NEW: Shared Artifact Store (typed access by artifact type)
+    artifactStore: Annotation({
+        reducer: (x, y) => ({ ...x, ...y }),
+        default: () => createArtifactStore(),
     }),
     // Current phase of the workflow
     phase: Annotation({
@@ -44,22 +51,22 @@ export const AgentState = Annotation.Root({
         reducer: (x, y) => y ?? x,
         default: () => null,
     }),
-    // ✅ NEW: Turn counter (prevents infinite loops)
+    // Turn counter (prevents infinite loops)
     turnCount: Annotation({
         reducer: (x, y) => y ?? x + 1,
         default: () => 0,
     }),
-    // ✅ NEW: Per-agent retry counts
+    // Per-agent retry counts
     agentRetries: Annotation({
         reducer: (x, y) => ({ ...x, ...y }),
         default: () => ({}),
     }),
-    // ✅ NEW: Flag indicating current agent needs to retry
+    // Flag indicating current agent needs to retry
     needsRetry: Annotation({
         reducer: (x, y) => y ?? x,
         default: () => false,
     }),
-    // ✅ NEW: Last error message for retry context
+    // Last error message for retry context
     lastError: Annotation({
         reducer: (x, y) => y ?? x,
         default: () => null,

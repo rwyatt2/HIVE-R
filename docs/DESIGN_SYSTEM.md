@@ -1,76 +1,65 @@
-# Design Frameworks in HIVE-R
+# Design Frameworks & Tokens
 
-Quick framework switching + custom tokens = consistent UI.
+HIVE-R enforces world-class design principles while letting you bring your own tokens.
 
-## Switch Frameworks
+## Quick Start
 
 ```bash
-HIVE_DESIGN_FRAMEWORK=tailwind npm run dev   # default
-HIVE_DESIGN_FRAMEWORK=shadcn npm run dev
+# Default (Tailwind)
+npm run dev
+
+# With Custom Tokens
+HIVE_DESIGN_TOKENS=./my-tokens.json npm run dev
+
+# Switch Framework
 HIVE_DESIGN_FRAMEWORK=chakra npm run dev
-HIVE_DESIGN_FRAMEWORK=mui npm run dev
 ```
 
-## Custom Tokens (The Easy Way)
+## 🌍 World-Class Principles (Built-in)
 
-**1. Copy the template:**
-```bash
-cp design-systems/tokens.example.json my-tokens.json
-```
+Every agent automatically follows these 8 core pillars:
 
-**2. Edit your brand:**
+1.  **Core Experience**: Speed (<100ms), Fitts's Law, Feedback Loops.
+2.  **Visual Hierarchy**: 3 distinct levels, 4px grid rhythm.
+3.  **Typography**: Harmonious scales, readable line lengths (50-75 chars).
+4.  **Color**: 60-30-10 rule, semantic naming, accessible contrast.
+5.  **Interaction**: Physics-based motion, optimistic UI.
+6.  **Accessibility**: WCAG AA, focus management, semantic HTML.
+7.  **Content**: F-pattern scanning, front-loaded keywords.
+8.  **Engineering**: Component-driven, token-first implementation.
+
+## 🎨 Design Tokens
+
+Your `tokens.json` drives the entire UI. HIVE-R supports a comprehensive schema:
+
 ```json
 {
   "brand": "My App",
   "colors": {
-    "primary": "#your-color",
-    "background": "#ffffff",
-    "foreground": "#0f172a"
+    "primitives": { ... }, // Base palettes (slate, blue, etc)
+    "semantic": {
+      "primary": { "default": "$colors.primitives.blue.600" },
+      "status": { "success": "..." }
+    }
   },
-  "typography": {
-    "fontFamily": "Inter, system-ui"
-  }
+  "typography": { "scale": { "base": "1rem" }, "weights": ... },
+  "spacing": { "base": 4, "scale": ... },
+  "layout": { "breakpoints": ..., "zIndices": ... },
+  "animation": { "duration": ..., "easing": ... }
 }
 ```
 
-**3. Use it:**
-```bash
-HIVE_DESIGN_TOKENS=./my-tokens.json npm run dev
-```
+### Full Example
+See [`design-systems/tokens.example.json`](../design-systems/tokens.example.json) for the complete schema.
 
-Agents will generate framework-specific config from your tokens!
+## Frameworks Supported
 
-## What Gets Generated
-
-| Framework | Output |
-|-----------|--------|
-| Tailwind | `tailwind.config.js` + CSS variables |
-| shadcn | CSS variables in `globals.css` |
-| Chakra | Theme extension |
-| MUI | `createTheme()` config |
-
-## Token Schema
-
-```json
-{
-  "brand": "App Name",
-  "colors": {
-    "primary": "#hex",
-    "secondary": "#hex",
-    "background": "#hex",
-    "foreground": "#hex"
-  },
-  "darkColors": {
-    "background": "#hex",
-    "foreground": "#hex"
-  },
-  "typography": {
-    "fontFamily": "Font, fallback",
-    "fontMono": "Mono, monospace"
-  },
-  "radius": {
-    "sm": "0.25rem",
-    "md": "0.5rem"
-  }
-}
-```
+| Framework | Best For |
+|-----------|----------|
+| `tailwind` | Utility-first, rapid prototyping |
+| `shadcn` | Beautiful accessible components |
+| `chakra` | Simple modular components |
+| `mui` | Material Design, enterprise |
+| `radix` | Headless primitives |
+| `ant` | Enterprise dashboards |
+| `bootstrap` | Quick responsive layouts |
