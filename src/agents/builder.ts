@@ -4,6 +4,7 @@ import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { readFileTool, writeFileTool, listDirectoryTool } from "../tools/files.js";
 import { runCommandTool } from "../tools/testing.js";
+import { getDesignContext, getActiveFramework } from "../lib/design-system.js";
 
 const llm = new ChatOpenAI({
     modelName: "gpt-4o",
@@ -59,6 +60,13 @@ When producing code:
 2. **Implementation**: Use write_file to create the actual files
 3. **Verification**: Use run_command to verify the code works
 4. **Status**: Report SUCCESS or NEEDS_RETRY with reason
+
+## UI Implementation Rules
+When building UI components, follow the design framework best practices below.
+- Use the framework's component patterns exactly as documented
+- Follow the universal design principles for spacing, color, and accessibility
+- Support dark mode using the framework's recommended approach
+- Ensure keyboard accessibility and focus states
 
 ${CONTEXT_PROTOCOL}`;
 

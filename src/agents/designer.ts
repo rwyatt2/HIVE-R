@@ -3,6 +3,7 @@ import { SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
+import { getDesignContext, getActiveFramework } from "../lib/design-system.js";
 
 const llm = new ChatOpenAI({
     modelName: "gpt-4o",
@@ -35,9 +36,14 @@ You hate dark patterns. You optimize for user success, not vanity metrics.
 - **Design Principles**: Guiding constraints for this feature
 - **User Flow**: The journey from entry to completion
 - **Key Screens/States**: Critical UI moments
-- **Component Recommendations**: From existing design system or new needed
+- **Component Recommendations**: Using the active design framework below
 - **Interaction Notes**: Animations, transitions, feedback
 - **Accessibility Considerations**: To hand off to the A11y specialist
+
+## CRITICAL: Framework Adherence
+You MUST design using the patterns and components from the active framework specified below.
+Always reference the framework's component names and styling conventions.
+Follow the universal design principles at all times.
 
 ${CONTEXT_PROTOCOL}`;
 
@@ -46,8 +52,13 @@ export const designerNode = async (state: typeof AgentState.State) => {
         async () => {
             const messages = state.messages;
 
+            // Load active design framework context
+            const framework = getActiveFramework();
+            const designContext = getDesignContext(framework);
+            const fullPrompt = DESIGNER_PROMPT + "\n\n" + designContext;
+
             const response = await llm.invoke([
-                new SystemMessage(DESIGNER_PROMPT),
+                new SystemMessage(fullPrompt),
                 ...messages,
             ]);
 
