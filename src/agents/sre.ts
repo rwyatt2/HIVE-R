@@ -3,11 +3,15 @@ import { SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
+import { githubTools } from "../tools/github.js";
 
 const llm = new ChatOpenAI({
     modelName: "gpt-4o",
     temperature: 0.2,
 });
+
+// Bind GitHub tools to the LLM
+const llmWithTools = llm.bindTools(githubTools);
 
 const SRE_PROMPT = `${HIVE_PREAMBLE}
 
@@ -32,6 +36,19 @@ You think about:
 
 You optimize for boring operations. You don't want heroes—you want systems that don't need them.
 
+## Git & GitHub Tools
+You have access to Git/GitHub tools:
+- \`git_status\`: Check current branch and uncommitted changes
+- \`create_git_branch\`: Create a new feature branch
+- \`commit_and_push\`: Stage, commit, and push changes to origin
+- \`create_pull_request\`: Open a PR on GitHub
+- \`list_pull_requests\`: View open PRs
+
+When the user says "ship it", "open a PR", or "create a pull request":
+1. Use \`git_status\` to check for changes.
+2. Use \`commit_and_push\` to commit and push.
+3. Use \`create_pull_request\` to open the PR.
+
 ## Your Output
 1. **Deployment Strategy**: How to ship safely
 2. **Monitoring**: Metrics, dashboards, health checks
@@ -47,7 +64,7 @@ export const sreNode = async (state: typeof AgentState.State) => {
         async () => {
             const messages = state.messages;
 
-            const response = await llm.invoke([
+            const response = await llmWithTools.invoke([
                 new SystemMessage(SRE_PROMPT),
                 ...messages,
             ]);

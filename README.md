@@ -396,7 +396,7 @@ npm run export-tokens
 - [x] ~~Direct agent-to-agent messaging (skip Router)~~ ✅ **Implemented!**
 - [x] ~~Hierarchical teams (PM manages multiple Builders)~~ ✅ **Implemented!**
 - [x] ~~Plugin system for custom agents~~ ✅ **Implemented!**
-- [ ] GitHub integration (auto-create PRs)
+- [x] ~~GitHub integration (auto-create PRs)~~ ✅ **Implemented!**
 - [ ] Visual workflow editor
 
 ---
@@ -478,6 +478,32 @@ export const MarketingExpert = {
   keywords: ["tweet", "launch", "social media"] // Helps Router find you
 };
 ```
+
+---
+
+## New: GitHub Integration (Auto-PRs)
+
+Agents (specifically the SRE) can now automatically commit code and open Pull Requests.
+
+### Setup
+
+Add to your `.env` (requires a Personal Access Token with `repo` scope):
+```bash
+GITHUB_TOKEN=ghp_...
+GITHUB_OWNER=your-username
+GITHUB_REPO=your-repo
+```
+
+### Usage
+
+Ask the SRE to ship your changes:
+> "Ship the login feature as a PR"
+
+The agent will:
+1. Check for uncommitted changes
+2. Create a feature branch
+3. Commit and push code
+4. Open a Pull Request with a summary of changes
 
 ---
 
