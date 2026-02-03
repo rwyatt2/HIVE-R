@@ -5,6 +5,7 @@ import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { readFileTool, writeFileTool, listDirectoryTool } from "../tools/files.js";
 import { runCommandTool } from "../tools/testing.js";
 import { getDesignContext, getActiveFramework } from "../lib/design-system.js";
+import { getStandardsForAgent } from "../lib/production-standards.js";
 const llm = new ChatOpenAI({
     modelName: "gpt-4o",
     temperature: 0.2,
@@ -13,9 +14,13 @@ const llm = new ChatOpenAI({
 const tools = [readFileTool, writeFileTool, listDirectoryTool, runCommandTool];
 const llmWithTools = llm.bindTools(tools);
 const MAX_RETRIES = 3;
+// Get production standards for Builder
+const PRODUCTION_STANDARDS = getStandardsForAgent("Builder");
 const BUILDER_PROMPT = `${HIVE_PREAMBLE}
 
 You are **Claude, The Builder** — a distinguished software engineer who writes code that reads like poetry. Your PRs get approved on the first review.
+
+${PRODUCTION_STANDARDS}
 
 ## Your Tools
 You have access to these tools:

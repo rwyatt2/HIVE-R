@@ -190,6 +190,69 @@ app.get('/traces/:threadId', (c) => {
     });
 });
 
+// Import cost tracking
+import { getCostSummary, getConversationCost, formatCostSummary } from "./lib/cost-tracker.js";
+import { getCacheStats, isCacheEnabled } from "./lib/cache.js";
+import { getAuthStatus } from "./lib/auth.js";
+
+/**
+ * ✅ Performance Dashboard - overview of system health
+ */
+app.get('/dashboard', (c) => {
+    const startTime = Date.now();
+
+    return c.json({
+        status: "healthy",
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+
+        // Performance
+        performance: {
+            cache: getCacheStats(),
+            cacheEnabled: isCacheEnabled(),
+        },
+
+        // Costs
+        costs: getCostSummary(),
+
+        // System
+        system: {
+            memory: process.memoryUsage(),
+            nodeVersion: process.version,
+        },
+
+        // Security
+        auth: getAuthStatus(),
+
+        // Response time
+        responseTimeMs: Date.now() - startTime,
+    });
+});
+
+/**
+ * ✅ Cost dashboard - detailed cost breakdown
+ */
+app.get('/dashboard/costs', (c) => {
+    return c.json({
+        summary: getCostSummary(),
+        formatted: formatCostSummary(),
+    });
+});
+
+/**
+ * ✅ Get cost for specific conversation
+ */
+app.get('/dashboard/costs/:threadId', (c) => {
+    const threadId = c.req.param('threadId');
+    const cost = getConversationCost(threadId);
+
+    if (!cost) {
+        return c.json({ error: "No cost data for this thread" }, 404);
+    }
+
+    return c.json(cost);
+});
+
 /**
  * ✅ State snapshot endpoint (for debugging)
  * Returns the current conversation state for a thread
