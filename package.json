@@ -29,6 +29,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
+    "@langchain/community": "^1.1.10",
+    "@langchain/core": "^1.1.18",
     "@langchain/langgraph": "^1.1.2",
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.0",
     "@langchain/openai": "^1.2.4",

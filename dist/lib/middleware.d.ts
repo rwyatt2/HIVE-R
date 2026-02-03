@@ -8,4 +8,8 @@ export declare const rateLimiter: (maxRequests?: number, windowMs?: number) => M
  * Error handler middleware
  */
 export declare const errorHandler: () => MiddlewareHandler;
+/**
+ * CORS middleware for dashboard/external access
+ */
+export declare const cors: (allowedOrigins?: string[]) => MiddlewareHandler;
 //# sourceMappingURL=middleware.d.ts.map

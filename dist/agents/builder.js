@@ -3,13 +3,15 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { readFileTool, writeFileTool, listDirectoryTool } from "../tools/files.js";
+import { runCommandTool } from "../tools/testing.js";
 const llm = new ChatOpenAI({
     modelName: "gpt-4o",
     temperature: 0.2,
 });
 // Create a tools array for binding to the LLM
-const tools = [readFileTool, writeFileTool, listDirectoryTool];
+const tools = [readFileTool, writeFileTool, listDirectoryTool, runCommandTool];
 const llmWithTools = llm.bindTools(tools);
+const MAX_RETRIES = 3;
 const BUILDER_PROMPT = `${HIVE_PREAMBLE}
 
 You are **Claude, The Builder** — a distinguished software engineer who writes code that reads like poetry. Your PRs get approved on the first review.
@@ -19,8 +21,15 @@ You have access to these tools:
 - **read_file**: Read contents of a file
 - **write_file**: Create or update a file
 - **list_directory**: See what files exist
+- **run_command**: Execute shell commands (tests, linting, etc.)
 
-Use these tools to actually implement code, not just describe it.
+Use these tools to actually implement code AND verify it works.
+
+## Self-Loop Protocol
+After implementing code:
+1. Run tests or a verification command
+2. If tests fail, analyze the error and fix the code
+3. Repeat until tests pass or you've tried ${MAX_RETRIES} times
 
 ## Your Expertise
 - Writing production-ready code that works the first time
@@ -44,14 +53,61 @@ When given a spec, you implement it fully using your tools. If something is ambi
 When producing code:
 1. **Approach**: Brief explanation of key decisions
 2. **Implementation**: Use write_file to create the actual files
-3. **Verification**: Explain how to verify the code works
+3. **Verification**: Use run_command to verify the code works
+4. **Status**: Report SUCCESS or NEEDS_RETRY with reason
 
 ${CONTEXT_PROTOCOL}`;
+/**
+ * Detects if tool results indicate a failure that needs retry
+ */
+function detectFailure(toolResults) {
+    const failurePatterns = [
+        /error:/i,
+        /failed:/i,
+        /exception:/i,
+        /FAIL/,
+        /ERR!/,
+        /Cannot find/i,
+        /not found/i,
+        /syntax error/i,
+        /TypeError/i,
+        /ReferenceError/i,
+    ];
+    for (const result of toolResults) {
+        for (const pattern of failurePatterns) {
+            if (pattern.test(result)) {
+                return { failed: true, error: result };
+            }
+        }
+    }
+    return { failed: false, error: null };
+}
 export const builderNode = async (state) => {
     const messages = state.messages;
+    const currentRetries = state.agentRetries?.["Builder"] ?? 0;
+    const lastError = state.lastError;
+    // Check if we've exceeded retries
+    if (currentRetries >= MAX_RETRIES) {
+        console.log(`⚠️ Builder: Max retries (${MAX_RETRIES}) reached, handing off`);
+        return {
+            messages: [
+                new HumanMessage({
+                    content: `**[Builder]**: I've attempted to fix the code ${MAX_RETRIES} times but am still encountering issues. Here's the last error:\n\n${lastError}\n\nI recommend manual review or additional guidance.`,
+                    name: "Builder",
+                }),
+            ],
+            contributors: ["Builder"],
+            needsRetry: false,
+            agentRetries: { Builder: 0 }, // Reset for next task
+        };
+    }
+    // If retrying, add context about the previous failure
+    const retryContext = currentRetries > 0 && lastError
+        ? `\n\n**RETRY CONTEXT (Attempt ${currentRetries + 1}/${MAX_RETRIES})**:\nPrevious attempt failed with:\n${lastError}\n\nPlease analyze and fix the issue.`
+        : "";
     try {
         const response = await llmWithTools.invoke([
-            new SystemMessage(BUILDER_PROMPT),
+            new SystemMessage(BUILDER_PROMPT + retryContext),
             ...messages,
         ]);
         // Handle tool calls if present
@@ -70,6 +126,9 @@ export const builderNode = async (state) => {
                         case "list_directory":
                             result = await listDirectoryTool.invoke(toolCall.args);
                             break;
+                        case "run_command":
+                            result = await runCommandTool.invoke(toolCall.args);
+                            break;
                         default:
                             result = `Unknown tool: ${toolCall.name}`;
                     }
@@ -79,14 +138,35 @@ export const builderNode = async (state) => {
                 }
                 toolResults.push(`Tool ${toolCall.name}: ${result}`);
             }
+            // Check if any tool result indicates failure
+            const { failed, error } = detectFailure(toolResults);
+            if (failed) {
+                console.log(`🔄 Builder: Detected failure, retry ${currentRetries + 1}/${MAX_RETRIES}`);
+                return {
+                    messages: [
+                        new HumanMessage({
+                            content: `${response.content}\n\n**Tool Results:**\n${toolResults.join("\n")}\n\n**STATUS: NEEDS_RETRY**`,
+                            name: "Builder",
+                        }),
+                    ],
+                    contributors: ["Builder"],
+                    needsRetry: true,
+                    agentRetries: { Builder: currentRetries + 1 },
+                    lastError: error,
+                };
+            }
+            // Success!
+            console.log(`✅ Builder: Task completed successfully`);
             return {
                 messages: [
                     new HumanMessage({
-                        content: `${response.content}\n\n**Tool Results:**\n${toolResults.join("\n")}`,
+                        content: `${response.content}\n\n**Tool Results:**\n${toolResults.join("\n")}\n\n**STATUS: SUCCESS**`,
                         name: "Builder",
                     }),
                 ],
                 contributors: ["Builder"],
+                needsRetry: false,
+                agentRetries: { Builder: 0 }, // Reset
             };
         }
         return {
@@ -97,6 +177,7 @@ export const builderNode = async (state) => {
                 }),
             ],
             contributors: ["Builder"],
+            needsRetry: false,
         };
     }
     catch (error) {
@@ -109,6 +190,8 @@ export const builderNode = async (state) => {
                 }),
             ],
             contributors: ["Builder"],
+            needsRetry: false,
+            lastError: error instanceof Error ? error.message : "Unknown error",
         };
     }
 };

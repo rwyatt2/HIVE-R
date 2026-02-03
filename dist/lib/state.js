@@ -6,6 +6,7 @@ import { Annotation } from "@langchain/langgraph";
  * - Routing decisions
  * - Typed artifacts
  * - Agent contribution tracking
+ * - Turn counting & retry logic
  */
 export const AgentState = Annotation.Root({
     // Conversation messages
@@ -40,6 +41,26 @@ export const AgentState = Annotation.Root({
     }),
     // Approval status (if paused)
     approvalStatus: Annotation({
+        reducer: (x, y) => y ?? x,
+        default: () => null,
+    }),
+    // ✅ NEW: Turn counter (prevents infinite loops)
+    turnCount: Annotation({
+        reducer: (x, y) => y ?? x + 1,
+        default: () => 0,
+    }),
+    // ✅ NEW: Per-agent retry counts
+    agentRetries: Annotation({
+        reducer: (x, y) => ({ ...x, ...y }),
+        default: () => ({}),
+    }),
+    // ✅ NEW: Flag indicating current agent needs to retry
+    needsRetry: Annotation({
+        reducer: (x, y) => y ?? x,
+        default: () => false,
+    }),
+    // ✅ NEW: Last error message for retry context
+    lastError: Annotation({
         reducer: (x, y) => y ?? x,
         default: () => null,
     }),

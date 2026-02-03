@@ -9,7 +9,7 @@ import { randomUUID } from "crypto";
 import { AgentState } from "./lib/state.js";
 import { checkpointer } from "./lib/memory.js";
 // Middleware
-import { requestLogger, rateLimiter, errorHandler } from "./lib/middleware.js";
+import { requestLogger, rateLimiter, errorHandler, cors } from "./lib/middleware.js";
 // Router
 import { routerNode, HIVE_MEMBERS } from "./agents/router.js";
 // Subgraphs
@@ -34,9 +34,10 @@ import { dataAnalystNode } from "./agents/data-analyst.js";
 config();
 const app = new Hono();
 // ✅ A+ Production Middleware
+app.use('*', cors(["http://localhost:3001", "http://localhost:3000", "*"]));
 app.use('*', errorHandler());
 app.use('*', requestLogger());
-app.use('/chat*', rateLimiter(30, 60000)); // 30 requests/min for chat
+app.use('/chat*', rateLimiter(100, 60000)); // 100 requests/min for dev
 // --- Graph Setup ---
 const workflow = new StateGraph(AgentState)
     .addNode("Router", routerNode)
@@ -70,14 +71,30 @@ workflow.addConditionalEdges("Router", (state) => state.next, {
     DataAnalyst: "DataAnalyst",
     FINISH: END,
 });
+// ✅ Builder has self-loop capability for retry
+workflow.addConditionalEdges("Builder", (state) => {
+    if (state.needsRetry) {
+        console.log("🔄 Builder self-loop triggered");
+        return "Builder";
+    }
+    return "Router";
+}, {
+    Builder: "Builder",
+    Router: "Router",
+});
+// All other agents route back to Router
 for (const member of HIVE_MEMBERS) {
-    workflow.addEdge(member, "Router");
+    if (member !== "Builder") {
+        workflow.addEdge(member, "Router");
+    }
 }
 const graph = workflow.compile({
     checkpointer
 });
 // Import metrics
 import { metrics } from "./lib/metrics.js";
+// Import vector memory
+import { retrieveMemories, formatMemoriesForPrompt, getMemoryStats, storeMemory } from "./lib/vector-memory.js";
 // --- API Endpoints ---
 /**
  * ✅ Health check endpoint
@@ -103,6 +120,23 @@ app.get('/metrics', (c) => {
 app.get('/metrics/prometheus', (c) => {
     c.header('Content-Type', 'text/plain');
     return c.text(metrics.getPrometheusMetrics());
+});
+/**
+ * ✅ Memory stats endpoint
+ */
+app.get('/memory/stats', (c) => {
+    return c.json(getMemoryStats());
+});
+/**
+ * ✅ Memory search endpoint
+ */
+app.post('/memory/search', async (c) => {
+    const { query, agent, limit } = await c.req.json();
+    if (!query) {
+        return c.json({ error: "Query is required" }, 400);
+    }
+    const memories = await retrieveMemories(query, { agent, limit });
+    return c.json({ memories });
 });
 /**
  * Standard chat endpoint

@@ -67,4 +67,25 @@ export const errorHandler = () => {
         }
     };
 };
+/**
+ * CORS middleware for dashboard/external access
+ */
+export const cors = (allowedOrigins = ["*"]) => {
+    return async (c, next) => {
+        const origin = c.req.header("origin") || "";
+        // Check if origin is allowed
+        const isAllowed = allowedOrigins.includes("*") || allowedOrigins.includes(origin);
+        if (isAllowed) {
+            c.res.headers.set("Access-Control-Allow-Origin", allowedOrigins.includes("*") ? "*" : origin);
+            c.res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            c.res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            c.res.headers.set("Access-Control-Max-Age", "86400");
+        }
+        // Handle preflight
+        if (c.req.method === "OPTIONS") {
+            return new Response(null, { status: 204 });
+        }
+        await next();
+    };
+};
 //# sourceMappingURL=middleware.js.map

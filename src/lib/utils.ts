@@ -71,3 +71,19 @@ export const createAgentResponse = (
         contributors: [agentName],
     };
 };
+
+/**
+ * Extract the user's original query from messages
+ */
+export const extractUserQuery = (messages: BaseMessage[]): string => {
+    // Find the first human message (the original user request)
+    for (const msg of messages) {
+        if (msg._getType() === "human" && !("name" in msg)) {
+            return typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+        }
+    }
+    // Fallback to last message content
+    const last = messages[messages.length - 1];
+    return typeof last?.content === "string" ? last.content : "";
+};
+

@@ -17,4 +17,8 @@ export declare const createAgentResponse: (content: string | object, agentName: 
     messages: BaseMessage[];
     contributors: string[];
 };
+/**
+ * Extract the user's original query from messages
+ */
+export declare const extractUserQuery: (messages: BaseMessage[]) => string;
 //# sourceMappingURL=utils.d.ts.map

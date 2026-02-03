@@ -73,6 +73,31 @@ export declare const buildSubgraph: import("@langchain/langgraph").CompiledState
     Builder: {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
+        needsRetry: boolean;
+        agentRetries: {
+            Builder: number;
+        };
+        lastError?: never;
+    } | {
+        messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
+        contributors: string[];
+        needsRetry: boolean;
+        agentRetries: {
+            Builder: number;
+        };
+        lastError: string | null;
+    } | {
+        messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
+        contributors: string[];
+        needsRetry: boolean;
+        agentRetries?: never;
+        lastError?: never;
+    } | {
+        messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
+        contributors: string[];
+        needsRetry: boolean;
+        lastError: string;
+        agentRetries?: never;
     };
     Reviewer: {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];

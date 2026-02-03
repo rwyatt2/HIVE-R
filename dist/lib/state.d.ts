@@ -5,6 +5,7 @@ import { BaseMessage } from "@langchain/core/messages";
  * - Routing decisions
  * - Typed artifacts
  * - Agent contribution tracking
+ * - Turn counting & retry logic
  */
 export declare const AgentState: import("@langchain/langgraph").AnnotationRoot<{
     messages: import("@langchain/langgraph").BinaryOperatorAggregate<BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[], BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[]>;
@@ -222,6 +223,10 @@ export declare const AgentState: import("@langchain/langgraph").AnnotationRoot<{
     phase: import("@langchain/langgraph").BinaryOperatorAggregate<"strategy" | "design" | "build" | "ship", "strategy" | "design" | "build" | "ship">;
     requiresApproval: import("@langchain/langgraph").BinaryOperatorAggregate<boolean, boolean>;
     approvalStatus: import("@langchain/langgraph").BinaryOperatorAggregate<"pending" | "approved" | "rejected" | null, "pending" | "approved" | "rejected" | null>;
+    turnCount: import("@langchain/langgraph").BinaryOperatorAggregate<number, number>;
+    agentRetries: import("@langchain/langgraph").BinaryOperatorAggregate<Record<string, number>, Record<string, number>>;
+    needsRetry: import("@langchain/langgraph").BinaryOperatorAggregate<boolean, boolean>;
+    lastError: import("@langchain/langgraph").BinaryOperatorAggregate<string | null, string | null>;
 }>;
 export type AgentStateType = typeof AgentState.State;
 //# sourceMappingURL=state.d.ts.map
