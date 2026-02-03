@@ -627,6 +627,37 @@ app.get('/agents', (c) => {
     });
 });
 
+/**
+ * Graph structure for HIVE-R Studio visualization
+ */
+app.get('/api/graph', (c) => {
+    const nodes = [
+        { id: 'Router', position: { x: 300, y: 0 }, data: { label: '🧭 Router', role: 'Orchestrator' }, type: 'input' },
+        ...HIVE_MEMBERS.map((member, i) => ({
+            id: member,
+            position: { x: (i % 5) * 150, y: Math.floor(i / 5) * 120 + 100 },
+            data: { label: member, role: member },
+        })),
+    ];
+
+    const edges = [
+        // Router to all agents
+        ...HIVE_MEMBERS.map((member) => ({
+            id: `e-router-${member.toLowerCase()}`,
+            source: 'Router',
+            target: member,
+            animated: false,
+        })),
+        // Direct handoff edges
+        { id: 'e-designer-builder', source: 'Designer', target: 'Builder', style: { stroke: '#22c55e' } },
+        { id: 'e-builder-tester', source: 'Builder', target: 'Tester', style: { stroke: '#22c55e' } },
+        { id: 'e-tester-builder', source: 'Tester', target: 'Builder', style: { stroke: '#f59e0b' } },
+        { id: 'e-pm-designer', source: 'ProductManager', target: 'Designer', style: { stroke: '#22c55e' } },
+    ];
+
+    return c.json({ nodes, edges });
+});
+
 // ============================================
 // Server Startup
 // ============================================

@@ -397,7 +397,7 @@ npm run export-tokens
 - [x] ~~Hierarchical teams (PM manages multiple Builders)~~ ✅ **Implemented!**
 - [x] ~~Plugin system for custom agents~~ ✅ **Implemented!**
 - [x] ~~GitHub integration (auto-create PRs)~~ ✅ **Implemented!**
-- [ ] Visual workflow editor
+- [x] ~~Visual workflow editor (HIVE-R Studio)~~ ✅ **Implemented!**
 
 ---
 
@@ -504,6 +504,31 @@ The agent will:
 2. Create a feature branch
 3. Commit and push code
 4. Open a Pull Request with a summary of changes
+
+---
+
+## New: HIVE-R Studio (Visual Dashboard)
+
+A visual web client to interact with your AI team.
+
+### How to Run
+
+1.  **Backend** (Terminal 1):
+    ```bash
+    npm run dev
+    ```
+
+2.  **Frontend** (Terminal 2):
+    ```bash
+    cd client && npm run dev
+    ```
+
+Open **http://localhost:5173** to access the Studio.
+
+### Features
+-   **Chat**: Talk to the team directly.
+-   **Graph**: See the agents and their relationships.
+-   **Real-time**: Watch the graph light up as agents work (coming soon).
 
 ---
 
