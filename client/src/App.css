@@ -46,11 +46,34 @@ body {
 .chat-header {
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .chat-header h2 {
   font-size: 1.25rem;
   font-weight: 600;
+  margin: 0;
+}
+
+.docs-button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.docs-button:hover {
+  background: var(--accent-hover);
 }
 
 .chat-messages {

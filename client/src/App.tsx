@@ -16,6 +16,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './App.css';
+import { Docs } from './components/Docs';
 
 // ============================================================================
 // INITIAL GRAPH DATA
@@ -69,7 +70,15 @@ interface Message {
   content: string;
 }
 
-function ChatPanel({ messages, onSend }: { messages: Message[]; onSend: (msg: string) => void }) {
+function ChatPanel({
+  messages,
+  onSend,
+  onOpenDocs
+}: {
+  messages: Message[];
+  onSend: (msg: string) => void;
+  onOpenDocs: () => void;
+}) {
   const [input, setInput] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -84,6 +93,9 @@ function ChatPanel({ messages, onSend }: { messages: Message[]; onSend: (msg: st
     <div className="chat-panel">
       <div className="chat-header">
         <h2>💬 HIVE-R Studio</h2>
+        <button className="docs-button" onClick={onOpenDocs} title="Getting Started">
+          📚 Docs
+        </button>
       </div>
       <div className="chat-messages">
         {messages.map((msg) => (
@@ -113,6 +125,7 @@ function ChatPanel({ messages, onSend }: { messages: Message[]; onSend: (msg: st
 function App() {
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
+  const [showDocs, setShowDocs] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', role: 'agent', agent: 'Router', content: 'Welcome to HIVE-R Studio! I coordinate a team of 13 AI specialists. What would you like to build today?' },
   ]);
@@ -146,21 +159,24 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <ChatPanel messages={messages} onSend={handleSend} />
-      <div className="graph-panel">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          fitView
-        >
-          <Controls />
-          <Background />
-        </ReactFlow>
+    <>
+      <div className="app">
+        <ChatPanel messages={messages} onSend={handleSend} onOpenDocs={() => setShowDocs(true)} />
+        <div className="graph-panel">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            fitView
+          >
+            <Controls />
+            <Background />
+          </ReactFlow>
+        </div>
       </div>
-    </div>
+      {showDocs && <Docs onClose={() => setShowDocs(false)} />}
+    </>
   );
 }
 
