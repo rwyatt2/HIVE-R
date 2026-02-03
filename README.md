@@ -393,11 +393,30 @@ npm run export-tokens
 
 ## Roadmap
 
-- [x] ~~Direct agent-to-agent messaging (skip Router)~~ ✅ **Implemented!**
-- [x] ~~Hierarchical teams (PM manages multiple Builders)~~ ✅ **Implemented!**
-- [x] ~~Plugin system for custom agents~~ ✅ **Implemented!**
-- [x] ~~GitHub integration (auto-create PRs)~~ ✅ **Implemented!**
-- [x] ~~Visual workflow editor (HIVE-R Studio)~~ ✅ **Implemented!**
+- [x] ~~Direct agent-to-agent messaging~~ ✅
+- [x] ~~Hierarchical teams~~ ✅
+- [x] ~~Plugin system~~ ✅
+- [x] ~~GitHub integration~~ ✅
+- [x] ~~Visual workflow editor (HIVE-R Studio)~~ ✅
+
+## Roadmap V2: Production & Ecosystem
+
+### 🔴 Production Readiness (High Priority)
+- [ ] **Load Tests**: Ensure robust concurrency
+- [ ] **Health Checks**: Probes for orchestration
+- [ ] **Error Alerting**: Sentry integration
+- [ ] **Security Audit**: Hardening API & Auth
+
+### 🟡 Platform Growth
+- [ ] **HIVE-R Studio V2**: User Login, Real-time Graph, Agent Config UI
+- [ ] **Marketing Site**: Public landing page
+- [ ] **Plugin Marketplace**: Registry for community agents
+- [ ] **No-Code Builder**: "Build your own Agent" UI
+
+### 🟢 Future / Scale
+- [ ] **PostgreSQL**: Migration for scale
+- [ ] **Vector Memory**: Long-term semantic recall
+- [ ] **Team Workspaces**: Multi-user orgs
 
 ---
 
