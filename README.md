@@ -293,6 +293,39 @@ cp .env.example .env
 npm run dev
 ```
 
+---
+
+## ⚠️ Security Setup (Important!)
+
+**These files are NOT included in the repo for security reasons.** You must create them yourself:
+
+### 1. Create your `.env` file
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` and add your API keys:
+
+```
+OPENAI_API_KEY=sk-your-key-here
+HIVE_API_KEY=your-secret-password     # Optional: protects your API
+```
+
+### 2. Database is auto-created
+
+The `data/` folder with `hive.db` is created automatically on first run. This contains your conversation history and is **not committed to git**.
+
+### What's protected by `.gitignore`:
+
+| File/Folder | Contains | Why it's private |
+|-------------|----------|------------------|
+| `.env` | API keys | Would expose your accounts |
+| `data/*.db` | Conversations | User data / privacy |
+| `*.key`, `*.pem` | SSL certs | Security credentials |
+
+> **Never commit secrets to git!** If you accidentally do, rotate your API keys immediately.
+
 ### Production
 
 ```bash
