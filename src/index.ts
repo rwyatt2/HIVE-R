@@ -12,6 +12,7 @@ import { checkpointer } from "./lib/memory.js";
 
 // Middleware
 import { requestLogger, rateLimiter, errorHandler, cors } from "./lib/middleware.js";
+import { authMiddleware, isAuthEnabled } from "./lib/auth.js";
 
 // Router
 import { routerNode, HIVE_MEMBERS } from "./agents/router.js";
@@ -45,6 +46,7 @@ const app = new Hono()
 app.use('*', cors(["http://localhost:3001", "http://localhost:3000", "*"]));
 app.use('*', errorHandler());
 app.use('*', requestLogger());
+app.use('*', authMiddleware);  // ✅ API Key auth (set HIVE_API_KEY to enable)
 app.use('/chat*', rateLimiter(100, 60000)); // 100 requests/min for dev
 
 // --- Graph Setup ---

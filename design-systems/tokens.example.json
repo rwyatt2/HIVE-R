@@ -1,5 +1,5 @@
 {
-    "$schema": "https://hive-r.dev/schemas/tokens.json",
+    "$comment": "HIVE-R Reference Tokens - copy and customize for your brand",
     "meta": {
         "name": "HIVE-R Reference Tokens",
         "version": "2.0.0",
