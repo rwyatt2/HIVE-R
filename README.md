@@ -395,7 +395,7 @@ npm run export-tokens
 
 - [x] ~~Direct agent-to-agent messaging (skip Router)~~ ✅ **Implemented!**
 - [x] ~~Hierarchical teams (PM manages multiple Builders)~~ ✅ **Implemented!**
-- [ ] Plugin system for custom agents
+- [x] ~~Plugin system for custom agents~~ ✅ **Implemented!**
 - [ ] GitHub integration (auto-create PRs)
 - [ ] Visual workflow editor
 
@@ -454,10 +454,37 @@ This massively speeds up complex features by running work concurrently.
 
 ---
 
+## New: Plugin System (Custom Agents)
+
+You can now extend HIVE-R with custom agents without modifying the core code.
+
+### How It Works
+
+1.  Create a `.js` file in the `plugins/` directory.
+2.  Define an agent object with `name`, `role`, `description`, `systemPrompt`.
+3.  Restart the server.
+
+The Router will automatically detect the new agent and route relevant tasks to it.
+
+### Example Plugin
+
+```javascript
+// plugins/marketing.js
+export const MarketingExpert = {
+  name: "MarketingExpert",
+  role: "Marketing Strategist",
+  description: "Creates tweets, blog outlines, and launch campaigns.",
+  systemPrompt: "You are a world-class marketing guru...",
+  keywords: ["tweet", "launch", "social media"] // Helps Router find you
+};
+```
+
+---
+
 ## License
 
 MIT
 
 ---
 
-*Built with ❤️ for developers who want to ship faster.*
+*Built with ❤️ for anyone who want to ship faster.*

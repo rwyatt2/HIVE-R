@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AgentState } from "../lib/state.js";
 import { HIVE_MEMBERS } from "../lib/prompts.js";
 import { formatContributorContext } from "../lib/utils.js";
+import { getPluginRouterContext, getPluginNames } from "../lib/plugins.js";
 const llm = new ChatOpenAI({
     modelName: "gpt-4o",
     temperature: 0,
@@ -43,10 +44,17 @@ Analyze the conversation and decide:
 - Why? (brief reasoning)
 
 If the original request has been thoroughly addressed, respond with FINISH.`;
-const routeSchema = z.object({
-    next: z.enum([...HIVE_MEMBERS, "FINISH"]),
-    reasoning: z.string().describe("Why this agent was chosen (1-2 sentences)"),
-});
+/**
+ * Create route schema dynamically (includes plugins)
+ */
+function createRouteSchema() {
+    const pluginNames = getPluginNames();
+    const allAgents = [...HIVE_MEMBERS, ...pluginNames, "FINISH"];
+    return z.object({
+        next: z.enum(allAgents),
+        reasoning: z.string().describe("Why this agent was chosen (1-2 sentences)"),
+    });
+}
 import { logger } from "../lib/logger.js";
 import { checkTurnLimit, isCircuitOpen, SAFETY_CONFIG } from "../lib/safety.js";
 export const routerNode = async (state) => {
@@ -59,10 +67,12 @@ export const routerNode = async (state) => {
         logger.safetyTrigger("MAX_TURNS exceeded", { turnCount });
         return { next: "FINISH" };
     }
-    // ✅ Inject contributor context into router
+    // ✅ Inject contributor context and plugin context into router
     const contributorContext = formatContributorContext(contributors);
-    const enhancedPrompt = ROUTER_PROMPT + contributorContext;
+    const pluginContext = getPluginRouterContext();
+    const enhancedPrompt = ROUTER_PROMPT + contributorContext + pluginContext;
     try {
+        const routeSchema = createRouteSchema();
         const chain = llm.withStructuredOutput(routeSchema);
         const response = await chain.invoke([
             new SystemMessage(enhancedPrompt),
