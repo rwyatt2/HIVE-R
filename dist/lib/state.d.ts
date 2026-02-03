@@ -230,6 +230,11 @@ export declare const AgentState: import("@langchain/langgraph").AnnotationRoot<{
     agentRetries: import("@langchain/langgraph").BinaryOperatorAggregate<Record<string, number>, Record<string, number>>;
     needsRetry: import("@langchain/langgraph").BinaryOperatorAggregate<boolean, boolean>;
     lastError: import("@langchain/langgraph").BinaryOperatorAggregate<string | null, string | null>;
+    subTasks: import("@langchain/langgraph").BinaryOperatorAggregate<SubTask[], SubTask[]>;
+    aggregatedResults: import("@langchain/langgraph").BinaryOperatorAggregate<string[], string[]>;
+    supervisorMode: import("@langchain/langgraph").BinaryOperatorAggregate<boolean, boolean>;
+    parentTaskId: import("@langchain/langgraph").BinaryOperatorAggregate<string | null, string | null>;
 }>;
+import type { SubTask } from "../tools/delegate.js";
 export type AgentStateType = typeof AgentState.State;
 //# sourceMappingURL=state.d.ts.map

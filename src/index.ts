@@ -96,18 +96,57 @@ workflow.addConditionalEdges(
             console.log("🔄 Builder self-loop triggered");
             return "Builder";
         }
+        // Check for direct handoff
+        if (state.next && HIVE_MEMBERS.includes(state.next as any)) {
+            console.log(`📡 Direct handoff: Builder → ${state.next}`);
+            return state.next;
+        }
         return "Router";
     },
     {
         Builder: "Builder",
         Router: "Router",
+        Tester: "Tester",
+        Reviewer: "Reviewer",
     }
 );
 
-// All other agents route back to Router
+// ✅ Create routing function for direct handoffs
+function createAgentRouter(agentName: string) {
+    return (state: typeof AgentState.State) => {
+        // Check for direct handoff via state.next
+        if (state.next && state.next !== "Router" && HIVE_MEMBERS.includes(state.next as any)) {
+            console.log(`📡 Direct handoff: ${agentName} → ${state.next}`);
+            return state.next;
+        }
+        return "Router";
+    };
+}
+
+// All other agents can route directly OR back to Router
 for (const member of HIVE_MEMBERS) {
     if (member !== "Builder") {
-        workflow.addEdge(member, "Router");
+        workflow.addConditionalEdges(
+            member,
+            createAgentRouter(member),
+            {
+                Router: "Router",
+                // Add all possible direct handoff targets
+                Founder: "Founder",
+                ProductManager: "ProductManager",
+                UXResearcher: "UXResearcher",
+                Designer: "Designer",
+                Accessibility: "Accessibility",
+                Planner: "Planner",
+                Security: "Security",
+                Builder: "Builder",
+                Reviewer: "Reviewer",
+                Tester: "Tester",
+                TechWriter: "TechWriter",
+                SRE: "SRE",
+                DataAnalyst: "DataAnalyst",
+            }
+        );
     }
 }
 
@@ -538,6 +577,34 @@ app.post('/workflow/ship', async (c) => {
 
     return c.json({
         phase: "ship",
+        messages: result.messages.map((msg: BaseMessage) => ({
+            agent: msg.name || "Unknown",
+            content: msg.content,
+        })),
+    });
+});
+
+// Import hierarchical subgraph
+import { hierarchicalSubgraph } from "./subgraphs/hierarchical.js";
+
+/**
+ * Hierarchical phase: PM delegates to parallel workers
+ */
+app.post('/workflow/hierarchical', async (c) => {
+    const { message } = await c.req.json();
+
+    if (!message) {
+        return c.json({ error: "Message is required" }, 400);
+    }
+
+    const result = await hierarchicalSubgraph.invoke({
+        messages: [new HumanMessage(message)],
+    });
+
+    return c.json({
+        phase: "hierarchical",
+        subTasks: result.subTasks || [],
+        aggregatedResults: result.aggregatedResults || [],
         messages: result.messages.map((msg: BaseMessage) => ({
             agent: msg.name || "Unknown",
             content: msg.content,

@@ -20,6 +20,16 @@ export const CONTEXT_PROTOCOL = `
 3. **Disagree Respectfully**: If you see issues, flag them ("I'd push back on X because...")
 4. **Handoff**: End with a clear statement for the next agent
 
+## Direct Handoffs
+
+Use the \`handoff_to_agent\` tool when you know exactly who should handle the next step:
+- Designer finishing spec → handoff to Builder
+- PM finishing PRD → handoff to Designer  
+- Tester finding bug → handoff to Builder
+- Builder finishing code → handoff to Tester
+
+If you're unsure who should go next, don't use the handoff tool—the Router will decide.
+
 ## Output Format
 
 **Summary**: 1-2 sentence takeaway of your contribution

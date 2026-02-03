@@ -51,17 +51,18 @@ export const formatContributorContext = (contributors: string[]): string => {
 };
 
 /**
- * Create consistent agent response
+ * Create consistent agent response with optional direct handoff
  */
 export const createAgentResponse = (
     content: string | object,
-    agentName: string
-): { messages: BaseMessage[]; contributors: string[] } => {
+    agentName: string,
+    options?: { next?: string }
+): { messages: BaseMessage[]; contributors: string[]; next?: string } => {
     const messageContent = typeof content === "string"
         ? content
         : JSON.stringify(content, null, 2);
 
-    return {
+    const response: { messages: BaseMessage[]; contributors: string[]; next?: string } = {
         messages: [
             new HumanMessage({
                 content: messageContent,
@@ -70,6 +71,14 @@ export const createAgentResponse = (
         ],
         contributors: [agentName],
     };
+
+    // Support direct handoff
+    if (options?.next) {
+        response.next = options.next;
+        console.log(`📡 ${agentName} requesting handoff to ${options.next}`);
+    }
+
+    return response;
 };
 
 /**

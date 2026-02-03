@@ -393,11 +393,64 @@ npm run export-tokens
 
 ## Roadmap
 
-- [ ] Direct agent-to-agent messaging (skip Router)
-- [ ] Hierarchical teams (PM manages multiple Builders)
+- [x] ~~Direct agent-to-agent messaging (skip Router)~~ ✅ **Implemented!**
+- [x] ~~Hierarchical teams (PM manages multiple Builders)~~ ✅ **Implemented!**
 - [ ] Plugin system for custom agents
 - [ ] GitHub integration (auto-create PRs)
 - [ ] Visual workflow editor
+
+---
+
+## New: Direct Agent Handoffs
+
+Agents can now skip the Router and hand off directly to each other when the next step is obvious:
+
+```
+Designer → Builder (instead of Designer → Router → Builder)
+```
+
+### How It Works
+
+Agents use the `handoff_to_agent` tool or return `{ next: "AgentName" }`:
+
+```typescript
+return createAgentResponse(content, "Designer", { next: "Builder" });
+```
+
+### Common Handoff Patterns
+
+| From | To | When |
+|------|-----|------|
+| PM | Designer | PRD complete |
+| Designer | Builder | Design spec ready |
+| Builder | Tester | Code complete |
+| Tester | Builder | Bug found |
+| Reviewer | Builder | Changes requested |
+
+This reduces latency and token costs by eliminating unnecessary Router calls.
+
+---
+
+## New: Hierarchical Teams (Parallel Execution)
+
+The Product Manager can now act as a "Supervisor" to break large features into sub-tasks and delegate them to multiple agents in parallel.
+
+### How It Works
+
+1. **Map**: PM uses `delegate_task` to create sub-tasks
+2. **Parallel**: Workers (Builders, Designers) run simultaneously
+3. **Reduce**: A Synthesizer aggregates the results
+
+### Usage
+
+```bash
+curl -X POST http://localhost:3000/workflow/hierarchical \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-key" \
+  -d '{"message": "Create 3 React components: Button, Card, Navbar"}'
+```
+
+This massively speeds up complex features by running work concurrently.
 
 ---
 

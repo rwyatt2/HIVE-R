@@ -71,5 +71,39 @@ export const AgentState = Annotation.Root({
         reducer: (x, y) => y ?? x,
         default: () => null,
     }),
+    // ✅ NEW: Hierarchical Teams Support
+    // Active sub-tasks delegated by supervisor
+    subTasks: Annotation({
+        reducer: (x, y) => {
+            // Merge sub-tasks, update existing ones by ID
+            const merged = [...x];
+            for (const task of y) {
+                const existing = merged.findIndex(t => t.id === task.id);
+                if (existing >= 0) {
+                    merged[existing] = task;
+                }
+                else {
+                    merged.push(task);
+                }
+            }
+            return merged;
+        },
+        default: () => [],
+    }),
+    // Results aggregated from parallel workers
+    aggregatedResults: Annotation({
+        reducer: (x, y) => [...x, ...y],
+        default: () => [],
+    }),
+    // Is the current agent acting as a supervisor?
+    supervisorMode: Annotation({
+        reducer: (x, y) => y ?? x,
+        default: () => false,
+    }),
+    // Parent task ID (for sub-task context)
+    parentTaskId: Annotation({
+        reducer: (x, y) => y ?? x,
+        default: () => null,
+    }),
 });
 //# sourceMappingURL=state.js.map

@@ -11,11 +11,14 @@ export declare const safeAgentCall: <T>(fn: () => Promise<T>, agentName: string,
  */
 export declare const formatContributorContext: (contributors: string[]) => string;
 /**
- * Create consistent agent response
+ * Create consistent agent response with optional direct handoff
  */
-export declare const createAgentResponse: (content: string | object, agentName: string) => {
+export declare const createAgentResponse: (content: string | object, agentName: string, options?: {
+    next?: string;
+}) => {
     messages: BaseMessage[];
     contributors: string[];
+    next?: string;
 };
 /**
  * Extract the user's original query from messages
