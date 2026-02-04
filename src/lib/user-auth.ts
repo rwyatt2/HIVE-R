@@ -28,6 +28,7 @@ const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 export interface User {
     id: string;
     email: string;
+    role: 'user' | 'system_owner';
     createdAt: string;
 }
 
@@ -223,11 +224,11 @@ export function registerUser(email: string, password: string): User {
     const createdAt = new Date().toISOString();
 
     getDb().prepare(`
-        INSERT INTO users (id, email, password_hash, created_at)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO users (id, email, password_hash, role, created_at)
+        VALUES (?, ?, ?, 'user', ?)
     `).run(id, email.toLowerCase(), passwordHash, createdAt);
 
-    return { id, email: email.toLowerCase(), createdAt };
+    return { id, email: email.toLowerCase(), role: 'user', createdAt };
 }
 
 /**
@@ -317,14 +318,15 @@ export function logoutAll(userId: string): void {
  */
 export function getUserById(userId: string): User | null {
     const user = getDb().prepare(`
-        SELECT id, email, created_at FROM users WHERE id = ?
-    `).get(userId) as { id: string; email: string; created_at: string } | undefined;
+        SELECT id, email, role, created_at FROM users WHERE id = ?
+    `).get(userId) as { id: string; email: string; role: string; created_at: string } | undefined;
 
     if (!user) return null;
 
     return {
         id: user.id,
         email: user.email,
+        role: (user.role as 'user' | 'system_owner') || 'user',
         createdAt: user.created_at
     };
 }

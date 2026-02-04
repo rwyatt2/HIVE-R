@@ -185,7 +185,12 @@ function UserMenu() {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-function App() {
+interface AppProps {
+  demoMode?: boolean;
+  showMarketplaceOnLoad?: boolean;
+}
+
+function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false }: AppProps) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
@@ -194,9 +199,9 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [useStreaming, setUseStreaming] = useState(true);
-  const [demoMode, setDemoMode] = useState(false);
+  const [demoMode, setDemoMode] = useState(initialDemoMode);
   const [showConfig, setShowConfig] = useState(false);
-  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(showMarketplaceOnLoad);
   const [showPluginBuilder, setShowPluginBuilder] = useState(false);
 
   // Chat persistence

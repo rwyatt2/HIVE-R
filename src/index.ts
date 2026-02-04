@@ -58,6 +58,7 @@ initSentry();
 import { initSemanticMemory, searchMemories as searchSemanticMemories, storeMemory as storeSemanticMemory, getSemanticMemoryStats, isSemanticMemoryEnabled } from "./lib/semantic-memory.js";
 import * as orgs from "./lib/organizations.js";
 import * as billing from "./lib/billing.js";
+import adminRouter from "./routers/admin.js"; // ✅ Admin Router
 
 // Initialize Phase 15 features
 orgs.initOrgTables();
@@ -75,111 +76,11 @@ app.use('*', errorHandler());
 app.use('*', requestLogger());
 app.use('*', authMiddleware);  // ✅ API Key auth (set HIVE_API_KEY to enable)
 app.use('/chat*', rateLimiter(100, 60000)); // 100 requests/min for dev
+app.route('/admin', adminRouter); // ✅ Mount Admin Router
 
 // --- Graph Setup ---
-const workflow = new StateGraph(AgentState)
-    .addNode("Router", routerNode)
-    .addNode("Founder", founderNode)
-    .addNode("ProductManager", productManagerNode)
-    .addNode("UXResearcher", uxResearcherNode)
-    .addNode("Designer", designerNode)
-    .addNode("Accessibility", accessibilityNode)
-    .addNode("Planner", plannerNode)
-    .addNode("Security", securityNode)
-    .addNode("Builder", builderNode)
-    .addNode("Reviewer", reviewerNode)
-    .addNode("Tester", testerNode)
-    .addNode("TechWriter", techWriterNode)
-    .addNode("SRE", sreNode)
-    .addNode("DataAnalyst", dataAnalystNode)
-    .addEdge(START, "Router");
-
-workflow.addConditionalEdges(
-    "Router",
-    (state) => state.next,
-    {
-        Founder: "Founder",
-        ProductManager: "ProductManager",
-        UXResearcher: "UXResearcher",
-        Designer: "Designer",
-        Accessibility: "Accessibility",
-        Planner: "Planner",
-        Security: "Security",
-        Builder: "Builder",
-        Reviewer: "Reviewer",
-        Tester: "Tester",
-        TechWriter: "TechWriter",
-        SRE: "SRE",
-        DataAnalyst: "DataAnalyst",
-        FINISH: END,
-    }
-);
-
-// ✅ Builder has self-loop capability for retry
-workflow.addConditionalEdges(
-    "Builder",
-    (state) => {
-        if (state.needsRetry) {
-            console.log("🔄 Builder self-loop triggered");
-            return "Builder";
-        }
-        // Check for direct handoff
-        if (state.next && HIVE_MEMBERS.includes(state.next as any)) {
-            console.log(`📡 Direct handoff: Builder → ${state.next}`);
-            return state.next;
-        }
-        return "Router";
-    },
-    {
-        Builder: "Builder",
-        Router: "Router",
-        Tester: "Tester",
-        Reviewer: "Reviewer",
-    }
-);
-
-// ✅ Create routing function for direct handoffs
-function createAgentRouter(agentName: string) {
-    return (state: typeof AgentState.State) => {
-        // Check for direct handoff via state.next
-        if (state.next && state.next !== "Router" && HIVE_MEMBERS.includes(state.next as any)) {
-            console.log(`📡 Direct handoff: ${agentName} → ${state.next}`);
-            return state.next;
-        }
-        return "Router";
-    };
-}
-
-// All other agents can route directly OR back to Router
-for (const member of HIVE_MEMBERS) {
-    if (member !== "Builder") {
-        workflow.addConditionalEdges(
-            member,
-            createAgentRouter(member),
-            {
-                Router: "Router",
-                // Add all possible direct handoff targets
-                Founder: "Founder",
-                ProductManager: "ProductManager",
-                UXResearcher: "UXResearcher",
-                Designer: "Designer",
-                Accessibility: "Accessibility",
-                Planner: "Planner",
-                Security: "Security",
-                Builder: "Builder",
-                Reviewer: "Reviewer",
-                Tester: "Tester",
-                TechWriter: "TechWriter",
-                SRE: "SRE",
-                DataAnalyst: "DataAnalyst",
-            }
-        );
-    }
-}
-
-const graph = workflow.compile({
-    checkpointer
-});
+// --- Graph Setup ---
+import { graph } from "./graph.js";
 
 // Import metrics
 import { metrics } from "./lib/metrics.js";

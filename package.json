@@ -16,7 +16,8 @@
     "build": "tsc",
     "export-tokens": "tsx scripts/export-tokens.ts",
     "backup": "tsx scripts/backup.ts",
-    "backup:restore": "tsx scripts/restore.ts"
+    "backup:restore": "tsx scripts/restore.ts",
+    "mcp": "tsx src/mcp-server.ts"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,7 @@
     "@langchain/langgraph": "^1.1.2",
     "@langchain/langgraph-checkpoint-sqlite": "^1.0.0",
     "@langchain/openai": "^1.2.4",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.6.2",
     "chromadb": "^3.2.2",
