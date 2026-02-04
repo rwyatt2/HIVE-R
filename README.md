@@ -105,22 +105,41 @@ Every agent is trained to write code that:
 - Has tests
 
 ### 💾 Persistent Memory
-Conversations are saved to a database. If the server restarts, your work isn't lost. Each conversation has a unique `threadId` that tracks the entire history.
+- **Chat History**: Conversations saved to SQLite with per-user sessions
+- **Semantic Memory**: Long-term vector storage (ChromaDB + OpenAI embeddings)
+- **Thread Context**: Each conversation has a unique `threadId`
 
 ### 🔒 Security Built-In
+- **JWT Authentication**: Secure user login with refresh tokens
 - **API Key Authentication**: Set `HIVE_API_KEY` to require auth on all requests
-- **Workspace Isolation**: Agents can only read/write files in the designated workspace
-- **Rate Limiting**: Protection against abuse
+- **Security Headers**: XSS, CSRF, clickjacking protection
+- **Rate Limiting**: 100 requests/minute protection
+- **Audit Trail**: Every action logged with retention policies
 
 ### 📊 Full Observability
-- **Tracing**: Every agent call is logged with timing
+- **Sentry Integration**: Error monitoring and alerting
+- **Health Probes**: `/health`, `/health/live`, `/health/ready` for K8s
 - **Cost Tracking**: Know exactly how many tokens (and dollars) each conversation uses
-- **Dashboard**: `/dashboard` endpoint shows system health
+- **Request Logging**: Structured JSON logs with tracing
 
 ### ⚡ Performance Optimized
 - **Response Caching**: Repeated queries are fast
-- **Streaming**: Results stream in real-time
-- **Load Tested**: Designed to handle 100+ concurrent users
+- **SSE Streaming**: Results stream in real-time
+- **SQLite Backups**: Automated dump/restore with `npm run backup`
+
+### 🎤 Voice Input
+- **Web Speech API**: Native browser voice recognition (Chrome)
+- **Whisper Fallback**: OpenAI transcription for other browsers
+
+### 👥 Multi-User Workspaces
+- **Organizations**: Team workspaces with shared projects
+- **RBAC**: Owner, Admin, and Member roles
+- **Invitations**: Email-based team invites
+
+### 💳 Usage-Based Billing
+- **Stripe Integration**: Subscription management
+- **Tiered Pricing**: Free, Pro ($29), Team ($99), Enterprise
+- **Usage Metering**: Track requests and tokens per user
 
 ---
 
@@ -260,16 +279,34 @@ All configuration is done through environment variables:
 |----------|-------------|
 | `OPENAI_API_KEY` | Your OpenAI API key |
 
-### Optional
+### Core Settings
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | 3000 | Server port |
 | `HIVE_API_KEY` | (none) | Enable API authentication |
 | `HIVE_WORKSPACE` | current directory | Where agents can read/write files |
-| `HIVE_DESIGN_SYSTEM` | default | Design system preset |
 | `DATABASE_PATH` | ./data/hive.db | SQLite database location |
-| `LOG_LEVEL` | info | debug, info, warn, error |
-| `HIVE_CACHE_ENABLED` | true | Enable response caching |
+| `JWT_SECRET` | (auto-generated) | Secret for JWT tokens |
+
+### Semantic Memory (Optional)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CHROMA_HOST` | localhost | ChromaDB server host |
+| `CHROMA_PORT` | 8000 | ChromaDB server port |
+
+### Error Monitoring (Optional)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SENTRY_DSN` | (none) | Sentry error tracking DSN |
+| `SENTRY_TRACES_SAMPLE_RATE` | 0.1 | Sentry performance sampling |
+
+### Billing (Optional)
+| Variable | Description |
+|----------|-------------|
+| `STRIPE_SECRET_KEY` | Stripe API secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_PRICE_PRO` | Stripe Price ID for Pro tier |
+| `STRIPE_PRICE_TEAM` | Stripe Price ID for Team tier |
 
 ---
 
@@ -399,24 +436,41 @@ npm run export-tokens
 - [x] ~~GitHub integration~~ ✅
 - [x] ~~Visual workflow editor (HIVE-R Studio)~~ ✅
 
-## Roadmap V2: Production & Ecosystem
+## Roadmap V2: Production & Ecosystem ✅ Complete
 
-### 🔴 Production Readiness (High Priority)
-- [ ] **Load Tests**: Ensure robust concurrency
-- [ ] **Health Checks**: Probes for orchestration
-- [ ] **Error Alerting**: Sentry integration
-- [ ] **Security Audit**: Hardening API & Auth
+### ✅ Phase 11: Production Readiness
+- [x] **Rate Limiting**: 100 req/min protection
+- [x] **Health Checks**: `/health`, `/health/live`, `/health/ready`
+- [x] **Error Alerting**: Sentry integration
+- [x] **Security Audit**: Security headers, audit function
+- [x] **Audit Trail**: Full request logging with retention
+- [x] **SQLite Backups**: `npm run backup` / `npm run backup:restore`
 
-### 🟡 Platform Growth
-- [ ] **HIVE-R Studio V2**: User Login, Real-time Graph, Agent Config UI
-- [ ] **Marketing Site**: Public landing page
-- [ ] **Plugin Marketplace**: Registry for community agents
-- [ ] **No-Code Builder**: "Build your own Agent" UI
+### ✅ Phase 12: HIVE-R Studio Enhancements
+- [x] **User Login**: JWT authentication with refresh tokens
+- [x] **Real-time Graph**: SSE streaming to light up active edges
+- [x] **Chat Persistence**: Save/load chat history per user
+- [x] **Agent Config UI**: Edit agent prompts from web UI
+
+### ✅ Phase 13: Marketing & Growth
+- [x] **Landing Page**: `/landing` — High-converting homepage
+- [x] **Demo Mode**: `/demo/*` — Read-only agent simulation
+- [x] **Documentation**: `/docs` — Full setup and design guides
+
+### ✅ Phase 14: Plugin Ecosystem
+- [x] **Plugin Registry**: Self-hosted marketplace API
+- [x] **Plugin Builder**: No-code UI to create plugins
+- [x] **One-Click Install**: Download from registry
+- [x] **Community Ratings**: Star/review system
+
+### ✅ Phase 15: Agent & Project Enhancements
+- [x] **Semantic Memory**: ChromaDB + OpenAI embeddings
+- [x] **Voice Input**: Web Speech API + Whisper fallback
+- [x] **Multi-User**: Organizations with RBAC
+- [x] **Billing**: Stripe usage-based billing
 
 ### 🟢 Future / Scale
-- [ ] **PostgreSQL**: Migration for scale
-- [ ] **Vector Memory**: Long-term semantic recall
-- [ ] **Team Workspaces**: Multi-user orgs
+- [ ] **PostgreSQL**: Migration when scaling beyond 10k users
 
 ---
 
@@ -526,28 +580,34 @@ The agent will:
 
 ---
 
-## New: HIVE-R Studio (Visual Dashboard)
+## HIVE-R Studio (Visual Dashboard)
 
 A visual web client to interact with your AI team.
 
 ### How to Run
 
-1.  **Backend** (Terminal 1):
-    ```bash
-    npm run dev
-    ```
+```bash
+# Terminal 1: Backend
+npm run dev
 
-2.  **Frontend** (Terminal 2):
-    ```bash
-    cd client && npm run dev
-    ```
+# Terminal 2: Client (Studio)
+cd client && npm run dev
+
+# Terminal 3: Landing Page
+cd landing && npm run dev
+```
 
 Open **http://localhost:5173** to access the Studio.
 
 ### Features
--   **Chat**: Talk to the team directly.
--   **Graph**: See the agents and their relationships.
--   **Real-time**: Watch the graph light up as agents work (coming soon).
+- **Chat**: Talk to the team directly
+- **Real-time Graph**: Watch agents light up as they work (SSE)
+- **Session Sidebar**: Browse and restore past conversations
+- **Agent Config**: Edit system prompts from the UI
+- **Plugin Marketplace**: Browse, install, and rate plugins
+- **Plugin Builder**: Create custom plugins with no code
+- **Voice Input**: 🎤 Speak instead of typing
+- **Demo Mode**: Try without an API key
 
 ---
 
