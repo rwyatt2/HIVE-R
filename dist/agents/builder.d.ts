@@ -7,7 +7,7 @@ export declare const builderNode: (state: typeof AgentState.State) => Promise<{
     agentRetries: {
         Builder: number;
     };
-    lastError?: never;
+    lastError?: undefined;
 } | {
     messages: HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
     contributors: string[];
@@ -20,13 +20,13 @@ export declare const builderNode: (state: typeof AgentState.State) => Promise<{
     messages: HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
     contributors: string[];
     needsRetry: boolean;
-    agentRetries?: never;
-    lastError?: never;
+    agentRetries?: undefined;
+    lastError?: undefined;
 } | {
     messages: HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
     contributors: string[];
     needsRetry: boolean;
     lastError: string;
-    agentRetries?: never;
+    agentRetries?: undefined;
 }>;
 //# sourceMappingURL=builder.d.ts.map

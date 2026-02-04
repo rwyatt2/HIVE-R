@@ -13,5 +13,5 @@ mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 // Create the checkpointer
 export const checkpointer = SqliteSaver.fromConnString(DB_PATH);
-console.log(`💾 SQLite persistence enabled: ${DB_PATH}`);
+console.error(`💾 SQLite persistence enabled: ${DB_PATH}`);
 //# sourceMappingURL=memory.js.map

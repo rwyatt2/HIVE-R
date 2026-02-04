@@ -20,7 +20,7 @@ Cursor is the best way to use HIVE-R because it allows the agents to see your ac
 Copy this command (this is the absolute path to your HIVE-R brain):
 
 ```bash
-/usr/local/bin/node --import tsx/esm /Users/mnstr/Desktop/HIVE-R/src/mcp-server.ts
+/usr/local/bin/node /Users/mnstr/Desktop/HIVE-R/dist/mcp-server.js
 ```
 
 > **Note**: If `/usr/local/bin/node` is not your node path, run `which node` in your terminal and replace it. Alternatively, you can use:

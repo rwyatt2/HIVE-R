@@ -23,6 +23,6 @@ export declare const productManagerNode: (state: typeof AgentState.State) => Pro
 } | {
     messages: HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
     contributors: string[];
-    artifacts?: never;
+    artifacts?: undefined;
 }>;
 //# sourceMappingURL=product-manager.d.ts.map

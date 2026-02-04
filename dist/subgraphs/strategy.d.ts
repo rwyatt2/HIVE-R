@@ -3,8 +3,8 @@ export declare const strategySubgraph: import("@langchain/langgraph").CompiledSt
     messages: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[];
     currentStep: "done" | "founder" | "pm" | "ux";
 }, {
-    messages?: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[];
-    currentStep?: "done" | "founder" | "pm" | "ux";
+    messages?: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[] | undefined;
+    currentStep?: "done" | "founder" | "pm" | "ux" | undefined;
 }, "ProductManager" | "Founder" | "UXResearcher" | "__start__", {
     messages: import("@langchain/langgraph").BinaryOperatorAggregate<BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[], BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[]>;
     currentStep: import("@langchain/langgraph").BinaryOperatorAggregate<"done" | "founder" | "pm" | "ux", "done" | "founder" | "pm" | "ux">;
@@ -39,7 +39,7 @@ export declare const strategySubgraph: import("@langchain/langgraph").CompiledSt
     } | {
         messages: HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
-        artifacts?: never;
+        artifacts?: undefined;
     };
     UXResearcher: {
         messages: HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];

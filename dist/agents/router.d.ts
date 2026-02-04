@@ -1,7 +1,7 @@
 import { AgentState } from "../lib/state.js";
 export declare const routerNode: (state: typeof AgentState.State) => Promise<{
     next: string;
-    turnCount?: never;
+    turnCount?: undefined;
 } | {
     next: string;
     turnCount: number;

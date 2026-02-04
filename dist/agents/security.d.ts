@@ -24,6 +24,6 @@ export declare const securityNode: (state: typeof AgentState.State) => Promise<{
 } | {
     messages: HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
     contributors: string[];
-    artifacts?: never;
+    artifacts?: undefined;
 }>;
 //# sourceMappingURL=security.d.ts.map

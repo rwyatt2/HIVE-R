@@ -111,7 +111,7 @@ export const builderNode = async (state: typeof AgentState.State) => {
 
     // Check if we've exceeded retries
     if (currentRetries >= MAX_RETRIES) {
-        console.log(`⚠️ Builder: Max retries (${MAX_RETRIES}) reached, handing off`);
+        console.error(`⚠️ Builder: Max retries (${MAX_RETRIES}) reached, handing off`);
         return {
             messages: [
                 new HumanMessage({
@@ -171,7 +171,7 @@ export const builderNode = async (state: typeof AgentState.State) => {
             const { failed, error } = detectFailure(toolResults);
 
             if (failed) {
-                console.log(`🔄 Builder: Detected failure, retry ${currentRetries + 1}/${MAX_RETRIES}`);
+                console.error(`🔄 Builder: Detected failure, retry ${currentRetries + 1}/${MAX_RETRIES}`);
                 return {
                     messages: [
                         new HumanMessage({
@@ -187,7 +187,7 @@ export const builderNode = async (state: typeof AgentState.State) => {
             }
 
             // Success!
-            console.log(`✅ Builder: Task completed successfully`);
+            console.error(`✅ Builder: Task completed successfully`);
             return {
                 messages: [
                     new HumanMessage({

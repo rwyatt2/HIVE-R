@@ -332,17 +332,22 @@ export function queryAuditLogs(options: {
         success: number | null;
     }>;
 
-    return rows.map(row => ({
-        timestamp: row.timestamp,
-        eventType: row.event_type as AuditEventType,
-        threadId: row.thread_id || undefined,
-        userId: row.user_id || undefined,
-        agentName: row.agent_name || undefined,
-        action: row.action,
-        metadata: row.metadata ? JSON.parse(row.metadata) : {},
-        duration: row.duration || undefined,
-        success: row.success !== null ? row.success === 1 : undefined,
-    }));
+    return rows.map(row => {
+        const event: AuditEvent = {
+            timestamp: row.timestamp,
+            eventType: row.event_type as AuditEventType,
+            action: row.action,
+            metadata: row.metadata ? JSON.parse(row.metadata) : {},
+        };
+
+        if (row.thread_id) event.threadId = row.thread_id;
+        if (row.user_id) event.userId = row.user_id;
+        if (row.agent_name) event.agentName = row.agent_name;
+        if (row.duration !== null) event.duration = row.duration;
+        if (row.success !== null) event.success = row.success === 1;
+
+        return event;
+    });
 }
 
 /**

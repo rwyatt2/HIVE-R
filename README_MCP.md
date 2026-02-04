@@ -20,9 +20,9 @@ Connect your HIVE-R Agent Swarm to **Cursor**, **Claude Code**, or other MCP-com
 
    **Recommended Command (Absolute Path):**
    ```bash
-   /usr/local/bin/node --import tsx/esm /Users/mnstr/Desktop/HIVE-R/src/mcp-server.ts
+   /usr/local/bin/node /Users/mnstr/Desktop/HIVE-R/dist/mcp-server.js
    ```
-   *(Adjust paths to match your Node.js and project location if needed, or just use the `npm run mcp` from the project root if invoking via CLI wrapper)*
+   *(Adjust paths to match your Node.js and project location if needed. This uses the production build to ensure stability)*
 
 ### 3. Usage
 

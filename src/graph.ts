@@ -63,12 +63,12 @@ workflow.addConditionalEdges(
     "Builder",
     (state) => {
         if (state.needsRetry) {
-            console.log("🔄 Builder self-loop triggered");
+            console.error("🔄 Builder self-loop triggered");
             return "Builder";
         }
         // Check for direct handoff
         if (state.next && HIVE_MEMBERS.includes(state.next as any)) {
-            console.log(`📡 Direct handoff: Builder → ${state.next}`);
+            console.error(`📡 Direct handoff: Builder → ${state.next}`);
             return state.next;
         }
         return "Router";
@@ -86,7 +86,7 @@ function createAgentRouter(agentName: string) {
     return (state: typeof AgentState.State) => {
         // Check for direct handoff via state.next
         if (state.next && state.next !== "Router" && HIVE_MEMBERS.includes(state.next as any)) {
-            console.log(`📡 Direct handoff: ${agentName} → ${state.next}`);
+            console.error(`📡 Direct handoff: ${agentName} → ${state.next}`);
             return state.next;
         }
         return "Router";

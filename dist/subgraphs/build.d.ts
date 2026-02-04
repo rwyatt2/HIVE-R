@@ -3,8 +3,8 @@ export declare const buildSubgraph: import("@langchain/langgraph").CompiledState
     messages: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[];
     reviewPassed: boolean;
 }, {
-    messages?: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[];
-    reviewPassed?: boolean;
+    messages?: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[] | undefined;
+    reviewPassed?: boolean | undefined;
 }, "Planner" | "Security" | "Builder" | "Reviewer" | "Tester" | "__start__", {
     messages: import("@langchain/langgraph").BinaryOperatorAggregate<BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[], BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[]>;
     reviewPassed: import("@langchain/langgraph").BinaryOperatorAggregate<boolean, boolean>;
@@ -42,7 +42,7 @@ export declare const buildSubgraph: import("@langchain/langgraph").CompiledState
     } | {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
-        artifacts?: never;
+        artifacts?: undefined;
     };
     Security: {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
@@ -68,7 +68,7 @@ export declare const buildSubgraph: import("@langchain/langgraph").CompiledState
     } | {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
-        artifacts?: never;
+        artifacts?: undefined;
     };
     Builder: {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
@@ -77,7 +77,7 @@ export declare const buildSubgraph: import("@langchain/langgraph").CompiledState
         agentRetries: {
             Builder: number;
         };
-        lastError?: never;
+        lastError?: undefined;
     } | {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
@@ -90,14 +90,14 @@ export declare const buildSubgraph: import("@langchain/langgraph").CompiledState
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
         needsRetry: boolean;
-        agentRetries?: never;
-        lastError?: never;
+        agentRetries?: undefined;
+        lastError?: undefined;
     } | {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
         needsRetry: boolean;
         lastError: string;
-        agentRetries?: never;
+        agentRetries?: undefined;
     };
     Reviewer: {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
@@ -122,12 +122,12 @@ export declare const buildSubgraph: import("@langchain/langgraph").CompiledState
     } | {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
-        artifacts?: never;
+        artifacts?: undefined;
     };
     Tester: {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         contributors: string[];
-        artifacts?: never;
+        artifacts?: undefined;
     } | {
         messages: import("@langchain/core/messages").HumanMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>>[];
         artifacts: {
