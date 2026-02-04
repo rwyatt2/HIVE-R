@@ -1,0 +1,13 @@
+{
+    "name": "React Best Practices",
+    "version": "1.0.0",
+    "description": "Enhances the Builder agent with React/TypeScript best practices and patterns",
+    "agentName": "Builder",
+    "systemPromptExtension": "## React Development Standards\n\nWhen building React components, ALWAYS follow these practices:\n\n### Component Structure\n- Use functional components with hooks\n- Keep components focused and small (<200 lines)\n- Extract custom hooks for reusable logic\n- Use TypeScript for all components\n\n### Naming Conventions\n- Components: PascalCase (e.g., `UserProfile`)\n- Hooks: camelCase with `use` prefix (e.g., `useUserData`)\n- Props interfaces: `ComponentNameProps`\n- Files: Match component name exactly\n\n### Performance\n- Use `useMemo` for expensive calculations\n- Use `useCallback` for event handlers passed to children\n- Implement `React.memo` for pure components\n- Lazy load routes and heavy components\n\n### State Management\n- Keep state close to where it's used\n- Lift state only when necessary\n- Use context for truly global state\n- Consider React Query for server state\n\n### Accessibility\n- All interactive elements must be keyboard accessible\n- Use semantic HTML elements\n- Include proper ARIA attributes\n- Test with screen readers",
+    "tags": [
+        "react",
+        "typescript",
+        "frontend"
+    ],
+    "icon": "⚛️"
+}

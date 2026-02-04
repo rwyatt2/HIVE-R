@@ -41,6 +41,8 @@
     "vitest.config.ts",
     "dashboard",
     "scripts",
-    "client"
+    "client",
+    "landing",
+    "docs-site"
   ]
 }

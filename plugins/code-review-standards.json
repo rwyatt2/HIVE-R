@@ -1,0 +1,13 @@
+{
+    "name": "Code Review Standards",
+    "version": "1.0.0",
+    "description": "Adds detailed code review guidelines and checklist to the Reviewer agent",
+    "agentName": "Reviewer",
+    "systemPromptExtension": "## Code Review Standards\n\nWhen reviewing code, follow these comprehensive guidelines:\n\n### 1. Security Checklist\n- [ ] No hardcoded secrets or credentials\n- [ ] Input validation on all user inputs\n- [ ] Proper authentication/authorization checks\n- [ ] SQL injection prevention (parameterized queries)\n- [ ] XSS prevention (output escaping)\n\n### 2. Performance Considerations\n- [ ] No N+1 database queries\n- [ ] Appropriate caching strategies\n- [ ] Efficient algorithm choices\n- [ ] Bundle size impact considered\n\n### 3. Code Quality\n- [ ] DRY principles followed\n- [ ] Single responsibility maintained\n- [ ] Clear naming conventions\n- [ ] Adequate error handling\n- [ ] No commented-out code\n\n### 4. Testing\n- [ ] Unit tests for new logic\n- [ ] Edge cases covered\n- [ ] Integration tests where needed",
+    "tags": [
+        "review",
+        "security",
+        "quality"
+    ],
+    "icon": "✅"
+}

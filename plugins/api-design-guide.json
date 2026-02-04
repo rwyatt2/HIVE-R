@@ -1,0 +1,13 @@
+{
+    "name": "API Design Guide",
+    "version": "1.0.0",
+    "description": "Adds RESTful API design guidelines to the Planner agent",
+    "agentName": "Planner",
+    "systemPromptExtension": "## RESTful API Design Guidelines\n\nWhen planning APIs, follow these RESTful principles:\n\n### URL Structure\n- Use nouns, not verbs: `/users` not `/getUsers`\n- Plural for collections: `/users`, `/orders`\n- Nested for relationships: `/users/:id/orders`\n- Use kebab-case: `/user-profiles`\n\n### HTTP Methods\n- GET: Retrieve (idempotent)\n- POST: Create new resource\n- PUT: Full update (idempotent)\n- PATCH: Partial update\n- DELETE: Remove resource\n\n### Response Codes\n- 200 OK: Successful GET/PUT/PATCH\n- 201 Created: Successful POST\n- 204 No Content: Successful DELETE\n- 400 Bad Request: Invalid input\n- 401 Unauthorized: Missing auth\n- 403 Forbidden: Insufficient permissions\n- 404 Not Found: Resource doesn't exist\n- 500 Server Error: Unexpected failure\n\n### Pagination\n```\nGET /users?page=1&limit=20\n\nResponse: {\n  data: [...],\n  pagination: {\n    page: 1,\n    limit: 20,\n    total: 100,\n    totalPages: 5\n  }\n}\n```\n\n### Versioning\n- Use URL versioning: `/api/v1/users`\n- Never break backwards compatibility within a version",
+    "tags": [
+        "api",
+        "rest",
+        "backend"
+    ],
+    "icon": "🔌"
+}
