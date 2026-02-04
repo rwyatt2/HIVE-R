@@ -22,6 +22,9 @@ import * as path from "path";
 // Load environment variables (try common locations)
 const WORKSPACE = process.env.HIVE_WORKSPACE || process.cwd();
 const envPath = path.resolve(WORKSPACE, ".env");
+
+// Silence dotenv output
+process.env.DOTENV_CONFIG_QUIET = 'true';
 config({ path: envPath });
 
 console.error(`🐝 Loaded config from: ${envPath}`);

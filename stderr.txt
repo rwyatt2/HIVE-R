@@ -1,0 +1,2 @@
+--- START STDERR ---
+--- END STDERR ---
