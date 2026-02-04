@@ -16,6 +16,16 @@ import { z } from "zod";
 import { graph } from "./graph.js";
 import { HumanMessage } from "@langchain/core/messages";
 import { randomUUID } from "crypto";
+import { config } from "dotenv";
+import * as path from "path";
+
+// Load environment variables (try common locations)
+const WORKSPACE = process.env.HIVE_WORKSPACE || process.cwd();
+const envPath = path.resolve(WORKSPACE, ".env");
+config({ path: envPath });
+
+console.error(`🐝 Loaded config from: ${envPath}`);
+console.error(`🔑 OpenAI Key Present: ${!!process.env.OPENAI_API_KEY}`);
 
 // Initialize MCP Server
 const server = new Server(
