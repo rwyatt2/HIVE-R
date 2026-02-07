@@ -11,13 +11,15 @@
 import Stripe from 'stripe';
 import { getDb } from './user-auth.js';
 import { randomUUID } from 'crypto';
+import { getSecret } from './secrets.js';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-const stripe = process.env.STRIPE_SECRET_KEY
-    ? new Stripe(process.env.STRIPE_SECRET_KEY)
+const stripeKey = getSecret('STRIPE_SECRET_KEY');
+const stripe = stripeKey
+    ? new Stripe(stripeKey)
     : null;
 
 // Pricing configuration (use Stripe Dashboard IDs in production)
@@ -482,7 +484,8 @@ export function verifyWebhookSignature(
     payload: string,
     signature: string
 ): WebhookEvent | null {
-    if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
+    const webhookSecret = getSecret('STRIPE_WEBHOOK_SECRET');
+    if (!stripe || !webhookSecret) {
         console.warn('Stripe webhook verification not configured');
         return null;
     }
@@ -491,7 +494,7 @@ export function verifyWebhookSignature(
         return stripe.webhooks.constructEvent(
             payload,
             signature,
-            process.env.STRIPE_WEBHOOK_SECRET
+            webhookSecret
         ) as WebhookEvent;
     } catch (error) {
         console.error('Webhook signature verification failed:', error);

@@ -5,6 +5,7 @@
  */
 
 import type { Context, Next } from "hono";
+import { hasSecret } from "./secrets.js";
 
 // ============================================================================
 // SECURITY HEADERS MIDDLEWARE
@@ -122,12 +123,12 @@ export function runSecurityAudit(): SecurityAuditResult {
     const recommendations: string[] = [];
 
     // Check API key auth
-    if (!process.env.HIVE_API_KEY) {
+    if (!hasSecret('HIVE_API_KEY')) {
         issues.push('HIVE_API_KEY not set - API is unprotected');
     }
 
     // Check OpenAI key
-    if (!process.env.OPENAI_API_KEY) {
+    if (!hasSecret('OPENAI_API_KEY')) {
         issues.push('OPENAI_API_KEY not set');
     }
 

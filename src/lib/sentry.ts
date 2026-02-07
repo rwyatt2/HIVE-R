@@ -5,6 +5,8 @@
  * Set SENTRY_DSN environment variable to enable.
  */
 
+import { getSecret } from "./secrets.js";
+
 // Sentry module reference - will be dynamically imported
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Sentry: any = null;
@@ -21,7 +23,7 @@ let isInitialized = false;
  * Call this once at server startup.
  */
 export async function initSentry(): Promise<boolean> {
-    const dsn = process.env.SENTRY_DSN;
+    const dsn = getSecret("SENTRY_DSN");
 
     if (!dsn) {
         console.log("ℹ️ Sentry disabled (SENTRY_DSN not set)");
@@ -181,7 +183,7 @@ export function isSentryEnabled(): boolean {
 export function getSentryStatus(): { enabled: boolean; dsn: boolean } {
     return {
         enabled: isInitialized,
-        dsn: !!process.env.SENTRY_DSN,
+        dsn: !!getSecret("SENTRY_DSN"),
     };
 }
 

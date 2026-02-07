@@ -8,6 +8,7 @@
 import { ChromaClient, type Collection, type Where } from 'chromadb';
 import OpenAI from 'openai';
 import { randomUUID } from 'crypto';
+import { getSecret } from './secrets.js';
 
 // ============================================================================
 // CONFIGURATION
@@ -67,13 +68,14 @@ export async function initSemanticMemory(): Promise<void> {
 
     try {
         // Initialize OpenAI client
-        if (!process.env.OPENAI_API_KEY) {
+        const openaiKey = getSecret('OPENAI_API_KEY');
+        if (!openaiKey) {
             console.warn('⚠️ OPENAI_API_KEY not set - semantic memory disabled');
             return;
         }
 
         openaiClient = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
+            apiKey: openaiKey
         });
 
         // Try to initialize ChromaDB client

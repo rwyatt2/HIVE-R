@@ -20,10 +20,11 @@ services:
       - hive-data:/data
     environment:
       - NODE_ENV=production
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - JWT_SECRET=${JWT_SECRET}
-      - HIVE_API_KEY=${HIVE_API_KEY:-}
       - DATABASE_PATH=/data/hive.db
+    secrets:
+      - openai_api_key
+      - jwt_secret
+      - hive_api_key
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health" ]
       interval: 30s
@@ -66,6 +67,15 @@ services:
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     profiles:
       - ssl
+
+# Docker Secrets
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  hive_api_key:
+    file: ./secrets/hive_api_key.txt
 
 volumes:
   hive-data:

@@ -7,12 +7,13 @@
 
 import type { Context, Next } from "hono";
 import { logger } from "./logger.js";
+import { getSecret } from "./secrets.js";
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-const API_KEY = process.env.HIVE_API_KEY;
+const API_KEY = getSecret("HIVE_API_KEY");
 const AUTH_ENABLED = !!API_KEY;
 
 // Endpoints that don't require auth

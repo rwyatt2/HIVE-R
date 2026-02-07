@@ -10,6 +10,7 @@
  */
 
 import { logger } from "./logger.js";
+import { getSecret } from "./secrets.js";
 
 // ============================================================================
 // TRACE TYPES
@@ -227,7 +228,7 @@ export function getTraceSummary(trace: ConversationTrace): {
 // LANGSMITH INTEGRATION (Optional)
 // ============================================================================
 
-const LANGSMITH_API_KEY = process.env.LANGSMITH_API_KEY;
+const LANGSMITH_API_KEY = getSecret("LANGSMITH_API_KEY");
 const LANGSMITH_PROJECT = process.env.LANGSMITH_PROJECT ?? "hive-r";
 
 /**

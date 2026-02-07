@@ -7,12 +7,14 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
-      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY:-}
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-hive-r}
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
       - DATABASE_PATH=/app/data/hive.db
+    secrets:
+      - openai_api_key
+      - hive_api_key
+      - github_token
+      - langchain_api_key
     volumes:
       - hive-data:/app/data
     restart: unless-stopped
@@ -22,6 +24,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+# Docker Secrets — create files in ./secrets/ directory
+# Each file contains the raw secret value (no trailing newline)
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt
+  hive_api_key:
+    file: ./secrets/hive_api_key.txt
+  github_token:
+    file: ./secrets/github_token.txt
+  langchain_api_key:
+    file: ./secrets/langchain_api_key.txt
 
 volumes:
   hive-data:
