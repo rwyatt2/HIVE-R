@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { CostDashboard } from '../components/CostDashboard';
 import './DashboardPage.css';
 
 interface Metrics {
@@ -172,6 +173,9 @@ export function DashboardPage() {
                     </table>
                 </div>
             </div>
+
+            {/* Cost Dashboard */}
+            <CostDashboard />
         </div>
     );
 }
