@@ -22,6 +22,7 @@ import { logger } from "../lib/logger.js";
 import { circuitBreakerRegistry, CircuitOpenError } from "../lib/circuit-breaker.js";
 import { withRetry } from "../lib/retry.js";
 import { recordTokenUsage, recordCost } from "../lib/metrics.js";
+import { getActiveSpan } from "../lib/tracer.js";
 
 // ============================================================================
 // MODEL PRICING (per 1K tokens, USD) — user-specified rates
@@ -175,6 +176,15 @@ export class CostTrackingCallback extends BaseCallbackHandler {
             const costUsd = calculateCostPer1K(this.modelName, tokensIn, tokensOut);
             recordTokenUsage(this.modelName, this.agentName, tokensIn, tokensOut);
             recordCost(this.modelName, this.agentName, costUsd);
+
+            // Enrich active OTel span with LLM attributes
+            const span = getActiveSpan();
+            if (span) {
+                span.setAttribute("agent.model", this.modelName);
+                span.setAttribute("agent.tokens_in", tokensIn);
+                span.setAttribute("agent.tokens_out", tokensOut);
+                span.setAttribute("agent.cost", costUsd);
+            }
         } catch (err) {
             // Graceful failure — log error but don't break the request
             logger.error({ agent: this.agentName, err }, 'Cost tracking failed');

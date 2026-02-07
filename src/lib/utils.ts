@@ -2,9 +2,11 @@ import { HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { AgentState } from "./state.js";
 import { logger } from "./logger.js";
 import { recordAgentInvocation } from "./metrics.js";
+import { withSpan } from "./tracer.js";
 
 /**
- * Safe agent wrapper with error handling and retry logic
+ * Safe agent wrapper with error handling and retry logic.
+ * Creates an OTel span for each agent invocation.
  */
 export const safeAgentCall = async <T>(
     fn: () => Promise<T>,
@@ -12,35 +14,42 @@ export const safeAgentCall = async <T>(
     fallbackMessage: string = "I encountered an error processing this request."
 ): Promise<{ messages: BaseMessage[]; contributors: string[] }> => {
     recordAgentInvocation(agentName);
-    const maxRetries = 2;
-    let lastError: Error | null = null;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            return await fn() as { messages: BaseMessage[]; contributors: string[] };
-        } catch (error) {
-            lastError = error instanceof Error ? error : new Error(String(error));
-            logger.warn({ agentName, attempt, maxRetries, err: lastError }, `${agentName} attempt ${attempt}/${maxRetries} failed`);
+    return withSpan(`hive.agent.${agentName}`, async (span) => {
+        span.setAttribute("agent.name", agentName);
+        const startMs = Date.now();
+        const maxRetries = 2;
+        let lastError: Error | null = null;
 
-            if (attempt < maxRetries) {
-                // Exponential backoff: 1s, 2s
-                await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await fn() as { messages: BaseMessage[]; contributors: string[] };
+                span.setAttribute("agent.duration_ms", Date.now() - startMs);
+                return result;
+            } catch (error) {
+                lastError = error instanceof Error ? error : new Error(String(error));
+                logger.warn({ agentName, attempt, maxRetries, err: lastError }, `${agentName} attempt ${attempt}/${maxRetries} failed`);
+
+                if (attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+                }
             }
         }
-    }
 
-    // All retries exhausted, return error message
-    logger.error({ agentName, maxRetries, err: lastError }, `${agentName} failed after ${maxRetries} attempts`);
+        // All retries exhausted
+        span.setAttribute("agent.duration_ms", Date.now() - startMs);
+        logger.error({ agentName, maxRetries, err: lastError }, `${agentName} failed after ${maxRetries} attempts`);
 
-    return {
-        messages: [
-            new HumanMessage({
-                content: `**[${agentName} Error]**: ${fallbackMessage}\n\n_Error: ${lastError?.message}_`,
-                name: agentName,
-            }),
-        ],
-        contributors: [agentName],
-    };
+        return {
+            messages: [
+                new HumanMessage({
+                    content: `**[${agentName} Error]**: ${fallbackMessage}\n\n_Error: ${lastError?.message}_`,
+                    name: agentName,
+                }),
+            ],
+            contributors: [agentName],
+        };
+    });
 };
 
 /**

@@ -1,3 +1,6 @@
+// OpenTelemetry — must be imported FIRST (patches Node http before other imports)
+import "./lib/tracer.js";
+
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'

@@ -38,6 +38,16 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     restart: unless-stopped
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.56
+    container_name: hive-jaeger
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4318:4318" # OTLP HTTP collector
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+
 volumes:
   prometheus-data:
   grafana-data:
