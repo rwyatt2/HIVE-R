@@ -70,6 +70,10 @@ orgs.initOrgTables();
 billing.initBillingTables();
 initSemanticMemory().catch(err => console.warn('Semantic memory init failed:', err));
 
+// ✅ LLM Cost Tracking
+import { initCostTrackingTable } from "./lib/cost-tracker.js";
+initCostTrackingTable();
+
 const app = new Hono<{ Variables: AppVariables }>()
 
 // ✅ A+ Production Middleware

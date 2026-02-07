@@ -1,175 +1,457 @@
 /**
- * Cost Tracker for HIVE-R
- * 
- * Tracks token usage and estimated costs per conversation.
+ * LLM Cost Tracker for HIVE-R
+ *
+ * Tracks every LLM API call with: agent name, model, tokens in/out,
+ * cost, timestamp, latency. Provides aggregation helpers for dashboards.
+ *
+ * Usage:
+ *   import { logUsage, getDailyCost, getAgentCosts } from "./cost-tracker.js";
+ *
+ *   // Log an LLM call
+ *   logUsage({
+ *       agentName: "Security",
+ *       model: "gpt-4o",
+ *       tokensIn: 1500,
+ *       tokensOut: 800,
+ *       latencyMs: 2340,
+ *       threadId: "thread-abc",
+ *   });
+ *
+ *   // Query costs
+ *   const today = getDailyCost();             // today's cost
+ *   const agents = getAgentCosts("2026-02-01", "2026-02-07");
  */
 
-import { logger } from "./logger.js";
+import Database from "better-sqlite3";
+import { randomUUID } from "crypto";
+import type {
+    LLMUsageEntry,
+    LogUsageInput,
+    DailyCost,
+    AgentCost,
+    ModelCost,
+    CostSummary,
+    ModelPricing,
+} from "../types/cost-tracking.js";
 
 // ============================================================================
-// PRICING (per 1K tokens, as of 2024)
+// MODEL PRICING (per 1M tokens, USD)
+// Update when OpenAI changes pricing.
 // ============================================================================
 
-const PRICING: Record<string, { input: number; output: number }> = {
-    "gpt-4o": { input: 0.005, output: 0.015 },
-    "gpt-4o-mini": { input: 0.00015, output: 0.0006 },
-    "gpt-4-turbo": { input: 0.01, output: 0.03 },
-    "gpt-3.5-turbo": { input: 0.0005, output: 0.0015 },
+export const MODEL_PRICING: Record<string, ModelPricing> = {
+    "gpt-4o": { inputPer1M: 2.50, outputPer1M: 10.00 },
+    "gpt-4o-mini": { inputPer1M: 0.15, outputPer1M: 0.60 },
+    "gpt-4-turbo": { inputPer1M: 10.00, outputPer1M: 30.00 },
+    "gpt-4": { inputPer1M: 30.00, outputPer1M: 60.00 },
+    "gpt-3.5-turbo": { inputPer1M: 0.50, outputPer1M: 1.50 },
 };
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface TokenUsage {
-    inputTokens: number;
-    outputTokens: number;
-    model: string;
-    timestamp: number;
-}
-
-interface ConversationCost {
-    threadId: string;
-    totalInputTokens: number;
-    totalOutputTokens: number;
-    estimatedCost: number;
-    calls: number;
-    model: string;
-}
-
-interface CostSummary {
-    totalCost: number;
-    totalInputTokens: number;
-    totalOutputTokens: number;
-    totalCalls: number;
-    conversations: number;
-    avgCostPerConversation: number;
-    costByModel: Record<string, number>;
-}
+/** Default pricing for unknown models */
+const DEFAULT_PRICING: ModelPricing = { inputPer1M: 5.00, outputPer1M: 15.00 };
 
 // ============================================================================
-// COST STORE
+// DATABASE
 // ============================================================================
 
-const conversationUsage: Map<string, TokenUsage[]> = new Map();
+const DB_PATH = process.env.DATABASE_PATH || "./data/hive.db";
+let db: Database.Database | null = null;
 
-// ============================================================================
-// PUBLIC API
-// ============================================================================
-
-/**
- * Record token usage for a conversation
- */
-export function recordUsage(
-    threadId: string,
-    inputTokens: number,
-    outputTokens: number,
-    model: string = "gpt-4o"
-): void {
-    if (!conversationUsage.has(threadId)) {
-        conversationUsage.set(threadId, []);
+function getDb(): Database.Database {
+    if (!db) {
+        const { existsSync, mkdirSync } = require("fs");
+        const { dirname } = require("path");
+        const dbDir = dirname(DB_PATH);
+        if (!existsSync(dbDir)) {
+            mkdirSync(dbDir, { recursive: true });
+        }
+        db = new Database(DB_PATH);
     }
-
-    conversationUsage.get(threadId)!.push({
-        inputTokens,
-        outputTokens,
-        model,
-        timestamp: Date.now(),
-    });
-
-    const pricing = PRICING[model] ?? PRICING["gpt-4o"]!;
-    const cost = (inputTokens / 1000) * pricing.input + (outputTokens / 1000) * pricing.output;
-
-    logger.debug("💰 Token usage recorded", {
-        threadId: threadId.substring(0, 8),
-        inputTokens,
-        outputTokens,
-        cost: `$${cost.toFixed(4)}`
-    });
+    return db;
 }
 
-/**
- * Get cost for a specific conversation
- */
-export function getConversationCost(threadId: string): ConversationCost | null {
-    const usage = conversationUsage.get(threadId);
-    if (!usage || usage.length === 0) return null;
+/** Initialize the llm_usage table and indexes. Safe to call multiple times. */
+export function initCostTrackingTable(): void {
+    const database = getDb();
 
-    const totalInputTokens = usage.reduce((sum, u) => sum + u.inputTokens, 0);
-    const totalOutputTokens = usage.reduce((sum, u) => sum + u.outputTokens, 0);
-    const model = usage[0]!.model;
-    const pricing = PRICING[model] ?? PRICING["gpt-4o"]!;
+    database.exec(`
+        CREATE TABLE IF NOT EXISTS llm_usage (
+            id            TEXT PRIMARY KEY,
+            agent_name    TEXT NOT NULL,
+            model         TEXT NOT NULL,
+            tokens_in     INTEGER NOT NULL,
+            tokens_out    INTEGER NOT NULL,
+            cost_usd      REAL NOT NULL,
+            latency_ms    INTEGER NOT NULL,
+            thread_id     TEXT,
+            user_id       TEXT,
+            metadata      TEXT,
+            created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_agent   ON llm_usage(agent_name);
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_model   ON llm_usage(model);
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_created ON llm_usage(created_at);
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_user    ON llm_usage(user_id);
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_daily   ON llm_usage(created_at, agent_name);
+    `);
+
+    console.log("✅ Cost tracking table initialized");
+}
+
+// ============================================================================
+// COST CALCULATION
+// ============================================================================
+
+/**
+ * Calculate cost in USD for a given model and token counts.
+ */
+export function calculateCost(
+    model: string,
+    tokensIn: number,
+    tokensOut: number
+): number {
+    const pricing = MODEL_PRICING[model] || DEFAULT_PRICING;
+    const inputCost = (tokensIn / 1_000_000) * pricing.inputPer1M;
+    const outputCost = (tokensOut / 1_000_000) * pricing.outputPer1M;
+    return Math.round((inputCost + outputCost) * 1_000_000) / 1_000_000; // 6 decimal places
+}
+
+// ============================================================================
+// CORE: LOG USAGE
+// ============================================================================
+
+/**
+ * Log a single LLM API call. Cost is automatically calculated from model pricing.
+ */
+export function logUsage(input: LogUsageInput): LLMUsageEntry {
+    const database = getDb();
+    const id = randomUUID();
+    const costUsd = calculateCost(input.model, input.tokensIn, input.tokensOut);
+    const createdAt = new Date().toISOString();
+
+    database.prepare(`
+        INSERT INTO llm_usage (id, agent_name, model, tokens_in, tokens_out, cost_usd, latency_ms, thread_id, user_id, metadata, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+        id,
+        input.agentName,
+        input.model,
+        input.tokensIn,
+        input.tokensOut,
+        costUsd,
+        input.latencyMs,
+        input.threadId || null,
+        input.userId || null,
+        input.metadata ? JSON.stringify(input.metadata) : null,
+        createdAt
+    );
 
     return {
-        threadId,
-        totalInputTokens,
-        totalOutputTokens,
-        estimatedCost: (totalInputTokens / 1000) * pricing.input + (totalOutputTokens / 1000) * pricing.output,
-        calls: usage.length,
-        model,
+        id,
+        agentName: input.agentName,
+        model: input.model,
+        tokensIn: input.tokensIn,
+        tokensOut: input.tokensOut,
+        costUsd,
+        latencyMs: input.latencyMs,
+        threadId: input.threadId,
+        userId: input.userId,
+        metadata: input.metadata,
+        createdAt,
     };
 }
 
+// ============================================================================
+// QUERIES: DAILY COST
+// ============================================================================
+
 /**
- * Get overall cost summary
+ * Get total cost for a specific date (YYYY-MM-DD). Defaults to today.
  */
-export function getCostSummary(): CostSummary {
-    let totalCost = 0;
-    let totalInputTokens = 0;
-    let totalOutputTokens = 0;
-    let totalCalls = 0;
-    const costByModel: Record<string, number> = {};
+export function getDailyCost(dateStr?: string): DailyCost {
+    const database = getDb();
+    const targetDate = dateStr || new Date().toISOString().split("T")[0]!;
 
-    for (const [_, usage] of conversationUsage) {
-        for (const u of usage) {
-            const pricing = PRICING[u.model] ?? PRICING["gpt-4o"]!;
-            const cost = (u.inputTokens / 1000) * pricing.input + (u.outputTokens / 1000) * pricing.output;
+    const row = database.prepare(`
+        SELECT
+            date(created_at) as day,
+            COALESCE(SUM(cost_usd), 0) as total_cost,
+            COALESCE(SUM(tokens_in), 0) as total_tokens_in,
+            COALESCE(SUM(tokens_out), 0) as total_tokens_out,
+            COUNT(*) as call_count
+        FROM llm_usage
+        WHERE date(created_at) = ?
+    `).get(targetDate) as {
+        day: string | null;
+        total_cost: number;
+        total_tokens_in: number;
+        total_tokens_out: number;
+        call_count: number;
+    };
 
-            totalCost += cost;
-            totalInputTokens += u.inputTokens;
-            totalOutputTokens += u.outputTokens;
-            totalCalls++;
+    return {
+        date: targetDate,
+        totalCost: row.total_cost,
+        totalTokensIn: row.total_tokens_in,
+        totalTokensOut: row.total_tokens_out,
+        callCount: row.call_count,
+    };
+}
 
-            costByModel[u.model] = (costByModel[u.model] ?? 0) + cost;
+// ============================================================================
+// QUERIES: AGENT COSTS
+// ============================================================================
+
+/**
+ * Get cost breakdown by agent for a date range.
+ * Defaults to last 30 days.
+ */
+export function getAgentCosts(startDate?: string, endDate?: string): AgentCost[] {
+    const database = getDb();
+    const start = startDate || getDateOffset(-30);
+    const end = endDate || getDateOffset(1); // tomorrow for inclusive end
+
+    const rows = database.prepare(`
+        SELECT
+            agent_name,
+            SUM(cost_usd) as total_cost,
+            SUM(tokens_in) as total_tokens_in,
+            SUM(tokens_out) as total_tokens_out,
+            COUNT(*) as call_count,
+            AVG(latency_ms) as avg_latency_ms
+        FROM llm_usage
+        WHERE created_at >= ? AND created_at < ?
+        GROUP BY agent_name
+        ORDER BY total_cost DESC
+    `).all(start, end) as Array<{
+        agent_name: string;
+        total_cost: number;
+        total_tokens_in: number;
+        total_tokens_out: number;
+        call_count: number;
+        avg_latency_ms: number;
+    }>;
+
+    return rows.map((r) => ({
+        agentName: r.agent_name,
+        totalCost: r.total_cost,
+        totalTokensIn: r.total_tokens_in,
+        totalTokensOut: r.total_tokens_out,
+        callCount: r.call_count,
+        avgLatencyMs: Math.round(r.avg_latency_ms),
+    }));
+}
+
+// ============================================================================
+// QUERIES: MODEL COSTS
+// ============================================================================
+
+/**
+ * Get cost breakdown by model for a date range.
+ */
+export function getModelCosts(startDate?: string, endDate?: string): ModelCost[] {
+    const database = getDb();
+    const start = startDate || getDateOffset(-30);
+    const end = endDate || getDateOffset(1);
+
+    const rows = database.prepare(`
+        SELECT
+            model,
+            SUM(cost_usd) as total_cost,
+            SUM(tokens_in) as total_tokens_in,
+            SUM(tokens_out) as total_tokens_out,
+            COUNT(*) as call_count
+        FROM llm_usage
+        WHERE created_at >= ? AND created_at < ?
+        GROUP BY model
+        ORDER BY total_cost DESC
+    `).all(start, end) as Array<{
+        model: string;
+        total_cost: number;
+        total_tokens_in: number;
+        total_tokens_out: number;
+        call_count: number;
+    }>;
+
+    return rows.map((r) => ({
+        model: r.model,
+        totalCost: r.total_cost,
+        totalTokensIn: r.total_tokens_in,
+        totalTokensOut: r.total_tokens_out,
+        callCount: r.call_count,
+    }));
+}
+
+// ============================================================================
+// QUERIES: COST SUMMARY
+// ============================================================================
+
+/**
+ * Get a full cost summary for a period (day, week, month, all).
+ */
+export function getCostSummary(period: "day" | "week" | "month" | "all" = "week"): CostSummary {
+    const endDate = getDateOffset(1);
+    let startDate: string;
+
+    switch (period) {
+        case "day":
+            startDate = getDateOffset(0);
+            break;
+        case "week":
+            startDate = getDateOffset(-7);
+            break;
+        case "month":
+            startDate = getDateOffset(-30);
+            break;
+        case "all":
+            startDate = "2000-01-01";
+            break;
+    }
+
+    const database = getDb();
+
+    // Totals
+    const totals = database.prepare(`
+        SELECT
+            COALESCE(SUM(cost_usd), 0) as total_cost,
+            COALESCE(SUM(tokens_in), 0) as total_tokens_in,
+            COALESCE(SUM(tokens_out), 0) as total_tokens_out,
+            COUNT(*) as total_calls
+        FROM llm_usage
+        WHERE created_at >= ? AND created_at < ?
+    `).get(startDate, endDate) as {
+        total_cost: number;
+        total_tokens_in: number;
+        total_tokens_out: number;
+        total_calls: number;
+    };
+
+    // By day
+    const dailyRows = database.prepare(`
+        SELECT
+            date(created_at) as day,
+            SUM(cost_usd) as total_cost,
+            SUM(tokens_in) as total_tokens_in,
+            SUM(tokens_out) as total_tokens_out,
+            COUNT(*) as call_count
+        FROM llm_usage
+        WHERE created_at >= ? AND created_at < ?
+        GROUP BY day
+        ORDER BY day ASC
+    `).all(startDate, endDate) as Array<{
+        day: string;
+        total_cost: number;
+        total_tokens_in: number;
+        total_tokens_out: number;
+        call_count: number;
+    }>;
+
+    return {
+        period,
+        startDate,
+        endDate,
+        totalCost: totals.total_cost,
+        totalTokensIn: totals.total_tokens_in,
+        totalTokensOut: totals.total_tokens_out,
+        totalCalls: totals.total_calls,
+        byAgent: getAgentCosts(startDate, endDate),
+        byModel: getModelCosts(startDate, endDate),
+        byDay: dailyRows.map((r) => ({
+            date: r.day,
+            totalCost: r.total_cost,
+            totalTokensIn: r.total_tokens_in,
+            totalTokensOut: r.total_tokens_out,
+            callCount: r.call_count,
+        })),
+    };
+}
+
+// ============================================================================
+// QUERIES: CONVERSATION COST
+// ============================================================================
+
+/**
+ * Get total cost for a specific conversation thread.
+ */
+export function getConversationCost(threadId: string): DailyCost | null {
+    const database = getDb();
+
+    const row = database.prepare(`
+        SELECT
+            COALESCE(SUM(cost_usd), 0) as total_cost,
+            COALESCE(SUM(tokens_in), 0) as total_tokens_in,
+            COALESCE(SUM(tokens_out), 0) as total_tokens_out,
+            COUNT(*) as call_count
+        FROM llm_usage
+        WHERE thread_id = ?
+    `).get(threadId) as {
+        total_cost: number;
+        total_tokens_in: number;
+        total_tokens_out: number;
+        call_count: number;
+    };
+
+    if (row.call_count === 0) return null;
+
+    return {
+        date: new Date().toISOString().split("T")[0]!,
+        totalCost: row.total_cost,
+        totalTokensIn: row.total_tokens_in,
+        totalTokensOut: row.total_tokens_out,
+        callCount: row.call_count,
+    };
+}
+
+// ============================================================================
+// FORMATTING
+// ============================================================================
+
+/**
+ * Format cost summary as a human-readable text string.
+ */
+export function formatCostSummary(period: "day" | "week" | "month" | "all" = "week"): string {
+    const summary = getCostSummary(period);
+    const lines: string[] = [
+        `📊 Cost Summary (${period})`,
+        `Total: $${summary.totalCost.toFixed(4)} | ${summary.totalCalls} calls`,
+        `Tokens: ${summary.totalTokensIn.toLocaleString()} in / ${summary.totalTokensOut.toLocaleString()} out`,
+        "",
+    ];
+
+    if (summary.byAgent.length > 0) {
+        lines.push("By Agent:");
+        for (const agent of summary.byAgent) {
+            lines.push(`  ${agent.agentName}: $${agent.totalCost.toFixed(4)} (${agent.callCount} calls, ~${agent.avgLatencyMs}ms avg)`);
+        }
+        lines.push("");
+    }
+
+    if (summary.byModel.length > 0) {
+        lines.push("By Model:");
+        for (const model of summary.byModel) {
+            lines.push(`  ${model.model}: $${model.totalCost.toFixed(4)} (${model.callCount} calls)`);
         }
     }
 
-    const conversations = conversationUsage.size;
+    return lines.join("\n");
+}
 
-    return {
-        totalCost,
-        totalInputTokens,
-        totalOutputTokens,
-        totalCalls,
-        conversations,
-        avgCostPerConversation: conversations > 0 ? totalCost / conversations : 0,
-        costByModel,
-    };
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+/** Get an ISO date string offset by `days` from today */
+function getDateOffset(days: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split("T")[0]!;
 }
 
 /**
- * Format cost summary for display
+ * Reset the database connection (for testing).
+ * @internal
  */
-export function formatCostSummary(): string {
-    const summary = getCostSummary();
-
-    return `
-💰 Cost Summary
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total Cost:        $${summary.totalCost.toFixed(4)}
-Input Tokens:      ${summary.totalInputTokens.toLocaleString()}
-Output Tokens:     ${summary.totalOutputTokens.toLocaleString()}
-Total Calls:       ${summary.totalCalls}
-Conversations:     ${summary.conversations}
-Avg/Conversation:  $${summary.avgCostPerConversation.toFixed(4)}
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-`.trim();
-}
-
-/**
- * Reset cost tracking
- */
-export function resetCostTracking(): void {
-    conversationUsage.clear();
-    logger.info("💰 Cost tracking reset");
+export function _resetDb(newDb?: Database.Database): void {
+    db = newDb || null;
 }
