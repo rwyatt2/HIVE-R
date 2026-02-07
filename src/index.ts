@@ -74,6 +74,10 @@ initSemanticMemory().catch(err => console.warn('Semantic memory init failed:', e
 import { initCostTrackingTable } from "./lib/cost-tracker.js";
 initCostTrackingTable();
 
+// ✅ Budget Alert Service
+import { startBudgetAlerts } from "./services/budget-alerts.js";
+startBudgetAlerts();
+
 const app = new Hono<{ Variables: AppVariables }>()
 
 // ✅ A+ Production Middleware

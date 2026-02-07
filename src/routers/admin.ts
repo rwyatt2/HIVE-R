@@ -114,4 +114,29 @@ app.get('/logs', (c) => {
 import costsRouter from "./admin/costs.js";
 app.route('/costs', costsRouter);
 
+// ============================================================================
+// ALERT HISTORY
+// ============================================================================
+
+import { getAlertHistory } from "../services/budget-alerts.js";
+
+/**
+ * GET /admin/alerts
+ * Budget alert history and configuration.
+ */
+app.get('/alerts', (c) => {
+    try {
+        const limitParam = c.req.query('limit');
+        const limit = limitParam ? parseInt(limitParam, 10) : 50;
+
+        if (isNaN(limit) || limit < 1 || limit > 200) {
+            return c.json({ error: 'limit must be between 1 and 200' }, 400);
+        }
+
+        return c.json(getAlertHistory(limit));
+    } catch (err) {
+        return c.json({ error: 'Failed to fetch alert history', detail: (err as Error).message }, 500);
+    }
+});
+
 export default app;
