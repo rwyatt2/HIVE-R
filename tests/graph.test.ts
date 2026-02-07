@@ -100,6 +100,12 @@ vi.mock("../src/lib/utils.js", () => ({
     formatContributorContext: vi.fn((contributors: string[]) =>
         contributors.length ? `\nContributors: ${contributors.join(", ")}` : ""
     ),
+    extractUserQuery: vi.fn((messages: any[]) => {
+        for (const msg of messages) {
+            if (typeof msg?.content === "string") return msg.content;
+        }
+        return "";
+    }),
 }));
 
 // Mock design system and production standards
@@ -171,9 +177,15 @@ describe("Graph Construction", () => {
         }
     });
 
-    it("should create tracked LLMs for agents (not raw ChatOpenAI)", async () => {
-        // Import router to trigger module-level createTrackedLLM calls
-        await import("../src/agents/router.js");
+    it("should create tracked LLMs for agents on use (lazy init)", async () => {
+        // Router now uses lazy LLM initialization — createTrackedLLM is called
+        // when routerNode executes, not at import time
+        mockCheckTurnLimit.mockReturnValue({ safe: true });
+        mockIsCircuitOpen.mockReturnValue(false);
+        mockRouterInvoke.mockResolvedValue(ROUTE_TO_BUILDER);
+        const routerModule = await import("../src/agents/router.js");
+        const state = createBuildRequestState();
+        await routerModule.routerNode(state);
         expect(createTrackedLLM).toHaveBeenCalled();
     });
 });
@@ -248,13 +260,16 @@ describe("Router Node — Routing Decisions", () => {
         expect(result.next).toBe("FINISH");
     });
 
-    it("should return FINISH on LLM error (graceful failure)", async () => {
+    it("should gracefully handle LLM error via fallback chain", async () => {
         mockRouterInvoke.mockRejectedValue(LLM_TIMEOUT_ERROR);
 
         const state = createBuildRequestState();
         const result = await routerNode(state);
 
-        expect(result.next).toBe("FINISH");
+        // With fallback chain, LLM errors cascade to rule-based routing (Level 3)
+        // rather than returning FINISH. The result should be a valid agent.
+        expect(result.next).toBeDefined();
+        expect(result.next).not.toBe("FINISH");
     });
 
     it("should not check circuit breaker for FINISH routing", async () => {

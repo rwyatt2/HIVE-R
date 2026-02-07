@@ -90,6 +90,8 @@ HIVE-R/
 - **[How to Use Agents](./HOW_TO_USE_AGENTS.md)**: Detailed guide for new projects.
 - **[MCP Server Setup](./README_MCP.md)**: Connect to Cursor/Claude.
 - **[Deployment](./deploy/README.md)**: Ship the HIVE-R server to production.
+- **[Testing Guide](./docs/development/testing.md)**: How to run, write, and debug tests.
+- **[Operations Runbook](./docs/operations/runbook.md)**: Failure scenarios, detection, and recovery procedures.
 
 ---
 

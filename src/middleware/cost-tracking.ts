@@ -19,6 +19,8 @@ import { ChatOpenAI } from "@langchain/openai";
 import type { LLMResult } from "@langchain/core/outputs";
 import { logUsage, getDailyCost } from "../lib/cost-tracker.js";
 import { logger } from "../lib/logger.js";
+import { circuitBreakerRegistry, CircuitOpenError } from "../lib/circuit-breaker.js";
+import { withRetry } from "../lib/retry.js";
 
 // ============================================================================
 // MODEL PRICING (per 1K tokens, USD) — user-specified rates
@@ -167,6 +169,9 @@ export class CostTrackingCallback extends BaseCallbackHandler {
                 cost: `$${calculateCostPer1K(this.modelName, tokensIn, tokensOut).toFixed(6)}`,
                 latencyMs,
             });
+
+            // Record success for circuit breaker
+            circuitBreakerRegistry.get(this.modelName).recordSuccess();
         } catch (err) {
             // Graceful failure — log error but don't break the request
             logger.error("💰 Cost tracking failed", {
@@ -184,6 +189,9 @@ export class CostTrackingCallback extends BaseCallbackHandler {
             agent: this.agentName,
             error: err.message,
         });
+
+        // Record failure for circuit breaker
+        circuitBreakerRegistry.get(this.modelName).recordFailure();
     }
 }
 
@@ -212,6 +220,12 @@ export function createTrackedLLM(agentName: string, opts: TrackedLLMOptions = {}
     const modelName = opts.modelName || "gpt-4o";
     const { threadId, userId, ...llmOpts } = opts;
 
+    // Circuit breaker check — throws if model circuit is open
+    const cb = circuitBreakerRegistry.get(modelName);
+    if (!cb.canExecute()) {
+        throw new CircuitOpenError(modelName, cb.remainingTimeoutMs);
+    }
+
     // Budget check — throws if exceeded
     const budget = checkBudget();
     if (budget.exceeded) {
@@ -222,9 +236,75 @@ export function createTrackedLLM(agentName: string, opts: TrackedLLMOptions = {}
     const callback = new CostTrackingCallback(agentName, modelName, { threadId, userId });
 
     // Create LLM with callback
-    return new ChatOpenAI({
+    const baseLLM = new ChatOpenAI({
         ...llmOpts,
         modelName,
         callbacks: [callback],
     });
+
+    // Wrap with retry-enabled proxy
+    return wrapWithRetry(baseLLM, agentName);
+}
+
+// ============================================================================
+// RETRY PROXY
+// ============================================================================
+
+/**
+ * Wrap a ChatOpenAI instance so that `invoke()` and `withStructuredOutput().invoke()`
+ * calls automatically retry on transient errors.
+ *
+ * Retries happen BEFORE the circuit breaker sees failures — only the final
+ * failure (after exhausting retries) triggers `recordFailure` via the callback.
+ */
+function wrapWithRetry(llm: ChatOpenAI, agentName: string): ChatOpenAI {
+    const retryOpts = { label: agentName };
+
+    return new Proxy(llm, {
+        get(target, prop, receiver) {
+            const value = Reflect.get(target, prop, receiver);
+
+            // Wrap .invoke() with retry
+            if (prop === "invoke" && typeof value === "function") {
+                return (...args: any[]) =>
+                    withRetry(() => value.apply(target, args), retryOpts);
+            }
+
+            // Wrap .withStructuredOutput() to return a proxy whose .invoke() retries
+            if (prop === "withStructuredOutput" && typeof value === "function") {
+                return (...args: any[]) => {
+                    const structured = value.apply(target, args);
+                    return new Proxy(structured, {
+                        get(sTarget, sProp, sReceiver) {
+                            const sValue = Reflect.get(sTarget, sProp, sReceiver);
+                            if (sProp === "invoke" && typeof sValue === "function") {
+                                return (...invokeArgs: any[]) =>
+                                    withRetry(() => sValue.apply(sTarget, invokeArgs), retryOpts);
+                            }
+                            return sValue;
+                        },
+                    });
+                };
+            }
+
+            // Wrap .bindTools() to return a retry-wrapped proxy for its .invoke()
+            if (prop === "bindTools" && typeof value === "function") {
+                return (...args: any[]) => {
+                    const bound = value.apply(target, args);
+                    return new Proxy(bound, {
+                        get(bTarget, bProp, bReceiver) {
+                            const bValue = Reflect.get(bTarget, bProp, bReceiver);
+                            if (bProp === "invoke" && typeof bValue === "function") {
+                                return (...invokeArgs: any[]) =>
+                                    withRetry(() => bValue.apply(bTarget, invokeArgs), retryOpts);
+                            }
+                            return bValue;
+                        },
+                    });
+                };
+            }
+
+            return value;
+        },
+    }) as ChatOpenAI;
 }

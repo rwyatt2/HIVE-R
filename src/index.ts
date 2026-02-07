@@ -102,45 +102,15 @@ import { metrics } from "./lib/metrics.js";
 // Import vector memory
 import { retrieveMemories, formatMemoriesForPrompt, getMemoryStats, storeMemory } from "./lib/vector-memory.js";
 
-// Import health checks
-import { runHealthChecks, checkMemory } from "./lib/health.js";
+// Import health router
+import { healthRouter } from "./routers/health.js";
 
 // --- API Endpoints ---
 
 /**
- * ✅ Health check endpoint (basic)
+ * ✅ Health check routes (liveness, readiness, basic)
  */
-app.get('/health', (c) => {
-    return c.json({
-        status: "healthy",
-        version: "1.0.0",
-        agents: HIVE_MEMBERS.length,
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-    });
-});
-
-/**
- * ✅ Liveness probe - is the process alive?
- * Used by K8s/Docker to determine if container should be restarted
- */
-app.get('/health/live', (c) => {
-    return c.json({
-        status: "alive",
-        uptime: process.uptime(),
-        timestamp: Date.now(),
-    });
-});
-
-/**
- * ✅ Readiness probe - is the service ready to accept traffic?
- * Used by K8s/Docker to determine if traffic should be routed to this instance
- */
-app.get('/health/ready', async (c) => {
-    const result = await runHealthChecks();
-
-    return c.json(result, result.ready ? 200 : 503);
-});
+app.route('/health', healthRouter);
 
 /**
  * ✅ Metrics endpoint (JSON format)

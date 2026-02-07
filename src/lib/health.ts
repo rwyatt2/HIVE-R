@@ -1,113 +1,193 @@
 /**
  * Health Check System for HIVE-R
- * 
- * Provides K8s-compatible health probes:
- * - /health/live: Is the process alive?
- * - /health/ready: Is the service ready to accept traffic?
+ *
+ * Production-grade health probes with:
+ * - Database connectivity (SELECT 1)
+ * - LLM API reachability via circuit breaker state (no HTTP calls)
+ * - Disk space availability
+ * - Memory usage percentage
+ * - 3-level status: healthy / degraded / unhealthy
+ * - 30s result caching to avoid hammering dependencies
+ *
+ * K8s-compatible:
+ *   /health/live  → liveness  (always 200)
+ *   /health/ready → readiness (200 or 503)
  */
 
 import Database from "better-sqlite3";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import { circuitBreakerRegistry, CircuitState } from "./circuit-breaker.js";
 
-// Cache health check results to avoid hammering dependencies
-interface HealthCache {
-    result: boolean;
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const DB_PATH = process.env.DATABASE_PATH || "./data/hive.db";
+const CACHE_TTL_MS = 30_000; // 30 seconds
+const DISK_WARNING_GB = 5;   // warn below 5 GB free
+const MEMORY_WARNING_PCT = 90; // warn above 90% usage
+
+// ============================================================================
+// CACHE
+// ============================================================================
+
+interface CacheEntry<T> {
+    result: T;
     timestamp: number;
-    error?: string;
 }
 
-const CACHE_TTL_MS = 30_000; // 30 seconds
-const healthCache: Map<string, HealthCache> = new Map();
+const cache = new Map<string, CacheEntry<unknown>>();
 
-function getCached(key: string): HealthCache | null {
-    const cached = healthCache.get(key);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        return cached;
+function getCached<T>(key: string): T | null {
+    const entry = cache.get(key) as CacheEntry<T> | undefined;
+    if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+        return entry.result;
     }
     return null;
 }
 
-function setCache(key: string, result: boolean, error?: string): void {
-    const cache: HealthCache = { result, timestamp: Date.now() };
-    if (error !== undefined) {
-        cache.error = error;
-    }
-    healthCache.set(key, cache);
+function setCache<T>(key: string, result: T): void {
+    cache.set(key, { result, timestamp: Date.now() });
+}
+
+export function clearHealthCache(): void {
+    cache.clear();
 }
 
 // ============================================================================
-// DATABASE CHECK
+// INDIVIDUAL CHECK TYPES
 // ============================================================================
 
-const DB_PATH = process.env.DATABASE_PATH || "./data/hive.db";
+export interface DatabaseCheckResult {
+    status: "ok" | "error";
+    latency_ms: number;
+    error?: string;
+}
 
-export async function checkDatabase(): Promise<{ healthy: boolean; latencyMs: number; error?: string }> {
-    const cached = getCached("database");
-    if (cached) {
-        const result: { healthy: boolean; latencyMs: number; error?: string } = { healthy: cached.result, latencyMs: 0 };
-        if (cached.error !== undefined) result.error = cached.error;
-        return result;
-    }
+export interface ApiCheckResult {
+    status: "ok" | "degraded" | "error";
+    circuit: string; // "closed" | "open" | "half_open"
+    failure_count?: number;
+}
+
+export interface DiskCheckResult {
+    status: "ok" | "warning";
+    free_gb: number;
+}
+
+export interface MemoryCheckResult {
+    status: "ok" | "warning";
+    usage_pct: number;
+}
+
+// ============================================================================
+export interface CheckDatabaseOptions {
+    /** Override database constructor (for testing). */
+    _dbFactory?: (path: string, opts: any) => { prepare: (sql: string) => { get: () => any }; close: () => void };
+}
+
+export async function checkDatabase(options: CheckDatabaseOptions = {}): Promise<DatabaseCheckResult> {
+    const cached = getCached<DatabaseCheckResult>("database");
+    if (cached) return cached;
+
+    const createDb = options._dbFactory || ((path: string, opts: any) => new Database(path, opts));
 
     const start = Date.now();
     try {
-        const db = new Database(DB_PATH, { readonly: true });
-        // Simple query to verify connection
+        const db = createDb(DB_PATH, { readonly: true });
         db.prepare("SELECT 1").get();
         db.close();
 
-        const latencyMs = Date.now() - start;
-        setCache("database", true);
-        return { healthy: true, latencyMs };
+        const result: DatabaseCheckResult = {
+            status: "ok",
+            latency_ms: Date.now() - start,
+        };
+        setCache("database", result);
+        return result;
     } catch (error) {
-        const latencyMs = Date.now() - start;
-        const errorMsg = error instanceof Error ? error.message : "Unknown error";
-        setCache("database", false, errorMsg);
-        return { healthy: false, latencyMs, error: errorMsg };
+        const result: DatabaseCheckResult = {
+            status: "error",
+            latency_ms: Date.now() - start,
+            error: error instanceof Error ? error.message : "Unknown error",
+        };
+        setCache("database", result);
+        return result;
     }
 }
 
 // ============================================================================
-// OPENAI CHECK
+// LLM API CHECKS (via circuit breaker state — no HTTP calls)
 // ============================================================================
 
-export async function checkOpenAI(): Promise<{ healthy: boolean; latencyMs: number; error?: string }> {
-    const cached = getCached("openai");
-    if (cached) {
-        const result: { healthy: boolean; latencyMs: number; error?: string } = { healthy: cached.result, latencyMs: 0 };
-        if (cached.error !== undefined) result.error = cached.error;
-        return result;
-    }
-
-    // Skip if no API key configured
-    if (!process.env.OPENAI_API_KEY) {
-        return { healthy: false, latencyMs: 0, error: "OPENAI_API_KEY not configured" };
-    }
-
-    const start = Date.now();
+function getCircuitCheckResult(modelName: string): ApiCheckResult {
     try {
-        // Minimal API call to verify key validity
-        const response = await fetch("https://api.openai.com/v1/models", {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-            },
-        });
+        const cb = circuitBreakerRegistry.get(modelName);
+        const state = cb.state;
+        const circuitLabel = state === CircuitState.CLOSED ? "closed"
+            : state === CircuitState.OPEN ? "open"
+                : "half_open";
 
-        const latencyMs = Date.now() - start;
+        const result: ApiCheckResult = {
+            status: state === CircuitState.CLOSED ? "ok"
+                : state === CircuitState.HALF_OPEN ? "degraded"
+                    : "error",
+            circuit: circuitLabel,
+        };
 
-        if (response.ok) {
-            setCache("openai", true);
-            return { healthy: true, latencyMs };
-        } else {
-            const errorMsg = `API returned ${response.status}`;
-            setCache("openai", false, errorMsg);
-            return { healthy: false, latencyMs, error: errorMsg };
+        if (cb.failureCount > 0) {
+            result.failure_count = cb.failureCount;
         }
-    } catch (error) {
-        const latencyMs = Date.now() - start;
-        const errorMsg = error instanceof Error ? error.message : "Network error";
-        setCache("openai", false, errorMsg);
-        return { healthy: false, latencyMs, error: errorMsg };
+
+        return result;
+    } catch {
+        // If registry throws, model hasn't been used yet — assume ok
+        return { status: "ok", circuit: "closed" };
+    }
+}
+
+export function checkOpenAI(): ApiCheckResult {
+    const cached = getCached<ApiCheckResult>("openai");
+    if (cached) return cached;
+
+    const result = getCircuitCheckResult("gpt-4o");
+    setCache("openai", result);
+    return result;
+}
+
+export function checkAnthropic(): ApiCheckResult {
+    const cached = getCached<ApiCheckResult>("anthropic");
+    if (cached) return cached;
+
+    const result = getCircuitCheckResult("claude-3-5-sonnet");
+    setCache("anthropic", result);
+    return result;
+}
+
+// ============================================================================
+// DISK SPACE CHECK
+// ============================================================================
+
+export function checkDiskSpace(): DiskCheckResult {
+    const cached = getCached<DiskCheckResult>("disk");
+    if (cached) return cached;
+
+    try {
+        const stats = fs.statfsSync("/");
+        const freeBytes = stats.bfree * stats.bsize;
+        const freeGb = Math.round((freeBytes / (1024 ** 3)) * 10) / 10;
+
+        const result: DiskCheckResult = {
+            status: freeGb < DISK_WARNING_GB ? "warning" : "ok",
+            free_gb: freeGb,
+        };
+        setCache("disk", result);
+        return result;
+    } catch {
+        // statfs not available (Windows, some containers)
+        const result: DiskCheckResult = { status: "ok", free_gb: -1 };
+        setCache("disk", result);
+        return result;
     }
 }
 
@@ -115,62 +195,89 @@ export async function checkOpenAI(): Promise<{ healthy: boolean; latencyMs: numb
 // MEMORY CHECK
 // ============================================================================
 
-export function checkMemory(): { healthy: boolean; usage: NodeJS.MemoryUsage; heapUsedMB: number; threshold: number } {
-    const usage = process.memoryUsage();
-    const heapUsedMB = Math.round(usage.heapUsed / 1024 / 1024);
-    const threshold = parseInt(process.env.MEMORY_THRESHOLD_MB || "1024", 10);
-    const healthy = heapUsedMB < threshold;
+export function checkMemory(): MemoryCheckResult {
+    const cached = getCached<MemoryCheckResult>("memory");
+    if (cached) return cached;
 
-    return { healthy, usage, heapUsedMB, threshold };
+    const totalMem = os.totalmem();
+    const usedMem = totalMem - os.freemem();
+    const usagePct = Math.round((usedMem / totalMem) * 100);
+
+    const result: MemoryCheckResult = {
+        status: usagePct >= MEMORY_WARNING_PCT ? "warning" : "ok",
+        usage_pct: usagePct,
+    };
+    setCache("memory", result);
+    return result;
 }
 
 // ============================================================================
 // AGGREGATED HEALTH CHECK
 // ============================================================================
 
+export type OverallStatus = "healthy" | "degraded" | "unhealthy";
+
 export interface HealthCheckResult {
-    ready: boolean;
+    status: OverallStatus;
     checks: {
-        database: { healthy: boolean; latencyMs: number; error?: string };
-        openai: { healthy: boolean; latencyMs: number; error?: string };
-        memory: { healthy: boolean; heapUsedMB: number; threshold: number };
+        database: DatabaseCheckResult;
+        openai_api: ApiCheckResult;
+        anthropic_api: ApiCheckResult;
+        disk_space: DiskCheckResult;
+        memory: MemoryCheckResult;
     };
     timestamp: string;
 }
 
-export async function runHealthChecks(): Promise<HealthCheckResult> {
-    const [database, openai] = await Promise.all([
-        checkDatabase(),
-        checkOpenAI(),
-    ]);
+/**
+ * Determine overall status from individual checks.
+ *
+ * - unhealthy: database down OR both LLM circuits open
+ * - degraded:  any check has a warning/degraded/error (but not critical)
+ * - healthy:   everything is ok
+ */
+export function determineStatus(checks: HealthCheckResult["checks"]): OverallStatus {
+    // Critical: database down → unhealthy
+    if (checks.database.status === "error") return "unhealthy";
 
+    // Critical: both LLM APIs circuits open → unhealthy
+    if (checks.openai_api.status === "error" && checks.anthropic_api.status === "error") {
+        return "unhealthy";
+    }
+
+    // Any non-ok check → degraded
+    const allStatuses = [
+        checks.database.status,
+        checks.openai_api.status,
+        checks.anthropic_api.status,
+        checks.disk_space.status,
+        checks.memory.status,
+    ];
+
+    if (allStatuses.some((s) => s !== "ok")) return "degraded";
+
+    return "healthy";
+}
+
+/**
+ * Run all health checks and return aggregated result.
+ * Total execution time target: <50ms (no HTTP calls).
+ */
+export async function runHealthChecks(): Promise<HealthCheckResult> {
+    // Database is the only async check (file I/O)
+    const database = await checkDatabase();
+
+    // These are all synchronous (circuit breaker lookups, os stats)
+    const openai_api = checkOpenAI();
+    const anthropic_api = checkAnthropic();
+    const disk_space = checkDiskSpace();
     const memory = checkMemory();
 
-    // Ready if database is healthy (OpenAI can be temporarily unavailable)
-    const ready = database.healthy;
+    const checks = { database, openai_api, anthropic_api, disk_space, memory };
 
     return {
-        ready,
-        checks: {
-            database,
-            openai,
-            memory,
-        },
+        status: determineStatus(checks),
+        checks,
         timestamp: new Date().toISOString(),
-    };
-}
-
-// ============================================================================
-// CACHE MANAGEMENT
-// ============================================================================
-
-export function clearHealthCache(): void {
-    healthCache.clear();
-}
-
-export function getHealthCacheStats(): { size: number; keys: string[] } {
-    return {
-        size: healthCache.size,
-        keys: Array.from(healthCache.keys()),
     };
 }
