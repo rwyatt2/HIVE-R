@@ -1,0 +1,60 @@
+# Prometheus Alert Rules for HIVE-R
+
+groups:
+  - name: hive-r-alerts
+    rules:
+      # Error rate exceeds 5% over 5 minutes
+      - alert: HighErrorRate
+        expr: >
+          (sum(rate(hive_http_requests_total{status=~"5.."}[5m]))
+          / sum(rate(hive_http_requests_total[5m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HIVE-R error rate above 5%"
+          description: "Error rate is {{ $value | printf \"%.1f\" }}% (threshold: 5%) for the last 2 minutes."
+
+      # LLM cost exceeds $10/hour
+      - alert: HighCostBurnRate
+        expr: >
+          sum(rate(hive_llm_call_cost_dollars_total[5m])) * 3600 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM cost burn rate exceeds $10/hour"
+          description: "Current burn rate: ${{ $value | printf \"%.2f\" }}/hr. Investigate heavy token usage."
+
+      # Circuit breaker opened for a model
+      - alert: CircuitBreakerOpen
+        expr: hive_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker OPEN for model {{ $labels.model }}"
+          description: "LLM provider {{ $labels.model }} has tripped its circuit breaker. Requests are being rejected."
+
+      # High p99 latency (> 10s for 5 minutes)
+      - alert: HighLatency
+        expr: >
+          histogram_quantile(0.99,
+            sum(rate(hive_http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 latency exceeds 10 seconds"
+          description: "p99 latency is {{ $value | printf \"%.1f\" }}s. Check for slow LLM calls or resource exhaustion."
+
+      # Node.js heap usage > 1.5GB
+      - alert: HighMemoryUsage
+        expr: hive_nodejs_heap_size_used_bytes > 1.5e9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node.js heap usage above 1.5 GB"
+          description: "Heap usage: {{ $value | humanize1024 }}B. Possible memory leak."

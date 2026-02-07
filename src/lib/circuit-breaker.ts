@@ -21,6 +21,7 @@
 
 import { EventEmitter } from "node:events";
 import { logger } from "./logger.js";
+import { setCircuitBreakerState, circuitStateToNumber } from "./metrics.js";
 
 // ============================================================================
 // CONFIGURATION
@@ -243,6 +244,9 @@ export class CircuitBreaker {
                 });
                 break;
         }
+
+        // Update Prometheus gauge
+        setCircuitBreakerState(this.modelName, circuitStateToNumber(newState));
     }
 }
 

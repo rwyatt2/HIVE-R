@@ -1,0 +1,19 @@
+# Prometheus Configuration for HIVE-R
+# Docs: https://prometheus.io/docs/prometheus/latest/configuration/
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  - job_name: "hive-r"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:3000"]
+        labels:
+          environment: "development"
+    scrape_interval: 15s
+    scrape_timeout: 10s

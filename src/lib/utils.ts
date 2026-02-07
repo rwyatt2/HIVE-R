@@ -1,6 +1,7 @@
 import { HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { AgentState } from "./state.js";
 import { logger } from "./logger.js";
+import { recordAgentInvocation } from "./metrics.js";
 
 /**
  * Safe agent wrapper with error handling and retry logic
@@ -10,6 +11,7 @@ export const safeAgentCall = async <T>(
     agentName: string,
     fallbackMessage: string = "I encountered an error processing this request."
 ): Promise<{ messages: BaseMessage[]; contributors: string[] }> => {
+    recordAgentInvocation(agentName);
     const maxRetries = 2;
     let lastError: Error | null = null;
 

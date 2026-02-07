@@ -87,9 +87,9 @@ app.use('*', sentryErrorHandler());  // ✅ Sentry error capture (first to catch
 app.use('*', securityHeaders());  // ✅ Security headers (XSS, clickjacking protection)
 app.use('*', cors(["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "*"]));
 app.use('*', errorHandler());
+app.use('*', metricsMiddleware());         // ✅ Prometheus HTTP metrics
 app.use('*', requestLogger());
 app.use('*', authMiddleware);  // ✅ API Key auth (set HIVE_API_KEY to enable)
-app.use('*', jwtAuthMiddleware);  // ✅ JWT user auth (enforced on all non-public routes)
 app.route('/chat', chatRouter); // ✅ Hardened Chat Router (with per-user rate limiting)
 app.route('/admin', adminRouter); // ✅ Mount Admin Router
 
@@ -98,7 +98,8 @@ app.route('/admin', adminRouter); // ✅ Mount Admin Router
 import { graph } from "./graph.js";
 
 // Import metrics
-import { metrics } from "./lib/metrics.js";
+import { register, recordAgentInvocation } from "./lib/metrics.js";
+import { metricsMiddleware } from "./lib/metrics-middleware.js";
 
 // Import vector memory
 import { retrieveMemories, formatMemoriesForPrompt, getMemoryStats, storeMemory } from "./lib/vector-memory.js";
@@ -114,19 +115,15 @@ import { healthRouter } from "./routers/health.js";
 app.route('/health', healthRouter);
 
 /**
- * ✅ Metrics endpoint (JSON format)
+ * ✅ Prometheus metrics endpoint (no auth — Prometheus scraper needs direct access)
  */
-app.get('/metrics', (c) => {
-    return c.json(metrics.getMetrics());
+app.get('/metrics', async (c) => {
+    c.header('Content-Type', register.contentType);
+    return c.text(await register.metrics());
 });
 
-/**
- * ✅ Prometheus metrics endpoint
- */
-app.get('/metrics/prometheus', (c) => {
-    c.header('Content-Type', 'text/plain');
-    return c.text(metrics.getPrometheusMetrics());
-});
+// JWT auth only applies AFTER /metrics so the scraper doesn't need credentials
+app.use('*', jwtAuthMiddleware);  // ✅ JWT user auth (enforced on all non-public routes)
 
 /**
  * ✅ Memory stats endpoint

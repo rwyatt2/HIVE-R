@@ -21,6 +21,7 @@ import { logUsage, getDailyCost } from "../lib/cost-tracker.js";
 import { logger } from "../lib/logger.js";
 import { circuitBreakerRegistry, CircuitOpenError } from "../lib/circuit-breaker.js";
 import { withRetry } from "../lib/retry.js";
+import { recordTokenUsage, recordCost } from "../lib/metrics.js";
 
 // ============================================================================
 // MODEL PRICING (per 1K tokens, USD) — user-specified rates
@@ -92,7 +93,7 @@ export function checkBudget(): { exceeded: boolean; dailyCost: number; budget: n
         };
     } catch (err) {
         // Graceful failure — don't block requests if budget check fails
-        logger.error("Budget check failed", { error: (err as Error).message });
+        logger.error({ err }, 'Budget check failed');
         return { exceeded: false, dailyCost: 0, budget: DAILY_BUDGET };
     }
 }
@@ -140,10 +141,7 @@ export class CostTrackingCallback extends BaseCallbackHandler {
             const tokenUsage = output.llmOutput?.tokenUsage || output.llmOutput?.estimatedTokenUsage;
 
             if (!tokenUsage) {
-                logger.warn("💰 Cost tracking: no token usage in LLM response", {
-                    agent: this.agentName,
-                    model: this.modelName,
-                });
+                logger.warn({ agent: this.agentName, model: this.modelName }, 'Cost tracking: no token usage in LLM response');
                 return;
             }
 
@@ -161,23 +159,25 @@ export class CostTrackingCallback extends BaseCallbackHandler {
                 userId: this.userId,
             });
 
-            logger.info("💰 LLM call tracked", {
+            logger.info({
                 agent: this.agentName,
                 model: this.modelName,
                 tokensIn,
                 tokensOut,
                 cost: `$${calculateCostPer1K(this.modelName, tokensIn, tokensOut).toFixed(6)}`,
                 latencyMs,
-            });
+            }, 'LLM call tracked');
 
             // Record success for circuit breaker
             circuitBreakerRegistry.get(this.modelName).recordSuccess();
+
+            // Record Prometheus metrics
+            const costUsd = calculateCostPer1K(this.modelName, tokensIn, tokensOut);
+            recordTokenUsage(this.modelName, this.agentName, tokensIn, tokensOut);
+            recordCost(this.modelName, this.agentName, costUsd);
         } catch (err) {
             // Graceful failure — log error but don't break the request
-            logger.error("💰 Cost tracking failed", {
-                agent: this.agentName,
-                error: (err as Error).message,
-            });
+            logger.error({ agent: this.agentName, err }, 'Cost tracking failed');
         }
     }
 
@@ -185,10 +185,7 @@ export class CostTrackingCallback extends BaseCallbackHandler {
      * Called on LLM error — log it but don't interfere.
      */
     async handleLLMError(err: Error): Promise<void> {
-        logger.warn("💰 LLM error occurred", {
-            agent: this.agentName,
-            error: err.message,
-        });
+        logger.warn({ agent: this.agentName, err: err.message }, 'LLM error occurred');
 
         // Record failure for circuit breaker
         circuitBreakerRegistry.get(this.modelName).recordFailure();
