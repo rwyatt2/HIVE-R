@@ -59,6 +59,7 @@ import { initSemanticMemory, searchMemories as searchSemanticMemories, storeMemo
 import * as orgs from "./lib/organizations.js";
 import * as billing from "./lib/billing.js";
 import adminRouter from "./routers/admin.js"; // ✅ Admin Router
+import chatRouter from "./routers/chat.js"; // ✅ Hardened Chat Router
 
 // Initialize Phase 15 features
 orgs.initOrgTables();
@@ -75,7 +76,7 @@ app.use('*', cors(["http://localhost:3001", "http://localhost:3000", "http://loc
 app.use('*', errorHandler());
 app.use('*', requestLogger());
 app.use('*', authMiddleware);  // ✅ API Key auth (set HIVE_API_KEY to enable)
-app.use('/chat*', rateLimiter(100, 60000)); // 100 requests/min for dev
+app.route('/chat', chatRouter); // ✅ Hardened Chat Router (with per-user rate limiting)
 app.route('/admin', adminRouter); // ✅ Mount Admin Router
 
 // --- Graph Setup ---
@@ -290,153 +291,8 @@ app.post('/memory/search', async (c) => {
 });
 
 
-/**
- * Standard chat endpoint
- */
-app.post('/chat', async (c) => {
-    const body = await c.req.json();
-    const { message, threadId } = body;
-
-    if (!message) {
-        return c.json({ error: "Message is required" }, 400);
-    }
-
-    const thread = threadId || randomUUID();
-    const config = {
-        configurable: { thread_id: thread }
-    };
-
-    const initialState = {
-        messages: [new HumanMessage(message)],
-    };
-
-    const result = await graph.invoke(initialState, config);
-
-    const history = result.messages.map((msg: BaseMessage) => ({
-        agent: msg.name || "User",
-        content: msg.content,
-    }));
-
-    return c.json({
-        threadId: thread,
-        result: result.messages[result.messages.length - 1]?.content,
-        contributors: result.contributors || [],
-        history
-    });
-});
-
-/**
- * Streaming endpoint with SSE
- */
-app.post('/chat/stream', async (c) => {
-    const body = await c.req.json();
-    const { message, threadId } = body;
-
-    if (!message) {
-        return c.json({ error: "Message is required" }, 400);
-    }
-
-    const thread = threadId || randomUUID();
-    const config = {
-        configurable: { thread_id: thread }
-    };
-
-    const initialState = {
-        messages: [new HumanMessage(message)],
-    };
-
-    return streamSSE(c, async (stream) => {
-        await stream.writeSSE({
-            data: JSON.stringify({ type: "thread", threadId: thread }),
-            event: "thread"
-        });
-
-        const eventStream = graph.streamEvents(initialState, {
-            ...config,
-            version: "v2"
-        });
-
-        let currentAgent: string | null = null;
-        let previousAgent: string | null = null;
-
-        for await (const event of eventStream) {
-            // Agent started processing
-            if (event.event === "on_chain_start" && event.name && HIVE_MEMBERS.includes(event.name as typeof HIVE_MEMBERS[number])) {
-                previousAgent = currentAgent;
-                currentAgent = event.name;
-
-                // Emit agent_start event
-                await stream.writeSSE({
-                    data: JSON.stringify({
-                        type: "agent_start",
-                        agent: event.name,
-                        timestamp: Date.now()
-                    }),
-                    event: "agent_start"
-                });
-
-                // Emit handoff event if there was a previous agent
-                if (previousAgent && previousAgent !== currentAgent) {
-                    await stream.writeSSE({
-                        data: JSON.stringify({
-                            type: "handoff",
-                            from: previousAgent,
-                            to: currentAgent,
-                            timestamp: Date.now()
-                        }),
-                        event: "handoff"
-                    });
-                }
-            }
-
-            // Agent finished processing
-            if (event.event === "on_chain_end" && event.name && HIVE_MEMBERS.includes(event.name as typeof HIVE_MEMBERS[number])) {
-                // Emit agent_end event
-                await stream.writeSSE({
-                    data: JSON.stringify({
-                        type: "agent_end",
-                        agent: event.name,
-                        timestamp: Date.now()
-                    }),
-                    event: "agent_end"
-                });
-
-                // Also emit the agent's final message
-                const content = event.data?.output?.messages?.[0]?.content;
-                if (content) {
-                    await stream.writeSSE({
-                        data: JSON.stringify({
-                            type: "agent",
-                            agent: event.name,
-                            content: content,
-                        }),
-                        event: "agent"
-                    });
-                }
-            }
-
-            // Stream content chunks
-            if (event.event === "on_chat_model_stream") {
-                const chunk = event.data?.chunk?.content;
-                if (chunk) {
-                    await stream.writeSSE({
-                        data: JSON.stringify({
-                            type: "chunk",
-                            content: chunk,
-                            agent: currentAgent
-                        }),
-                        event: "chunk"
-                    });
-                }
-            }
-        }
-
-        await stream.writeSSE({
-            data: JSON.stringify({ type: "done" }),
-            event: "done"
-        });
-    });
-});
+// Chat endpoints (/chat, /chat/stream) are in src/routers/chat.ts
+// with Zod validation, prompt injection sanitization, and per-user rate limiting.
 
 /**
  * Get conversation history
