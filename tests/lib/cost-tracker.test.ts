@@ -79,9 +79,9 @@ function insertUsage(overrides: {
 
 describe("calculateCost", () => {
     it("calculates gpt-4o cost correctly", () => {
-        // gpt-4o: $2.50/1M input, $10.00/1M output
+        // gpt-4o: $5.00/1M input, $15.00/1M output
         const cost = calculateCost("gpt-4o", 1_000_000, 1_000_000);
-        expect(cost).toBe(12.5);
+        expect(cost).toBe(20.0);
     });
 
     it("calculates gpt-4o-mini cost correctly", () => {
@@ -92,10 +92,10 @@ describe("calculateCost", () => {
 
     it("calculates small token counts precisely", () => {
         // 1000 input + 500 output on gpt-4o
-        // = (1000/1M * 2.50) + (500/1M * 10.00)
-        // = 0.0025 + 0.005 = 0.0075
+        // = (1000/1M * 5.00) + (500/1M * 15.00)
+        // = 0.005 + 0.0075 = 0.0125
         const cost = calculateCost("gpt-4o", 1000, 500);
-        expect(cost).toBeCloseTo(0.0075, 6);
+        expect(cost).toBeCloseTo(0.0125, 6);
     });
 
     it("uses default pricing for unknown models", () => {
@@ -145,7 +145,7 @@ describe("logUsage", () => {
             latencyMs: 1500,
         });
 
-        expect(entry.costUsd).toBeCloseTo(0.0075, 6);
+        expect(entry.costUsd).toBeCloseTo(0.0125, 6);
     });
 
     it("stores metadata as JSON", () => {

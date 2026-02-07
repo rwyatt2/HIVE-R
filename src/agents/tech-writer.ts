@@ -1,10 +1,10 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
 
-const llm = new ChatOpenAI({
+const llm = createTrackedLLM("TechWriter", {
     modelName: "gpt-4o",
     temperature: 0.3,
 });

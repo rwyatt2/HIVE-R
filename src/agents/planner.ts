@@ -1,12 +1,12 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { TechPlanSchema, type TechPlan } from "../lib/artifacts.js";
 
-const llm = new ChatOpenAI({
-    modelName: "gpt-4o",
-    temperature: 0.2,
+const llm = createTrackedLLM("Planner", {
+  modelName: "gpt-4o",
+  temperature: 0.2,
 });
 
 const PLANNER_PROMPT = `${HIVE_PREAMBLE}
@@ -55,17 +55,17 @@ You MUST respond with a structured TechPlan in JSON format:
 ${CONTEXT_PROTOCOL}`;
 
 export const plannerNode = async (state: typeof AgentState.State) => {
-    const messages = state.messages;
+  const messages = state.messages;
 
-    try {
-        const structuredLlm = llm.withStructuredOutput(TechPlanSchema);
+  try {
+    const structuredLlm = llm.withStructuredOutput(TechPlanSchema);
 
-        const artifact = await structuredLlm.invoke([
-            new SystemMessage(PLANNER_PROMPT),
-            ...messages,
-        ]);
+    const artifact = await structuredLlm.invoke([
+      new SystemMessage(PLANNER_PROMPT),
+      ...messages,
+    ]);
 
-        const formattedContent = `# Tech Plan: ${artifact.title}
+    const formattedContent = `# Tech Plan: ${artifact.title}
 
 ## Overview
 ${artifact.overview}
@@ -95,26 +95,26 @@ ${artifact.risks.map(r => `
 **Mitigation**: ${r.mitigation}
 `).join("")}`;
 
-        return {
-            messages: [
-                new HumanMessage({
-                    content: formattedContent,
-                    name: "Planner",
-                }),
-            ],
-            artifacts: [artifact],
-            contributors: ["Planner"],
-        };
-    } catch (error) {
-        console.error("❌ Planner failed:", error);
-        return {
-            messages: [
-                new HumanMessage({
-                    content: `**[Planner Error]**: I encountered an error creating the tech plan. ${error instanceof Error ? error.message : "Unknown error"}`,
-                    name: "Planner",
-                }),
-            ],
-            contributors: ["Planner"],
-        };
-    }
+    return {
+      messages: [
+        new HumanMessage({
+          content: formattedContent,
+          name: "Planner",
+        }),
+      ],
+      artifacts: [artifact],
+      contributors: ["Planner"],
+    };
+  } catch (error) {
+    console.error("❌ Planner failed:", error);
+    return {
+      messages: [
+        new HumanMessage({
+          content: `**[Planner Error]**: I encountered an error creating the tech plan. ${error instanceof Error ? error.message : "Unknown error"}`,
+          name: "Planner",
+        }),
+      ],
+      contributors: ["Planner"],
+    };
+  }
 };

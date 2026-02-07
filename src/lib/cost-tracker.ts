@@ -40,11 +40,13 @@ import type {
 // ============================================================================
 
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-    "gpt-4o": { inputPer1M: 2.50, outputPer1M: 10.00 },
+    "gpt-4o": { inputPer1M: 5.00, outputPer1M: 15.00 },
     "gpt-4o-mini": { inputPer1M: 0.15, outputPer1M: 0.60 },
     "gpt-4-turbo": { inputPer1M: 10.00, outputPer1M: 30.00 },
     "gpt-4": { inputPer1M: 30.00, outputPer1M: 60.00 },
     "gpt-3.5-turbo": { inputPer1M: 0.50, outputPer1M: 1.50 },
+    "claude-3-5-sonnet": { inputPer1M: 3.00, outputPer1M: 15.00 },
+    "claude-3-haiku": { inputPer1M: 0.25, outputPer1M: 1.25 },
 };
 
 /** Default pricing for unknown models */

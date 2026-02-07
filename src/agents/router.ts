@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage } from "@langchain/core/messages";
 import { z } from "zod";
 import { AgentState } from "../lib/state.js";
@@ -6,7 +6,7 @@ import { HIVE_MEMBERS } from "../lib/prompts.js";
 import { formatContributorContext } from "../lib/utils.js";
 import { getPluginRouterContext, getPluginNames } from "../lib/plugins.js";
 
-const llm = new ChatOpenAI({
+const llm = createTrackedLLM("Router", {
     modelName: "gpt-4o",
     temperature: 0,
 });
