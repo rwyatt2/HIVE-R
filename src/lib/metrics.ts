@@ -154,3 +154,53 @@ export function circuitStateToNumber(state: string): number {
             return 0;
     }
 }
+
+// ============================================================================
+// CACHE METRICS
+// ============================================================================
+
+/** Total cache hits by agent name. */
+export const cacheHitsTotal = new client.Counter({
+    name: "hive_cache_hits_total",
+    help: "Total semantic cache hits",
+    labelNames: ["agent"] as const,
+    registers: [register],
+});
+
+/** Total cache misses by agent name. */
+export const cacheMissesTotal = new client.Counter({
+    name: "hive_cache_misses_total",
+    help: "Total semantic cache misses",
+    labelNames: ["agent"] as const,
+    registers: [register],
+});
+
+/** Cache operation latency in seconds. */
+export const cacheLatency = new client.Histogram({
+    name: "hive_cache_latency_seconds",
+    help: "Semantic cache operation latency",
+    labelNames: ["operation"] as const,
+    buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1],
+    registers: [register],
+});
+
+/**
+ * Record a cache hit.
+ */
+export function recordCacheHit(agent: string): void {
+    cacheHitsTotal.inc({ agent });
+}
+
+/**
+ * Record a cache miss.
+ */
+export function recordCacheMiss(agent: string): void {
+    cacheMissesTotal.inc({ agent });
+}
+
+/**
+ * Observe cache operation latency.
+ */
+export function observeCacheLatency(operation: string, durationSec: number): void {
+    cacheLatency.observe({ operation }, durationSec);
+}

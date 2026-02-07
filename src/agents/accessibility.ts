@@ -55,6 +55,8 @@ export const accessibilityNode = async (state: typeof AgentState.State) => {
             return createAgentResponse(response.content, "Accessibility");
         },
         "Accessibility",
+        state.messages,
+        undefined,
         "I'm unable to provide accessibility review at this time. Please retry."
     );
 };

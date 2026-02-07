@@ -76,13 +76,66 @@ The dashboard includes two filter variables at the top:
 
 ## Alert Rules
 
-| Alert | Condition | Severity | For |
-|---|---|---|---|
-| `HighErrorRate` | Error rate > 5% | Critical | 2m |
-| `HighCostBurnRate` | Cost > $10/hr | Warning | 5m |
-| `CircuitBreakerOpen` | Any model circuit open | Critical | 1m |
-| `HighLatency` | p99 > 10s | Warning | 5m |
-| `HighMemoryUsage` | Heap > 1.5 GB | Warning | 5m |
+### Critical (pages on-call)
+| Alert | Condition | For |
+|---|---|---|
+| `HighErrorRate` | >5% of requests 5xx | 5m |
+| `CircuitBreakerOpen` | Any model circuit open | 5m |
+| `AgentHighFailureRate` | Any agent >50% failures | 5m |
+
+### Warning (Slack notification)
+| Alert | Condition | For |
+|---|---|---|
+| `HighLatency` | p95 >5s | 5m |
+| `HighCostBurnRate` | >$20/hr LLM spend | 10m |
+| `HighMemoryUsage` | Heap >1.5 GB | 5m |
+| `LowDiskSpace` | <10 GB remaining | 10m |
+
+### Info (log only)
+| Alert | Condition | For |
+|---|---|---|
+| `CircuitBreakerHalfOpen` | Model recovering | 2m |
+| `DailyBudgetApproaching` | Daily spend >$40 | 5m |
+
+All alerts include `runbook_url` linking to [`runbook.md`](./runbook.md).
+
+## Alertmanager
+
+Alertmanager routes alerts by severity:
+
+| Severity | Receiver | Channel |
+|---|---|---|
+| `critical` | PagerDuty + Slack | `#hive-alerts-critical` |
+| `warning` | Slack | `#hive-alerts` |
+| `info` | Null (log only) | — |
+
+### Anti-spam settings
+- **group_wait**: 5m (batch initial alerts)
+- **group_interval**: 10m (pause between updates)
+- **repeat_interval**: 4h (don't re-alert for same issue)
+
+### Inhibition rules
+- `CircuitBreakerOpen` suppresses `HighLatency` (symptom, not cause)
+- `HighErrorRate` suppresses `CircuitBreakerHalfOpen` (noise during outage)
+
+### Configure Slack webhook
+Edit `alertmanager.yml`:
+```yaml
+global:
+  slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+```
+
+### Configure PagerDuty
+Edit `alertmanager.yml`, uncomment the `pagerduty_configs` block:
+```yaml
+pagerduty_configs:
+  - service_key: 'YOUR_PAGERDUTY_INTEGRATION_KEY'
+```
+
+### Access Alertmanager UI
+```
+open http://localhost:9093
+```
 
 ## Configuration
 
@@ -131,6 +184,7 @@ static_configs:
 | Grafana empty panels | Wait 30s for first scrape, check Prometheus targets at `:9090/targets` |
 | Prometheus can't reach HIVE-R | Ensure `host.docker.internal` resolves (Docker Desktop), or use container networking |
 | Alert rules not showing | Check `prometheus-alerts.yml` YAML syntax, then `http://localhost:9090/rules` |
+| Alerts not routing | Check Alertmanager UI at `:9093`, verify `alertmanager.yml` YAML |
 | Dashboard not auto-loading | Verify provisioning volume mounts in `docker-compose.monitoring.yml` |
 | "No data" on agent/cost panels | These populate only after LLM calls are made |
 

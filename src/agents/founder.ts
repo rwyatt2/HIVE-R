@@ -40,6 +40,8 @@ export const founderNode = async (state: typeof AgentState.State) => {
             return createAgentResponse(response.content, "Founder");
         },
         "Founder",
+        state.messages,
+        undefined,
         "I'm unable to provide strategic direction at this time. Please retry or consult the Product Manager."
     );
 };

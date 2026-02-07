@@ -115,6 +115,9 @@ app.get('/logs', (c) => {
 import costsRouter from "./admin/costs.js";
 app.route('/costs', costsRouter);
 
+import cacheRouter from "./admin/cache.js";
+app.route('/cache', cacheRouter);
+
 // ============================================================================
 // ALERT HISTORY
 // ============================================================================

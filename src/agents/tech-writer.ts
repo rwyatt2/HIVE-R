@@ -54,6 +54,8 @@ export const techWriterNode = async (state: typeof AgentState.State) => {
             return createAgentResponse(response.content, "TechWriter");
         },
         "TechWriter",
+        state.messages,
+        undefined,
         "I'm unable to create documentation at this time. Please retry."
     );
 };

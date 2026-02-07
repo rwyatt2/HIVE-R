@@ -72,6 +72,8 @@ export const sreNode = async (state: typeof AgentState.State) => {
             return createAgentResponse(response.content, "SRE");
         },
         "SRE",
+        state.messages,
+        undefined,
         "I'm unable to provide SRE guidance at this time. Please retry."
     );
 };

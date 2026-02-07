@@ -193,6 +193,8 @@ ${CONTEXT_PROTOCOL}`;
                 );
             },
             plugin.name,
+            state.messages,
+            undefined,
             `${plugin.role} encountered an error. Please retry.`
         );
     };

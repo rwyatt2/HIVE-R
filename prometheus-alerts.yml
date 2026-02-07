@@ -1,60 +1,196 @@
 # Prometheus Alert Rules for HIVE-R
+#
+# Severity tiers:
+#   critical  → PagerDuty / Opsgenie (pages on-call)
+#   warning   → Slack notification
+#   info      → Log only (Alertmanager silent receiver)
+#
+# Grouping: alerts grouped by `alertname` with 5m group_wait
+# to prevent alert storms.
 
 groups:
-  - name: hive-r-alerts
+  # ========================================================================
+  # CRITICAL — Pages on-call immediately
+  # ========================================================================
+  - name: hive-critical
+    interval: 30s
     rules:
-      # Error rate exceeds 5% over 5 minutes
+
+      # ── High Error Rate ──────────────────────────────────────────────
+      # >5% of requests returning 5xx over 5 minutes
       - alert: HighErrorRate
         expr: >
-          (sum(rate(hive_http_requests_total{status=~"5.."}[5m]))
-          / sum(rate(hive_http_requests_total[5m]))) * 100 > 5
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: "HIVE-R error rate above 5%"
-          description: "Error rate is {{ $value | printf \"%.1f\" }}% (threshold: 5%) for the last 2 minutes."
-
-      # LLM cost exceeds $10/hour
-      - alert: HighCostBurnRate
-        expr: >
-          sum(rate(hive_llm_call_cost_dollars_total[5m])) * 3600 > 10
+          (
+            sum(rate(hive_http_requests_total{status=~"5.."}[5m]))
+            / sum(rate(hive_http_requests_total[5m]))
+          ) * 100 > 5
         for: 5m
         labels:
-          severity: warning
+          severity: critical
+          team: platform
         annotations:
-          summary: "LLM cost burn rate exceeds $10/hour"
-          description: "Current burn rate: ${{ $value | printf \"%.2f\" }}/hr. Investigate heavy token usage."
+          summary: "Error rate {{ $value | printf \"%.1f\" }}% (threshold: 5%)"
+          description: >
+            More than 5% of HTTP requests are failing with 5xx status codes
+            over the last 5 minutes. Check application logs and downstream
+            services.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#1-openai-api-down"
+          dashboard_url: "http://localhost:3001/d/hive-overview"
 
-      # Circuit breaker opened for a model
+      # ── Circuit Breaker Open >5 minutes ──────────────────────────────
+      # Any LLM provider circuit stuck open
       - alert: CircuitBreakerOpen
         expr: hive_circuit_breaker_state == 1
-        for: 1m
+        for: 5m
         labels:
           severity: critical
+          team: platform
         annotations:
-          summary: "Circuit breaker OPEN for model {{ $labels.model }}"
-          description: "LLM provider {{ $labels.model }} has tripped its circuit breaker. Requests are being rejected."
+          summary: "Circuit breaker OPEN for model {{ $labels.model }} (>5 min)"
+          description: >
+            LLM provider {{ $labels.model }} has had its circuit breaker open
+            for more than 5 minutes. All requests to this model are being
+            rejected. The system may be falling back to lower-tier models.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#1-openai-api-down"
 
-      # High p99 latency (> 10s for 5 minutes)
+      # ── Agent Failure Rate >50% ──────────────────────────────────────
+      # Any single agent failing more than half the time
+      - alert: AgentHighFailureRate
+        expr: >
+          (
+            sum by (agent) (rate(hive_http_requests_total{status=~"5..", path=~".*"}[5m]))
+            / sum by (agent) (rate(hive_agent_invocations_total[5m]))
+          ) > 0.5
+          or
+          (
+            sum by (agent) (increase(hive_agent_invocations_total[10m])) > 10
+            and
+            sum by (agent) (increase(hive_http_requests_total{status=~"5.."}[10m]))
+            / sum by (agent) (increase(hive_agent_invocations_total[10m])) > 0.5
+          )
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Agent {{ $labels.agent }} failing >50% of invocations"
+          description: >
+            Agent {{ $labels.agent }} has a failure rate above 50% over the
+            last 5 minutes. This indicates a systemic issue with the agent's
+            LLM calls, tools, or prompt.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#5-agent-stuck-in-loop"
+
+  # ========================================================================
+  # WARNING — Slack notification, no page
+  # ========================================================================
+  - name: hive-warning
+    interval: 30s
+    rules:
+
+      # ── High Latency ─────────────────────────────────────────────────
+      # p95 response time >5 seconds for 5 minutes
       - alert: HighLatency
         expr: >
-          histogram_quantile(0.99,
+          histogram_quantile(0.95,
             sum(rate(hive_http_request_duration_seconds_bucket[5m])) by (le)
-          ) > 10
+          ) > 5
         for: 5m
         labels:
           severity: warning
+          team: platform
         annotations:
-          summary: "p99 latency exceeds 10 seconds"
-          description: "p99 latency is {{ $value | printf \"%.1f\" }}s. Check for slow LLM calls or resource exhaustion."
+          summary: "p95 latency {{ $value | printf \"%.1f\" }}s (threshold: 5s)"
+          description: >
+            The 95th percentile response latency has exceeded 5 seconds for the
+            last 5 minutes. This may indicate slow LLM responses, resource
+            exhaustion, or downstream timeouts.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#3-memory-leak--high-memory-usage"
+          dashboard_url: "http://localhost:3001/d/hive-overview"
 
-      # Node.js heap usage > 1.5GB
+      # ── Cost Spike ───────────────────────────────────────────────────
+      # Burn rate >$20/hour ($1,500/month ≈ $2.08/hr baseline)
+      # $20/hr sustained = ~$480/day = budget blown in 3 days
+      - alert: HighCostBurnRate
+        expr: >
+          sum(rate(hive_llm_call_cost_dollars_total[5m])) * 3600 > 20
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "LLM cost burn rate ${{ $value | printf \"%.2f\" }}/hr (threshold: $20/hr)"
+          description: >
+            Current LLM spend rate is ${{ $value | printf "%.2f" }}/hour, which
+            would exhaust a $1,500 monthly budget in ~3 days. Investigate
+            whether a runaway agent loop or sudden traffic spike is causing
+            excessive token consumption.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#4-budget-exceeded"
+
+      # ── High Memory Usage ────────────────────────────────────────────
+      # Node.js heap >1.5 GB for 5 minutes
       - alert: HighMemoryUsage
         expr: hive_nodejs_heap_size_used_bytes > 1.5e9
         for: 5m
         labels:
           severity: warning
+          team: platform
         annotations:
-          summary: "Node.js heap usage above 1.5 GB"
-          description: "Heap usage: {{ $value | humanize1024 }}B. Possible memory leak."
+          summary: "Node.js heap {{ $value | humanize1024 }}B (threshold: 1.5 GB)"
+          description: >
+            Node.js heap usage has been above 1.5 GB for 5 minutes. This may
+            indicate a memory leak. Consider restarting the service.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#3-memory-leak--high-memory-usage"
+
+      # ── Low Disk Space ───────────────────────────────────────────────
+      # <10 GB remaining on the node_filesystem (requires node-exporter)
+      - alert: LowDiskSpace
+        expr: >
+          node_filesystem_avail_bytes{mountpoint="/"} < 10e9
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Disk space below 10 GB on {{ $labels.instance }}"
+          description: >
+            Available disk on {{ $labels.instance }} (mount: {{ $labels.mountpoint }})
+            is {{ $value | humanize1024 }}B. SQLite and log files may fail
+            when disk is full.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#2-database-locked--unavailable"
+
+  # ========================================================================
+  # INFO — Log only, no notification
+  # ========================================================================
+  - name: hive-info
+    interval: 60s
+    rules:
+
+      # ── Circuit Breaker Half-Open ────────────────────────────────────
+      # Model recovering — not actionable, just visibility
+      - alert: CircuitBreakerHalfOpen
+        expr: hive_circuit_breaker_state == 0.5
+        for: 2m
+        labels:
+          severity: info
+          team: platform
+        annotations:
+          summary: "Circuit breaker HALF_OPEN for model {{ $labels.model }}"
+          description: >
+            Model {{ $labels.model }} circuit breaker is in half-open state,
+            testing recovery. Will auto-close on success or re-open on failure.
+
+      # ── Daily Spend Warning ──────────────────────────────────────────
+      # Daily spend >80% of DAILY_BUDGET (approaching limit)
+      - alert: DailyBudgetApproaching
+        expr: hive_cost_dollars > 40
+        for: 5m
+        labels:
+          severity: info
+          team: platform
+        annotations:
+          summary: "Daily LLM spend ${{ $value | printf \"%.2f\" }} approaching budget limit"
+          description: >
+            Current daily spend is ${{ $value | printf "%.2f" }}. If
+            DAILY_BUDGET is $50, the system will soon start rejecting
+            LLM calls with BudgetExceededError.
+          runbook_url: "https://github.com/rwyatt2/HIVE-R/blob/main/docs/operations/runbook.md#4-budget-exceeded"

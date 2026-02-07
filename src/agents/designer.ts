@@ -65,6 +65,8 @@ export const designerNode = async (state: typeof AgentState.State) => {
             return createAgentResponse(response.content, "Designer");
         },
         "Designer",
+        state.messages,
+        undefined,
         "I'm unable to provide design specifications at this time. Please retry."
     );
 };

@@ -3,14 +3,38 @@ import { AgentState } from "./state.js";
 import { logger } from "./logger.js";
 import { recordAgentInvocation } from "./metrics.js";
 import { withSpan } from "./tracer.js";
+import { semanticCache } from "./semantic-cache.js";
 
 /**
- * Safe agent wrapper with error handling and retry logic.
+ * Extract the user's original query from messages
+ */
+export const extractUserQuery = (messages: BaseMessage[]): string => {
+    // Find the first human message (the original user request)
+    for (const msg of messages) {
+        if (msg._getType() === "human" && !("name" in msg)) {
+            return typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+        }
+    }
+    // Fallback to last message content
+    const last = messages[messages.length - 1];
+    return typeof last?.content === "string" ? last.content : "";
+};
+
+/**
+ * Safe agent wrapper with error handling, retry logic, and semantic cache.
  * Creates an OTel span for each agent invocation.
+ *
+ * @param fn - The agent function to call
+ * @param agentName - Name of the agent (used for cache key, metrics, span)
+ * @param messages - Current message state (used for cache key)
+ * @param options - Optional: skipCache to bypass cache for this call
+ * @param fallbackMessage - Error message if all retries fail
  */
 export const safeAgentCall = async <T>(
     fn: () => Promise<T>,
     agentName: string,
+    messages: BaseMessage[] = [],
+    options?: { skipCache?: boolean },
     fallbackMessage: string = "I encountered an error processing this request."
 ): Promise<{ messages: BaseMessage[]; contributors: string[] }> => {
     recordAgentInvocation(agentName);
@@ -18,6 +42,23 @@ export const safeAgentCall = async <T>(
     return withSpan(`hive.agent.${agentName}`, async (span) => {
         span.setAttribute("agent.name", agentName);
         const startMs = Date.now();
+
+        // ── Cache check ─────────────────────────────────────────────
+        if (!options?.skipCache && semanticCache.isCacheable(agentName)) {
+            const query = extractUserQuery(messages);
+            if (query) {
+                const cached = await semanticCache.get(agentName, query);
+                if (cached) {
+                    span.setAttribute("cache.hit", true);
+                    span.setAttribute("agent.duration_ms", Date.now() - startMs);
+                    logger.info({ agentName, event: "cache_hit" }, `${agentName}: cache hit`);
+                    return cached as { messages: BaseMessage[]; contributors: string[] };
+                }
+                span.setAttribute("cache.hit", false);
+            }
+        }
+
+        // ── Agent invocation with retries ────────────────────────────
         const maxRetries = 2;
         let lastError: Error | null = null;
 
@@ -25,6 +66,18 @@ export const safeAgentCall = async <T>(
             try {
                 const result = await fn() as { messages: BaseMessage[]; contributors: string[] };
                 span.setAttribute("agent.duration_ms", Date.now() - startMs);
+
+                // Cache the successful result
+                if (!options?.skipCache && semanticCache.isCacheable(agentName)) {
+                    const query = extractUserQuery(messages);
+                    if (query) {
+                        // Fire-and-forget cache write
+                        semanticCache.set(agentName, query, result).catch((err) => {
+                            logger.warn({ err, agentName }, "Cache set failed (non-fatal)");
+                        });
+                    }
+                }
+
                 return result;
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error(String(error));
@@ -92,19 +145,3 @@ export const createAgentResponse = (
 
     return response;
 };
-
-/**
- * Extract the user's original query from messages
- */
-export const extractUserQuery = (messages: BaseMessage[]): string => {
-    // Find the first human message (the original user request)
-    for (const msg of messages) {
-        if (msg._getType() === "human" && !("name" in msg)) {
-            return typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
-        }
-    }
-    // Fallback to last message content
-    const last = messages[messages.length - 1];
-    return typeof last?.content === "string" ? last.content : "";
-};
-
