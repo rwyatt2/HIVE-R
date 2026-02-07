@@ -1,6 +1,7 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
+import { optimizeDatabase } from "./db-init.js";
 import { logger } from "./logger.js";
 
 /**
@@ -14,6 +15,7 @@ const DB_PATH = process.env.MEMORY_DB_PATH || "./data/memory.db";
 
 // Initialize database
 const db = new Database(DB_PATH);
+optimizeDatabase(db);
 
 // Create tables if they don't exist
 db.exec(`

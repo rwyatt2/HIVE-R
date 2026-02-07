@@ -125,6 +125,7 @@ export function initOrgTables(): void {
 
         CREATE INDEX IF NOT EXISTS idx_org_members_user ON org_members(user_id);
         CREATE INDEX IF NOT EXISTS idx_org_invites_email ON org_invites(email);
+        CREATE INDEX IF NOT EXISTS idx_org_owner ON organizations(owner_id);
         CREATE INDEX IF NOT EXISTS idx_projects_org ON projects(org_id);
     `);
 

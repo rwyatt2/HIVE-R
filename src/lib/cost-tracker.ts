@@ -24,6 +24,9 @@
 
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
+import * as fs from "fs";
+import * as path from "path";
+import { optimizeDatabase } from "./db-init.js";
 import { logger } from "./logger.js";
 import type {
     LLMUsageEntry,
@@ -62,43 +65,46 @@ let db: Database.Database | null = null;
 
 function getDb(): Database.Database {
     if (!db) {
-        const { existsSync, mkdirSync } = require("fs");
-        const { dirname } = require("path");
-        const dbDir = dirname(DB_PATH);
-        if (!existsSync(dbDir)) {
-            mkdirSync(dbDir, { recursive: true });
+        const dbDir = path.dirname(DB_PATH);
+        if (!fs.existsSync(dbDir)) {
+            fs.mkdirSync(dbDir, { recursive: true });
         }
         db = new Database(DB_PATH);
+        optimizeDatabase(db);
+
+        // Create table + indexes inline so the table is always available
+        // before any budget check or query. Safe to run multiple times.
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS llm_usage (
+                id            TEXT PRIMARY KEY,
+                agent_name    TEXT NOT NULL,
+                model         TEXT NOT NULL,
+                tokens_in     INTEGER NOT NULL,
+                tokens_out    INTEGER NOT NULL,
+                cost_usd      REAL NOT NULL,
+                latency_ms    INTEGER NOT NULL,
+                thread_id     TEXT,
+                user_id       TEXT,
+                metadata      TEXT,
+                created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_agent   ON llm_usage(agent_name);
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_model   ON llm_usage(model);
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_created ON llm_usage(created_at);
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_user    ON llm_usage(user_id);
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_daily   ON llm_usage(created_at, agent_name);
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_covering ON llm_usage(created_at, agent_name, cost_usd, tokens_in, tokens_out);
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_thread  ON llm_usage(thread_id);
+            CREATE INDEX IF NOT EXISTS idx_llm_usage_model_date ON llm_usage(model, created_at);
+        `);
     }
     return db;
 }
 
 /** Initialize the llm_usage table and indexes. Safe to call multiple times. */
 export function initCostTrackingTable(): void {
-    const database = getDb();
-
-    database.exec(`
-        CREATE TABLE IF NOT EXISTS llm_usage (
-            id            TEXT PRIMARY KEY,
-            agent_name    TEXT NOT NULL,
-            model         TEXT NOT NULL,
-            tokens_in     INTEGER NOT NULL,
-            tokens_out    INTEGER NOT NULL,
-            cost_usd      REAL NOT NULL,
-            latency_ms    INTEGER NOT NULL,
-            thread_id     TEXT,
-            user_id       TEXT,
-            metadata      TEXT,
-            created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_llm_usage_agent   ON llm_usage(agent_name);
-        CREATE INDEX IF NOT EXISTS idx_llm_usage_model   ON llm_usage(model);
-        CREATE INDEX IF NOT EXISTS idx_llm_usage_created ON llm_usage(created_at);
-        CREATE INDEX IF NOT EXISTS idx_llm_usage_user    ON llm_usage(user_id);
-        CREATE INDEX IF NOT EXISTS idx_llm_usage_daily   ON llm_usage(created_at, agent_name);
-    `);
-
+    getDb(); // Table creation happens inside getDb() on first call
     logger.info('Cost tracking table initialized');
 }
 
@@ -172,21 +178,30 @@ export function logUsage(input: LogUsageInput): LLMUsageEntry {
 /**
  * Get total cost for a specific date (YYYY-MM-DD). Defaults to today.
  */
+// Cached prepared statement for getDailyCost (hot path — called on every LLM request)
+let dailyCostStmt: Database.Statement | null = null;
+
 export function getDailyCost(dateStr?: string): DailyCost {
     const database = getDb();
     const targetDate = dateStr || new Date().toISOString().split("T")[0]!;
 
-    const row = database.prepare(`
-        SELECT
-            date(created_at) as day,
-            COALESCE(SUM(cost_usd), 0) as total_cost,
-            COALESCE(SUM(tokens_in), 0) as total_tokens_in,
-            COALESCE(SUM(tokens_out), 0) as total_tokens_out,
-            COUNT(*) as call_count
-        FROM llm_usage
-        WHERE date(created_at) = ?
-    `).get(targetDate) as {
-        day: string | null;
+    // Range query uses the covering index instead of date() function scan
+    const dayStart = `${targetDate}T00:00:00.000Z`;
+    const dayEnd = `${targetDate}T23:59:59.999Z`;
+
+    if (!dailyCostStmt) {
+        dailyCostStmt = database.prepare(`
+            SELECT
+                COALESCE(SUM(cost_usd), 0) as total_cost,
+                COALESCE(SUM(tokens_in), 0) as total_tokens_in,
+                COALESCE(SUM(tokens_out), 0) as total_tokens_out,
+                COUNT(*) as call_count
+            FROM llm_usage
+            WHERE created_at >= ? AND created_at <= ?
+        `);
+    }
+
+    const row = dailyCostStmt.get(dayStart, dayEnd) as {
         total_cost: number;
         total_tokens_in: number;
         total_tokens_out: number;

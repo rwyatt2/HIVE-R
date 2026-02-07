@@ -11,6 +11,7 @@ import Database from "better-sqlite3";
 import { randomUUID, createHash, randomBytes } from "crypto";
 import { mkdirSync, existsSync } from "fs";
 import path from "path";
+import { optimizeDatabase } from "./db-init.js";
 import { getSecret } from "./secrets.js";
 
 // ============================================================================
@@ -60,6 +61,7 @@ export function getDb(): Database.Database {
         }
 
         db = new Database(DB_PATH);
+        optimizeDatabase(db);
 
         // Create auth tables
         db.exec(`
@@ -80,6 +82,7 @@ export function getDb(): Database.Database {
             
             CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
             CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
+            CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
         `);
     }
     return db;

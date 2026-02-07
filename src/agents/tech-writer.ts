@@ -7,6 +7,7 @@ import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
 const llm = createTrackedLLM("TechWriter", {
     modelName: "gpt-4o",
     temperature: 0.3,
+    enableRouting: true,
 });
 
 const TECH_WRITER_PROMPT = `${HIVE_PREAMBLE}

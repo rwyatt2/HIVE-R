@@ -7,8 +7,9 @@
 
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
-import { mkdirSync, existsSync } from "fs";
-import path from "path";
+import { existsSync, mkdirSync } from "fs";
+import * as path from "path";
+import { optimizeDatabase } from "./db-init.js";
 import { logger } from "./logger.js";
 
 // ============================================================================
@@ -54,6 +55,7 @@ function getDb(): Database.Database {
         }
 
         db = new Database(DB_PATH);
+        optimizeDatabase(db);
 
         // Create chat history tables if they don't exist
         db.exec(`
@@ -76,8 +78,10 @@ function getDb(): Database.Database {
             );
             
             CREATE INDEX IF NOT EXISTS idx_messages_session ON chat_messages(session_id);
+            CREATE INDEX IF NOT EXISTS idx_messages_session_ts ON chat_messages(session_id, timestamp);
             CREATE INDEX IF NOT EXISTS idx_sessions_user ON chat_sessions(user_id);
             CREATE INDEX IF NOT EXISTS idx_sessions_updated ON chat_sessions(updated_at);
+            CREATE INDEX IF NOT EXISTS idx_sessions_user_updated ON chat_sessions(user_id, updated_at);
         `);
     }
     return db;

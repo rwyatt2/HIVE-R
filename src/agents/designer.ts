@@ -8,6 +8,7 @@ import { getDesignContext, getActiveFramework } from "../lib/design-system.js";
 const llm = createTrackedLLM("Designer", {
     modelName: "gpt-4o",
     temperature: 0.5,
+    enableRouting: true,
 });
 
 const DESIGNER_PROMPT = `${HIVE_PREAMBLE}

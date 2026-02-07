@@ -7,6 +7,7 @@ import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
 const llm = createTrackedLLM("Founder", {
     modelName: "gpt-4o",
     temperature: 0.7,
+    enableRouting: true,
 });
 
 const FOUNDER_PROMPT = `${HIVE_PREAMBLE}

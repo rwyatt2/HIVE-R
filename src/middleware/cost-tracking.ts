@@ -211,46 +211,203 @@ interface TrackedLLMOptions {
     temperature?: number;
     threadId?: string;
     userId?: string;
+    /** Set to true to enable intelligent model routing for this agent. */
+    enableRouting?: boolean;
     [key: string]: unknown;
 }
 
 /**
- * Create a ChatOpenAI instance with cost tracking automatically wired in.
+ * Create a ChatOpenAI instance with cost tracking and optional model routing.
  *
- * Replaces `new ChatOpenAI(...)` in all agent files.
- * Checks daily budget before creating the LLM — throws BudgetExceededError if over limit.
+ * When `enableRouting` is true, the LLM is wrapped in a proxy that:
+ * 1. At invoke() time, extracts the user query from messages
+ * 2. Estimates query complexity using keyword heuristics
+ * 3. Selects the cheapest model that can handle the task
+ * 4. Creates the actual ChatOpenAI with the selected model
+ *
+ * When `enableRouting` is false (default), uses the hardcoded modelName as before.
  *
  * @param agentName - The HIVE agent name (e.g., "Builder", "Security")
- * @param opts - ChatOpenAI options + optional threadId/userId
+ * @param opts - ChatOpenAI options + optional threadId/userId + enableRouting
  */
 export function createTrackedLLM(agentName: string, opts: TrackedLLMOptions = {}): ChatOpenAI {
-    const modelName = opts.modelName || "gpt-4o";
-    const { threadId, userId, ...llmOpts } = opts;
+    const defaultModelName = opts.modelName || "gpt-4o";
+    const { threadId, userId, enableRouting, ...llmOpts } = opts;
 
-    // Circuit breaker check — throws if model circuit is open
+    // If routing is not enabled, use the original static behavior
+    if (!enableRouting) {
+        return createStaticLLM(agentName, defaultModelName, llmOpts, { threadId, userId });
+    }
+
+    // Routing enabled: create a lazy proxy that selects model at invoke() time
+    return createRoutedLLM(agentName, defaultModelName, llmOpts, { threadId, userId });
+}
+
+/**
+ * Original static LLM factory (no routing).
+ */
+function createStaticLLM(
+    agentName: string,
+    modelName: string,
+    llmOpts: Record<string, unknown>,
+    context: { threadId?: string; userId?: string },
+): ChatOpenAI {
+    // Circuit breaker check
     const cb = circuitBreakerRegistry.get(modelName);
     if (!cb.canExecute()) {
         throw new CircuitOpenError(modelName, cb.remainingTimeoutMs);
     }
 
-    // Budget check — throws if exceeded
+    // Budget check
     const budget = checkBudget();
     if (budget.exceeded) {
         throw new BudgetExceededError(budget.dailyCost, budget.budget);
     }
 
-    // Create callback handler
-    const callback = new CostTrackingCallback(agentName, modelName, { threadId, userId });
-
-    // Create LLM with callback
+    const callback = new CostTrackingCallback(agentName, modelName, context);
     const baseLLM = new ChatOpenAI({
         ...llmOpts,
         modelName,
         callbacks: [callback],
     });
 
-    // Wrap with retry-enabled proxy
     return wrapWithRetry(baseLLM, agentName);
+}
+
+/**
+ * Routing-aware LLM factory.
+ * Returns a proxy that dynamically selects the model based on query complexity.
+ */
+function createRoutedLLM(
+    agentName: string,
+    fallbackModelName: string,
+    llmOpts: Record<string, unknown>,
+    context: { threadId?: string; userId?: string },
+): ChatOpenAI {
+    // Import model router lazily to avoid circular deps at module init
+    let selectModelForQuery: typeof import("../lib/model-router.js").selectModelForQuery;
+    let recordRoutingSuccess: typeof import("../lib/model-router.js").recordRoutingSuccess;
+    let recordRoutingFailure: typeof import("../lib/model-router.js").recordRoutingFailure;
+
+    const loadRouter = async () => {
+        if (!selectModelForQuery) {
+            const mod = await import("../lib/model-router.js");
+            selectModelForQuery = mod.selectModelForQuery;
+            recordRoutingSuccess = mod.recordRoutingSuccess;
+            recordRoutingFailure = mod.recordRoutingFailure;
+        }
+    };
+
+    // Create a placeholder LLM with the fallback model (needed for proxy target)
+    const placeholderLLM = new ChatOpenAI({
+        ...llmOpts,
+        modelName: fallbackModelName,
+    });
+
+    return new Proxy(placeholderLLM, {
+        get(target, prop, receiver) {
+            const value = Reflect.get(target, prop, receiver);
+
+            // Intercept .invoke() to route dynamically
+            if (prop === "invoke" && typeof value === "function") {
+                return async (...args: any[]) => {
+                    await loadRouter();
+
+                    // Extract query text from messages
+                    const messages = args[0] as any[];
+                    const query = extractQueryFromMessages(messages);
+
+                    // Route to optimal model
+                    const decision = selectModelForQuery(agentName, query);
+
+                    // Budget + circuit breaker checks for selected model
+                    const budget = checkBudget();
+                    if (budget.exceeded) {
+                        throw new BudgetExceededError(budget.dailyCost, budget.budget);
+                    }
+                    const cb = circuitBreakerRegistry.get(decision.model);
+                    if (!cb.canExecute()) {
+                        throw new CircuitOpenError(decision.model, cb.remainingTimeoutMs);
+                    }
+
+                    // Create LLM with routed model
+                    const callback = new CostTrackingCallback(agentName, decision.model, context);
+                    const routedLLM = new ChatOpenAI({
+                        ...llmOpts,
+                        modelName: decision.model,
+                        callbacks: [callback],
+                    });
+
+                    try {
+                        const result = await withRetry(
+                            () => routedLLM.invoke(args[0] as any, args[1] as any),
+                            { label: agentName },
+                        );
+                        recordRoutingSuccess(agentName, decision.tier);
+                        return result;
+                    } catch (err) {
+                        recordRoutingFailure(agentName, decision.tier);
+                        throw err;
+                    }
+                };
+            }
+
+            // For .withStructuredOutput() and .bindTools(), delegate to the fallback model
+            // (these are complex chains and not easily routed at invoke-time)
+            if (prop === "withStructuredOutput" && typeof value === "function") {
+                return (...args: any[]) => {
+                    const callback = new CostTrackingCallback(agentName, fallbackModelName, context);
+                    const staticLLM = new ChatOpenAI({
+                        ...llmOpts,
+                        modelName: fallbackModelName,
+                        callbacks: [callback],
+                    });
+                    return wrapWithRetry(staticLLM, agentName).withStructuredOutput(args[0] as any, args[1] as any);
+                };
+            }
+
+            if (prop === "bindTools" && typeof value === "function") {
+                return (...args: any[]) => {
+                    const callback = new CostTrackingCallback(agentName, fallbackModelName, context);
+                    const staticLLM = new ChatOpenAI({
+                        ...llmOpts,
+                        modelName: fallbackModelName,
+                        callbacks: [callback],
+                    });
+                    return wrapWithRetry(staticLLM, agentName).bindTools(args[0] as any, args[1] as any);
+                };
+            }
+
+            return value;
+        },
+    }) as ChatOpenAI;
+}
+
+/**
+ * Extract the user query text from LangChain messages for routing.
+ */
+function extractQueryFromMessages(messages: any[]): string {
+    // Find the last HumanMessage without a name (the user's actual query)
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        if (msg && typeof msg === "object") {
+            // Check for SystemMessage — skip those
+            const type = msg._getType?.() ?? msg.constructor?.name;
+            if (type === "system" || type === "SystemMessage") continue;
+
+            // Check for HumanMessage from actual user (not agent outputs)
+            if (type === "human" || type === "HumanMessage") {
+                const name = msg.name ?? msg.additional_kwargs?.name;
+                if (!name) {
+                    return typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+                }
+            }
+        }
+    }
+
+    // Fallback: use last message content
+    const last = messages[messages.length - 1];
+    return typeof last?.content === "string" ? last.content : "";
 }
 
 // ============================================================================

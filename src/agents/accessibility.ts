@@ -7,6 +7,7 @@ import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
 const llm = createTrackedLLM("Accessibility", {
     modelName: "gpt-4o",
     temperature: 0.2,
+    enableRouting: true,
 });
 
 const A11Y_PROMPT = `${HIVE_PREAMBLE}

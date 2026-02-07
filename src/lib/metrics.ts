@@ -204,3 +204,52 @@ export function recordCacheMiss(agent: string): void {
 export function observeCacheLatency(operation: string, durationSec: number): void {
     cacheLatency.observe({ operation }, durationSec);
 }
+
+// ============================================================================
+// MODEL ROUTING METRICS
+// ============================================================================
+
+/** Model routing decisions by agent, tier, and selected model. */
+export const modelRoutingTotal = new client.Counter({
+    name: "hive_model_routing_total",
+    help: "Total model routing decisions",
+    labelNames: ["agent", "tier", "model"] as const,
+    registers: [register],
+});
+
+/** Estimated cost savings from routing to cheaper models (USD). */
+export const routingSavingsTotal = new client.Counter({
+    name: "hive_model_routing_savings_dollars",
+    help: "Estimated cost savings from model routing in USD",
+    registers: [register],
+});
+
+/** Auto-upgrade events when cheap models fail repeatedly. */
+export const modelUpgradesTotal = new client.Counter({
+    name: "hive_model_routing_upgrades_total",
+    help: "Auto-upgrade events when cheap model fails repeatedly",
+    labelNames: ["agent"] as const,
+    registers: [register],
+});
+
+/**
+ * Record a model routing decision.
+ */
+export function recordModelRouting(agent: string, tier: string, model: string): void {
+    modelRoutingTotal.inc({ agent, tier, model });
+}
+
+/**
+ * Record estimated savings from routing to a cheaper model.
+ */
+export function recordRoutingSavings(savingsUsd: number): void {
+    routingSavingsTotal.inc(savingsUsd);
+}
+
+/**
+ * Record an auto-upgrade event.
+ */
+export function recordModelUpgrade(agent: string): void {
+    modelUpgradesTotal.inc({ agent });
+}
+

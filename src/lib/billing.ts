@@ -132,6 +132,7 @@ export function initBillingTables(): void {
 
         CREATE INDEX IF NOT EXISTS idx_usage_customer ON usage_records(customer_id);
         CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage_records(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_usage_customer_ts ON usage_records(customer_id, timestamp);
         CREATE INDEX IF NOT EXISTS idx_billing_user ON billing_customers(user_id);
     `);
 
