@@ -107,4 +107,11 @@ app.get('/logs', (c) => {
     return c.json({ logs: [] });
 });
 
+// ============================================================================
+// SUB-ROUTERS
+// ============================================================================
+
+import costsRouter from "./admin/costs.js";
+app.route('/costs', costsRouter);
+
 export default app;

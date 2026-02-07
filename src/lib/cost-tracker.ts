@@ -440,6 +440,142 @@ export function formatCostSummary(period: "day" | "week" | "month" | "all" = "we
 }
 
 // ============================================================================
+// QUERIES: TOP QUERIES (most expensive individual calls)
+// ============================================================================
+
+export interface TopQuery {
+    id: string;
+    agentName: string;
+    model: string;
+    tokensIn: number;
+    tokensOut: number;
+    costUsd: number;
+    latencyMs: number;
+    threadId?: string;
+    createdAt: string;
+}
+
+/**
+ * Get the N most expensive individual LLM calls.
+ */
+export function getTopQueries(limit: number = 10, startDate?: string, endDate?: string): TopQuery[] {
+    const database = getDb();
+    const start = startDate || getDateOffset(-30);
+    const end = endDate || getDateOffset(1);
+
+    const rows = database.prepare(`
+        SELECT id, agent_name, model, tokens_in, tokens_out, cost_usd, latency_ms, thread_id, created_at
+        FROM llm_usage
+        WHERE created_at >= ? AND created_at < ?
+        ORDER BY cost_usd DESC
+        LIMIT ?
+    `).all(start, end, limit) as Array<{
+        id: string;
+        agent_name: string;
+        model: string;
+        tokens_in: number;
+        tokens_out: number;
+        cost_usd: number;
+        latency_ms: number;
+        thread_id: string | null;
+        created_at: string;
+    }>;
+
+    return rows.map((r) => ({
+        id: r.id,
+        agentName: r.agent_name,
+        model: r.model,
+        tokensIn: r.tokens_in,
+        tokensOut: r.tokens_out,
+        costUsd: r.cost_usd,
+        latencyMs: r.latency_ms,
+        threadId: r.thread_id || undefined,
+        createdAt: r.created_at,
+    }));
+}
+
+// ============================================================================
+// QUERIES: COST PROJECTION
+// ============================================================================
+
+export interface CostProjection {
+    currentDailyCost: number;
+    projectedMonthlyCost: number;
+    daysAnalyzed: number;
+    dailyAverage: number;
+    trend: "increasing" | "decreasing" | "stable";
+    trendPercentage: number;
+}
+
+/**
+ * Project monthly cost based on recent burn rate.
+ * Analyzes the last `daysToAnalyze` days and extrapolates to 30 days.
+ */
+export function getCostProjection(daysToAnalyze: number = 7): CostProjection {
+    const database = getDb();
+    const start = getDateOffset(-daysToAnalyze);
+    const end = getDateOffset(1);
+
+    // Get daily costs for the analysis window
+    const dailyRows = database.prepare(`
+        SELECT
+            date(created_at) as day,
+            SUM(cost_usd) as total_cost
+        FROM llm_usage
+        WHERE created_at >= ? AND created_at < ?
+        GROUP BY day
+        ORDER BY day ASC
+    `).all(start, end) as Array<{ day: string; total_cost: number }>;
+
+    const daysWithData = dailyRows.length;
+
+    if (daysWithData === 0) {
+        return {
+            currentDailyCost: 0,
+            projectedMonthlyCost: 0,
+            daysAnalyzed: 0,
+            dailyAverage: 0,
+            trend: "stable",
+            trendPercentage: 0,
+        };
+    }
+
+    const totalCost = dailyRows.reduce((sum, r) => sum + r.total_cost, 0);
+    const dailyAverage = totalCost / daysWithData;
+    const projectedMonthlyCost = Math.round(dailyAverage * 30 * 100) / 100;
+
+    // Calculate trend: compare first half to second half
+    let trend: "increasing" | "decreasing" | "stable" = "stable";
+    let trendPercentage = 0;
+
+    if (daysWithData >= 2) {
+        const mid = Math.floor(daysWithData / 2);
+        const firstHalf = dailyRows.slice(0, mid).reduce((s, r) => s + r.total_cost, 0) / mid;
+        const secondHalf = dailyRows.slice(mid).reduce((s, r) => s + r.total_cost, 0) / (daysWithData - mid);
+
+        if (firstHalf > 0) {
+            trendPercentage = Math.round(((secondHalf - firstHalf) / firstHalf) * 100);
+            if (trendPercentage > 5) trend = "increasing";
+            else if (trendPercentage < -5) trend = "decreasing";
+        }
+    }
+
+    // Today's cost
+    const todayStr = new Date().toISOString().split("T")[0]!;
+    const todayRow = dailyRows.find((r) => r.day === todayStr);
+    const currentDailyCost = todayRow?.total_cost || 0;
+
+    return {
+        currentDailyCost: Math.round(currentDailyCost * 1_000_000) / 1_000_000,
+        projectedMonthlyCost,
+        daysAnalyzed: daysWithData,
+        dailyAverage: Math.round(dailyAverage * 1_000_000) / 1_000_000,
+        trend,
+        trendPercentage,
+    };
+}
+
+// ============================================================================
 // HELPERS
 // ============================================================================
 
