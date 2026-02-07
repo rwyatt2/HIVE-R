@@ -9,6 +9,7 @@ import { ChromaClient, type Collection, type Where } from 'chromadb';
 import OpenAI from 'openai';
 import { randomUUID } from 'crypto';
 import { getSecret } from './secrets.js';
+import { logger } from './logger.js';
 
 // ============================================================================
 // CONFIGURATION
@@ -70,7 +71,7 @@ export async function initSemanticMemory(): Promise<void> {
         // Initialize OpenAI client
         const openaiKey = getSecret('OPENAI_API_KEY');
         if (!openaiKey) {
-            console.warn('⚠️ OPENAI_API_KEY not set - semantic memory disabled');
+            logger.warn('OPENAI_API_KEY not set — semantic memory disabled');
             return;
         }
 
@@ -90,15 +91,15 @@ export async function initSemanticMemory(): Promise<void> {
                 metadata: { description: 'HIVE-R agent memories' }
             });
 
-            console.log('✅ Semantic memory initialized with ChromaDB');
+            logger.info({ backend: 'chromadb' }, 'Semantic memory initialized with ChromaDB');
         } catch {
-            console.warn('⚠️ ChromaDB not available, using in-memory fallback');
+            logger.warn('ChromaDB not available, using in-memory fallback');
             useInMemoryFallback = true;
         }
 
         isInitialized = true;
     } catch (error) {
-        console.error('❌ Failed to initialize semantic memory:', error);
+        logger.error({ err: error }, 'Failed to initialize semantic memory');
     }
 }
 
@@ -177,7 +178,7 @@ export async function storeMemory(
 
         return memory;
     } catch (error) {
-        console.error('Failed to store memory:', error);
+        logger.error({ err: error }, 'Failed to store memory');
         throw error;
     }
 }
@@ -240,7 +241,7 @@ export async function searchMemories(
             score: 1 - (results.distances?.[0]?.[index] || 0)
         }));
     } catch (error) {
-        console.error('Memory search failed:', error);
+        logger.error({ err: error }, 'Memory search failed');
         return [];
     }
 }
@@ -351,7 +352,7 @@ export async function deleteThreadMemories(threadId: string): Promise<number> {
 
         return results.ids.length;
     } catch (error) {
-        console.error('Failed to delete thread memories:', error);
+        logger.error({ err: error }, 'Failed to delete thread memories');
         return 0;
     }
 }
@@ -385,7 +386,7 @@ export async function getSemanticMemoryStats(): Promise<SemanticMemoryStats> {
         baseStats.totalMemories = await memoryCollection.count();
         return baseStats;
     } catch (error) {
-        console.error('Failed to get memory stats:', error);
+        logger.error({ err: error }, 'Failed to get memory stats');
         return baseStats;
     }
 }

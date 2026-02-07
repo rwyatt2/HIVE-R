@@ -106,13 +106,13 @@ async function sendSlackAlert(alert: AlertRecord): Promise<boolean> {
         });
 
         if (!res.ok) {
-            logger.warn("🔔 Slack alert delivery failed", { status: res.status, statusText: res.statusText });
+            logger.warn({ status: res.status, statusText: res.statusText }, 'Slack alert delivery failed');
             return false;
         }
 
         return true;
     } catch (err) {
-        logger.warn("🔔 Slack alert error (graceful failure)", { error: (err as Error).message });
+        logger.warn({ err }, 'Slack alert error (graceful failure)');
         return false;
     }
 }
@@ -131,7 +131,7 @@ export async function checkBudgetAlerts(): Promise<AlertRecord[]> {
     if (today !== currentDay) {
         firedToday.clear();
         currentDay = today;
-        logger.info("🔔 Budget alerts: new day, reset thresholds", { date: today });
+        logger.info({ date: today }, 'Budget alerts: new day, reset thresholds');
     }
 
     // Get today's cost
@@ -139,7 +139,7 @@ export async function checkBudgetAlerts(): Promise<AlertRecord[]> {
     try {
         dailyCost = getDailyCost();
     } catch (err) {
-        logger.warn("🔔 Budget alert check failed: cannot read costs", { error: (err as Error).message });
+        logger.warn({ err }, 'Budget alert check failed: cannot read costs');
         return [];
     }
 
@@ -168,13 +168,13 @@ export async function checkBudgetAlerts(): Promise<AlertRecord[]> {
         };
 
         // Channel 1: Console + Logger (always)
-        const logMsg = `🔔 BUDGET ALERT: ${threshold.emoji} ${threshold.label} — $${dailyCost.totalCost.toFixed(4)} / $${DAILY_BUDGET} (${currentPercent.toFixed(1)}%)`;
-        console.log(logMsg);
+        const logMsg = `BUDGET ALERT: ${threshold.emoji} ${threshold.label} — $${dailyCost.totalCost.toFixed(4)} / $${DAILY_BUDGET} (${currentPercent.toFixed(1)}%)`;
+        logger.warn({ alert }, logMsg);
 
         if (threshold.level === "critical") {
-            logger.error(logMsg, { alert });
+            logger.error({ alert }, logMsg);
         } else {
-            logger.warn(logMsg, { alert });
+            logger.warn({ alert }, logMsg);
         }
         alert.channels.push("console", "logger");
 
@@ -215,22 +215,22 @@ export function startBudgetAlerts(): void {
         return;
     }
 
-    logger.info("🔔 Budget alert service started", {
+    logger.info({
         budget: `$${DAILY_BUDGET}`,
-        interval: "10 minutes",
-        thresholds: THRESHOLDS.map(t => `${t.percent}%`).join(", "),
+        interval: '10 minutes',
+        thresholds: THRESHOLDS.map(t => `${t.percent}%`).join(', '),
         slackEnabled: !!SLACK_WEBHOOK_URL,
-    });
+    }, 'Budget alert service started');
 
     // Run immediate check
     checkBudgetAlerts().catch(err => {
-        logger.error("🔔 Initial budget check failed", { error: (err as Error).message });
+        logger.error({ err }, 'Initial budget check failed');
     });
 
     // Schedule recurring checks
     intervalHandle = setInterval(() => {
         checkBudgetAlerts().catch(err => {
-            logger.error("🔔 Budget check failed", { error: (err as Error).message });
+            logger.error({ err }, 'Budget check failed');
         });
     }, CHECK_INTERVAL_MS);
 }

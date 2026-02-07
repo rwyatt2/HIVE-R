@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { logger } from "./logger.js";
 
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -14,22 +15,22 @@ const __dirname = dirname(__filename);
  */
 
 export type FrameworkPreset =
-    | "tailwind"
-    | "shadcn"
-    | "chakra"
-    | "mui"
-    | "radix"
-    | "ant"
-    | "bootstrap"
-    | "custom";
+  | "tailwind"
+  | "shadcn"
+  | "chakra"
+  | "mui"
+  | "radix"
+  | "ant"
+  | "bootstrap"
+  | "custom";
 
 interface DesignFramework {
-    name: string;
-    framework: FrameworkPreset;
-    description: string;
-    installCommand: string;
-    principles: string[];
-    bestPractices: string;
+  name: string;
+  framework: FrameworkPreset;
+  description: string;
+  installCommand: string;
+  principles: string[];
+  bestPractices: string;
 }
 
 // ============================================================================
@@ -37,12 +38,12 @@ interface DesignFramework {
 // ============================================================================
 
 function loadPrinciples(): string {
-    const principlesPath = join(__dirname, "../../design-systems/PRINCIPLES.md");
-    if (existsSync(principlesPath)) {
-        return readFileSync(principlesPath, "utf-8");
-    }
-    // Fallback if file not found
-    return `
+  const principlesPath = join(__dirname, "../../design-systems/PRINCIPLES.md");
+  if (existsSync(principlesPath)) {
+    return readFileSync(principlesPath, "utf-8");
+  }
+  // Fallback if file not found
+  return `
 ## 🎯 Design Principles
 
 See design-systems/PRINCIPLES.md for comprehensive guidelines.
@@ -57,18 +58,18 @@ const UNIVERSAL_DESIGN_PRINCIPLES = loadPrinciples();
 // ============================================================================
 
 const FRAMEWORKS: Record<FrameworkPreset, DesignFramework> = {
-    tailwind: {
-        name: "Tailwind CSS",
-        framework: "tailwind",
-        description: "Utility-first CSS framework",
-        installCommand: "npm install tailwindcss postcss autoprefixer && npx tailwindcss init -p",
-        principles: [
-            "Utility-first approach - compose styles from utility classes",
-            "Use @apply sparingly - only for frequently repeated patterns",
-            "Leverage Tailwind's color palette (slate, zinc, neutral, stone)",
-            "Use arbitrary values sparingly - prefer design tokens",
-        ],
-        bestPractices: `
+  tailwind: {
+    name: "Tailwind CSS",
+    framework: "tailwind",
+    description: "Utility-first CSS framework",
+    installCommand: "npm install tailwindcss postcss autoprefixer && npx tailwindcss init -p",
+    principles: [
+      "Utility-first approach - compose styles from utility classes",
+      "Use @apply sparingly - only for frequently repeated patterns",
+      "Leverage Tailwind's color palette (slate, zinc, neutral, stone)",
+      "Use arbitrary values sparingly - prefer design tokens",
+    ],
+    bestPractices: `
 ### Tailwind Best Practices
 
 **Component Structure**
@@ -100,20 +101,20 @@ Use \`dark:\` variant: \`bg-white dark:bg-zinc-900\`
 **Responsive**
 Mobile-first with breakpoint prefixes: \`md:flex lg:grid\`
 `,
-    },
+  },
 
-    shadcn: {
-        name: "shadcn/ui",
-        framework: "shadcn",
-        description: "Beautifully designed components built with Radix + Tailwind",
-        installCommand: "npx shadcn@latest init",
-        principles: [
-            "Copy-paste components - own your code",
-            "Built on Radix primitives for accessibility",
-            "Use CSS variables for theming",
-            "Compose from primitive components",
-        ],
-        bestPractices: `
+  shadcn: {
+    name: "shadcn/ui",
+    framework: "shadcn",
+    description: "Beautifully designed components built with Radix + Tailwind",
+    installCommand: "npx shadcn@latest init",
+    principles: [
+      "Copy-paste components - own your code",
+      "Built on Radix primitives for accessibility",
+      "Use CSS variables for theming",
+      "Compose from primitive components",
+    ],
+    bestPractices: `
 ### shadcn/ui Best Practices
 
 **Theme Variables** (globals.css)
@@ -146,20 +147,20 @@ npx shadcn@latest add button card dialog
 Modify CSS variables in globals.css for instant theme changes.
 Components automatically adapt to light/dark mode.
 `,
-    },
+  },
 
-    chakra: {
-        name: "Chakra UI",
-        framework: "chakra",
-        description: "Simple, modular and accessible component library",
-        installCommand: "npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion",
-        principles: [
-            "Use theme tokens via props - not inline styles",
-            "Leverage the style props API consistently",
-            "Use Chakra's built-in responsive array syntax",
-            "Extend theme for custom branding",
-        ],
-        bestPractices: `
+  chakra: {
+    name: "Chakra UI",
+    framework: "chakra",
+    description: "Simple, modular and accessible component library",
+    installCommand: "npm install @chakra-ui/react @emotion/react @emotion/styled framer-motion",
+    principles: [
+      "Use theme tokens via props - not inline styles",
+      "Leverage the style props API consistently",
+      "Use Chakra's built-in responsive array syntax",
+      "Extend theme for custom branding",
+    ],
+    bestPractices: `
 ### Chakra UI Best Practices
 
 **Style Props**
@@ -196,20 +197,20 @@ const theme = extendTheme({
 **Components**
 Use semantic components: Box, Flex, Stack, Grid, Container
 `,
-    },
+  },
 
-    mui: {
-        name: "Material UI",
-        framework: "mui",
-        description: "React components implementing Material Design",
-        installCommand: "npm install @mui/material @emotion/react @emotion/styled",
-        principles: [
-            "Use the sx prop for one-off styling",
-            "Use styled() for reusable styled components",
-            "Leverage theme.spacing() for consistent spacing",
-            "Use Material Design patterns correctly",
-        ],
-        bestPractices: `
+  mui: {
+    name: "Material UI",
+    framework: "mui",
+    description: "React components implementing Material Design",
+    installCommand: "npm install @mui/material @emotion/react @emotion/styled",
+    principles: [
+      "Use the sx prop for one-off styling",
+      "Use styled() for reusable styled components",
+      "Leverage theme.spacing() for consistent spacing",
+      "Use Material Design patterns correctly",
+    ],
+    bestPractices: `
 ### Material UI Best Practices
 
 **sx Prop**
@@ -246,20 +247,20 @@ const theme = createTheme({
 **Grid System**
 Use Grid2 for layouts with consistent gutters.
 `,
-    },
+  },
 
-    radix: {
-        name: "Radix Primitives",
-        framework: "radix",
-        description: "Unstyled, accessible components for building design systems",
-        installCommand: "npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu",
-        principles: [
-            "Radix handles behavior and accessibility - you handle styling",
-            "Use data attributes for styling states",
-            "Compose primitives for complex components",
-            "Pair with Tailwind or CSS Modules",
-        ],
-        bestPractices: `
+  radix: {
+    name: "Radix Primitives",
+    framework: "radix",
+    description: "Unstyled, accessible components for building design systems",
+    installCommand: "npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu",
+    principles: [
+      "Radix handles behavior and accessibility - you handle styling",
+      "Use data attributes for styling states",
+      "Compose primitives for complex components",
+      "Pair with Tailwind or CSS Modules",
+    ],
+    bestPractices: `
 ### Radix Best Practices
 
 **Styling with Data Attributes**
@@ -291,20 +292,20 @@ Use Grid2 for layouts with consistent gutters.
 **Accessibility**
 Already handled - focus trapping, keyboard nav, ARIA attributes.
 `,
-    },
+  },
 
-    ant: {
-        name: "Ant Design",
-        framework: "ant",
-        description: "Enterprise-class UI design language",
-        installCommand: "npm install antd",
-        principles: [
-            "Use ConfigProvider for global theming",
-            "Follow Ant's spacing and layout conventions",
-            "Use Form component for complex forms",
-            "Leverage built-in icons and patterns",
-        ],
-        bestPractices: `
+  ant: {
+    name: "Ant Design",
+    framework: "ant",
+    description: "Enterprise-class UI design language",
+    installCommand: "npm install antd",
+    principles: [
+      "Use ConfigProvider for global theming",
+      "Follow Ant's spacing and layout conventions",
+      "Use Form component for complex forms",
+      "Leverage built-in icons and patterns",
+    ],
+    bestPractices: `
 ### Ant Design Best Practices
 
 **Theme Customization**
@@ -334,20 +335,20 @@ Already handled - focus trapping, keyboard nav, ARIA attributes.
 **Tables**
 Use Table component with columns definition for data grids.
 `,
-    },
+  },
 
-    bootstrap: {
-        name: "Bootstrap 5",
-        framework: "bootstrap",
-        description: "Popular CSS framework for responsive design",
-        installCommand: "npm install bootstrap react-bootstrap",
-        principles: [
-            "Use Bootstrap's grid system for layouts",
-            "Leverage utility classes for spacing and sizing",
-            "Use CSS variables for customization",
-            "Prefer React-Bootstrap components",
-        ],
-        bestPractices: `
+  bootstrap: {
+    name: "Bootstrap 5",
+    framework: "bootstrap",
+    description: "Popular CSS framework for responsive design",
+    installCommand: "npm install bootstrap react-bootstrap",
+    principles: [
+      "Use Bootstrap's grid system for layouts",
+      "Leverage utility classes for spacing and sizing",
+      "Use CSS variables for customization",
+      "Prefer React-Bootstrap components",
+    ],
+    bestPractices: `
 ### Bootstrap Best Practices
 
 **Grid**
@@ -369,20 +370,20 @@ Use Table component with columns definition for data grids.
 **Customization**
 Use SCSS variables or CSS custom properties.
 `,
-    },
+  },
 
-    custom: {
-        name: "Custom CSS",
-        framework: "custom",
-        description: "Vanilla CSS or custom solution",
-        installCommand: "N/A",
-        principles: [
-            "Use CSS custom properties for theming",
-            "Follow BEM or similar naming convention",
-            "Use CSS Grid and Flexbox for layouts",
-            "Minimize specificity conflicts",
-        ],
-        bestPractices: `
+  custom: {
+    name: "Custom CSS",
+    framework: "custom",
+    description: "Vanilla CSS or custom solution",
+    installCommand: "N/A",
+    principles: [
+      "Use CSS custom properties for theming",
+      "Follow BEM or similar naming convention",
+      "Use CSS Grid and Flexbox for layouts",
+      "Minimize specificity conflicts",
+    ],
+    bestPractices: `
 ### Custom CSS Best Practices
 
 **CSS Variables**
@@ -411,32 +412,32 @@ Use SCSS variables or CSS custom properties.
 }
 \`\`\`
 `,
-    },
+  },
 };
 
 /**
  * Get full design context for agents
  */
 export function getDesignContext(framework: FrameworkPreset = "tailwind", tokensPath?: string): string {
-    const fw = FRAMEWORKS[framework];
+  const fw = FRAMEWORKS[framework];
 
-    // Try to load custom tokens
-    let tokenContext = "";
-    if (tokensPath || process.env.HIVE_DESIGN_TOKENS) {
-        const path = tokensPath || process.env.HIVE_DESIGN_TOKENS;
-        try {
-            // Dynamic import to avoid circular dependency
-            const { loadTokens, formatTokensForPrompt } = require("./token-mapper.js");
-            const tokens = loadTokens(path);
-            if (tokens) {
-                tokenContext = formatTokensForPrompt(tokens, framework);
-            }
-        } catch (e) {
-            console.warn("⚠️ Could not load token mapper:", e);
-        }
+  // Try to load custom tokens
+  let tokenContext = "";
+  if (tokensPath || process.env.HIVE_DESIGN_TOKENS) {
+    const path = tokensPath || process.env.HIVE_DESIGN_TOKENS;
+    try {
+      // Dynamic import to avoid circular dependency
+      const { loadTokens, formatTokensForPrompt } = require("./token-mapper.js");
+      const tokens = loadTokens(path);
+      if (tokens) {
+        tokenContext = formatTokensForPrompt(tokens, framework);
+      }
+    } catch (e) {
+      logger.warn({ err: e }, 'Could not load token mapper');
     }
+  }
 
-    return `
+  return `
 # Design Framework: ${fw.name}
 
 ${fw.description}
@@ -461,22 +462,22 @@ ${UNIVERSAL_DESIGN_PRINCIPLES}
  * Get current framework from env
  */
 export function getActiveFramework(): FrameworkPreset {
-    const fw = process.env.HIVE_DESIGN_FRAMEWORK as FrameworkPreset;
-    return FRAMEWORKS[fw] ? fw : "tailwind";
+  const fw = process.env.HIVE_DESIGN_FRAMEWORK as FrameworkPreset;
+  return FRAMEWORKS[fw] ? fw : "tailwind";
 }
 
 /**
  * List available frameworks
  */
 export function listFrameworks(): FrameworkPreset[] {
-    return Object.keys(FRAMEWORKS) as FrameworkPreset[];
+  return Object.keys(FRAMEWORKS) as FrameworkPreset[];
 }
 
 /**
  * Get framework info
  */
 export function getFrameworkInfo(framework: FrameworkPreset): DesignFramework {
-    return FRAMEWORKS[framework];
+  return FRAMEWORKS[framework];
 }
 
 export { FRAMEWORKS, UNIVERSAL_DESIGN_PRINCIPLES };

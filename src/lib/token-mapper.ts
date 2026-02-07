@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from "fs";
 import type { FrameworkPreset } from "./design-system.js";
+import { logger } from "./logger.js";
 
 /**
  * Design Token Mapper
@@ -8,58 +9,58 @@ import type { FrameworkPreset } from "./design-system.js";
  */
 
 export interface DesignTokens {
-    brand?: string;
-    colors: {
-        primary: string;
-        secondary?: string;
-        accent?: string;
-        background: string;
-        foreground: string;
-        muted?: string;
-        border?: string;
-        success?: string;
-        warning?: string;
-        error?: string;
-    };
-    darkColors?: {
-        background?: string;
-        foreground?: string;
-        muted?: string;
-        border?: string;
-    };
-    typography: {
-        fontFamily: string;
-        fontMono?: string;
-        fontSizes?: Record<string, string>;
-    };
-    spacing?: {
-        unit: number;
-        scale?: number[];
-    };
-    radius?: Record<string, string>;
-    shadows?: Record<string, string>;
+  brand?: string;
+  colors: {
+    primary: string;
+    secondary?: string;
+    accent?: string;
+    background: string;
+    foreground: string;
+    muted?: string;
+    border?: string;
+    success?: string;
+    warning?: string;
+    error?: string;
+  };
+  darkColors?: {
+    background?: string;
+    foreground?: string;
+    muted?: string;
+    border?: string;
+  };
+  typography: {
+    fontFamily: string;
+    fontMono?: string;
+    fontSizes?: Record<string, string>;
+  };
+  spacing?: {
+    unit: number;
+    scale?: number[];
+  };
+  radius?: Record<string, string>;
+  shadows?: Record<string, string>;
 }
 
 /**
  * Load tokens from file
  */
 export function loadTokens(path: string): DesignTokens | null {
-    if (!existsSync(path)) {
-        return null;
-    }
-    try {
-        return JSON.parse(readFileSync(path, "utf-8")) as DesignTokens;
-    } catch {
-        console.warn(`⚠️ Failed to load tokens from ${path}`);
-        return null;
-    }
+  if (!existsSync(path)) {
+    return null;
+  }
+  try {
+    return JSON.parse(readFileSync(path, "utf-8")) as DesignTokens;
+  } catch {
+    logger.warn({ path }, `Failed to load tokens from ${path}`);
+    return null;
+  }
 }
 
 /**
  * Map tokens to Tailwind config
  */
 export function tokensToTailwind(tokens: DesignTokens): string {
-    return `
+  return `
 // tailwind.config.js
 module.exports = {
   darkMode: 'class',
@@ -90,7 +91,7 @@ module.exports = {
  * Map tokens to CSS Variables
  */
 export function tokensToCSSVariables(tokens: DesignTokens): string {
-    return `
+  return `
 /* globals.css - Works with shadcn/ui, Radix, or any framework */
 :root {
   /* Colors */
@@ -125,7 +126,7 @@ export function tokensToCSSVariables(tokens: DesignTokens): string {
  * Map tokens to Chakra theme
  */
 export function tokensToChakra(tokens: DesignTokens): string {
-    return `
+  return `
 // theme.ts - Chakra UI theme extension
 import { extendTheme } from '@chakra-ui/react'
 
@@ -154,7 +155,7 @@ export const theme = extendTheme({
  * Map tokens to MUI theme
  */
 export function tokensToMUI(tokens: DesignTokens): string {
-    return `
+  return `
 // theme.ts - Material UI theme
 import { createTheme } from '@mui/material/styles';
 
@@ -183,32 +184,32 @@ export const theme = createTheme({
  * Map tokens to any framework
  */
 export function mapTokensToFramework(
-    tokens: DesignTokens,
-    framework: FrameworkPreset
+  tokens: DesignTokens,
+  framework: FrameworkPreset
 ): string {
-    switch (framework) {
-        case "tailwind":
-        case "shadcn":
-            return `${tokensToCSSVariables(tokens)}\n\n${tokensToTailwind(tokens)}`;
-        case "chakra":
-            return tokensToChakra(tokens);
-        case "mui":
-            return tokensToMUI(tokens);
-        case "radix":
-        case "custom":
-            return tokensToCSSVariables(tokens);
-        default:
-            return tokensToCSSVariables(tokens);
-    }
+  switch (framework) {
+    case "tailwind":
+    case "shadcn":
+      return `${tokensToCSSVariables(tokens)}\n\n${tokensToTailwind(tokens)}`;
+    case "chakra":
+      return tokensToChakra(tokens);
+    case "mui":
+      return tokensToMUI(tokens);
+    case "radix":
+    case "custom":
+      return tokensToCSSVariables(tokens);
+    default:
+      return tokensToCSSVariables(tokens);
+  }
 }
 
 /**
  * Format tokens for agent prompt
  */
 export function formatTokensForPrompt(tokens: DesignTokens, framework: FrameworkPreset): string {
-    const frameworkConfig = mapTokensToFramework(tokens, framework);
+  const frameworkConfig = mapTokensToFramework(tokens, framework);
 
-    return `
+  return `
 ## 🎨 Design Tokens (${tokens.brand || "Custom"})
 
 **Apply these exact tokens when building UI.**
@@ -231,17 +232,17 @@ ${frameworkConfig}
 
 // Helper functions
 function lighten(hex: string, amount: number): string {
-    const num = parseInt(hex.replace("#", ""), 16);
-    const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * amount));
-    const g = Math.min(255, Math.floor(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * amount));
-    const b = Math.min(255, Math.floor((num & 0x0000FF) + (255 - (num & 0x0000FF)) * amount));
-    return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, "0")}`;
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * amount));
+  const g = Math.min(255, Math.floor(((num >> 8) & 0x00FF) + (255 - ((num >> 8) & 0x00FF)) * amount));
+  const b = Math.min(255, Math.floor((num & 0x0000FF) + (255 - (num & 0x0000FF)) * amount));
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, "0")}`;
 }
 
 function darken(hex: string, amount: number): string {
-    const num = parseInt(hex.replace("#", ""), 16);
-    const r = Math.max(0, Math.floor((num >> 16) * (1 - amount)));
-    const g = Math.max(0, Math.floor(((num >> 8) & 0x00FF) * (1 - amount)));
-    const b = Math.max(0, Math.floor((num & 0x0000FF) * (1 - amount)));
-    return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, "0")}`;
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = Math.max(0, Math.floor((num >> 16) * (1 - amount)));
+  const g = Math.max(0, Math.floor(((num >> 8) & 0x00FF) * (1 - amount)));
+  const b = Math.max(0, Math.floor((num & 0x0000FF) * (1 - amount)));
+  return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, "0")}`;
 }

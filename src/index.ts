@@ -12,6 +12,7 @@ import { checkpointer } from "./lib/memory.js";
 
 // Middleware
 import { requestLogger, rateLimiter, errorHandler, cors } from "./lib/middleware.js";
+import { logger } from "./lib/logger.js";
 import { authMiddleware, isAuthEnabled } from "./lib/auth.js";
 import { jwtAuthMiddleware, type AuthUser } from "./middleware/auth.js";
 
@@ -68,7 +69,7 @@ import chatRouter from "./routers/chat.js"; // ✅ Hardened Chat Router
 // Initialize Phase 15 features
 orgs.initOrgTables();
 billing.initBillingTables();
-initSemanticMemory().catch(err => console.warn('Semantic memory init failed:', err));
+initSemanticMemory().catch(err => logger.warn({ err }, 'Semantic memory init failed'));
 
 // ✅ LLM Cost Tracking
 import { initCostTrackingTable } from "./lib/cost-tracker.js";
@@ -1307,27 +1308,13 @@ app.post('/webhooks/stripe', async (c) => {
 
 const port = parseInt(process.env.PORT || "3000");
 
-console.log(`
-🐝 HIVE-R v1.0.0 — A+ Grade Server
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Agents: ${HIVE_MEMBERS.length}
-💾 Persistence: SQLite
-🌊 Streaming: Enabled
-🔒 Rate Limiting: 30 req/min
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Endpoints:
-  POST /chat           Full orchestration
-  POST /chat/stream    SSE streaming
-  GET  /health         Health check
-  
-Subgraph Workflows:
-  POST /workflow/strategy
-  POST /workflow/design
-  POST /workflow/build
-  POST /workflow/ship
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Listening on port ${port}
-`);
+logger.info({
+    agents: HIVE_MEMBERS.length,
+    persistence: 'SQLite',
+    streaming: true,
+    rateLimiting: '30 req/min',
+    port,
+}, `HIVE-R v1.0.0 server starting on port ${port}`);
 
 serve({
     fetch: app.fetch,

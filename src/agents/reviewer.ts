@@ -3,6 +3,8 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { CodeReviewSchema } from "../lib/artifacts.js";
+import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
+import { logger } from "../lib/logger.js";
 
 const llm = createTrackedLLM("Reviewer", {
     modelName: "gpt-4o",
@@ -97,7 +99,7 @@ ${artifact.praise.map(p => `- ${p}`).join("\n")}`;
             contributors: ["Reviewer"],
         };
     } catch (error) {
-        console.error("❌ Reviewer failed:", error);
+        logger.error({ err: error, agentName: "Reviewer" }, "Reviewer failed");
         return {
             messages: [
                 new HumanMessage({

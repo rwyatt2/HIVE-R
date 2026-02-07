@@ -13,6 +13,7 @@
 import Database from "better-sqlite3";
 import { mkdirSync, existsSync } from "fs";
 import path from "path";
+import { logger } from "./logger.js";
 
 // ============================================================================
 // CONFIGURATION
@@ -102,7 +103,7 @@ export function logAuditEvent(event: AuditEvent): void {
     };
 
     // Console output in JSON Lines format (for log aggregators)
-    console.log(JSON.stringify(logEntry));
+    logger.info(logEntry, `audit:${logEntry.eventType}`);
 
     // Optional: Write to SQLite
     if (AUDIT_TO_DB) {
@@ -126,7 +127,7 @@ export function logAuditEvent(event: AuditEvent): void {
                 logEntry.success !== undefined ? (logEntry.success ? 1 : 0) : null
             );
         } catch (error) {
-            console.error("Failed to write audit log to DB:", error);
+            logger.error({ err: error }, 'Failed to write audit log to DB');
         }
     }
 }
@@ -295,7 +296,7 @@ export function queryAuditLogs(options: {
     offset?: number;
 }): AuditEvent[] {
     if (!AUDIT_TO_DB) {
-        console.warn("Audit DB not enabled. Set AUDIT_TO_DB=true");
+        logger.warn('Audit DB not enabled. Set AUDIT_TO_DB=true');
         return [];
     }
 
@@ -364,7 +365,7 @@ export function cleanupAuditLogs(): number {
         "DELETE FROM audit_log WHERE timestamp < ?"
     ).run(cutoff);
 
-    console.log(`🧹 Cleaned up ${result.changes} audit logs older than ${RETENTION_DAYS} days`);
+    logger.info({ cleaned: result.changes, retentionDays: RETENTION_DAYS }, `Cleaned up ${result.changes} audit logs older than ${RETENTION_DAYS} days`);
     return result.changes;
 }
 

@@ -3,6 +3,7 @@ import { StateGraph, START, END } from "@langchain/langgraph";
 import { AgentState } from "./lib/state.js";
 import { checkpointer } from "./lib/memory.js";
 import { routerNode, HIVE_MEMBERS } from "./agents/router.js";
+import { logger } from "./lib/logger.js";
 
 // Agents
 import { founderNode } from "./agents/founder.js";
@@ -63,12 +64,12 @@ workflow.addConditionalEdges(
     "Builder",
     (state) => {
         if (state.needsRetry) {
-            console.error("🔄 Builder self-loop triggered");
+            logger.info({ event: 'self_loop', agentName: 'Builder' }, 'Builder self-loop triggered');
             return "Builder";
         }
         // Check for direct handoff
         if (state.next && HIVE_MEMBERS.includes(state.next as any)) {
-            console.error(`📡 Direct handoff: Builder → ${state.next}`);
+            logger.info({ event: 'handoff', from: 'Builder', to: state.next }, `Direct handoff: Builder → ${state.next}`);
             return state.next;
         }
         return "Router";
@@ -86,7 +87,7 @@ function createAgentRouter(agentName: string) {
     return (state: typeof AgentState.State) => {
         // Check for direct handoff via state.next
         if (state.next && state.next !== "Router" && HIVE_MEMBERS.includes(state.next as any)) {
-            console.error(`📡 Direct handoff: ${agentName} → ${state.next}`);
+            logger.info({ event: 'handoff', from: agentName, to: state.next }, `Direct handoff: ${agentName} → ${state.next}`);
             return state.next;
         }
         return "Router";

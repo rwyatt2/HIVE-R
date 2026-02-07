@@ -6,6 +6,7 @@
  */
 
 import { getSecret } from "./secrets.js";
+import { logger } from "./logger.js";
 
 // Sentry module reference - will be dynamically imported
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +27,7 @@ export async function initSentry(): Promise<boolean> {
     const dsn = getSecret("SENTRY_DSN");
 
     if (!dsn) {
-        console.log("ℹ️ Sentry disabled (SENTRY_DSN not set)");
+        logger.info('Sentry disabled (SENTRY_DSN not set)');
         return false;
     }
 
@@ -45,7 +46,7 @@ export async function initSentry(): Promise<boolean> {
             // Only capture errors in production by default
             beforeSend(event: { message?: string }) {
                 if (process.env.NODE_ENV !== "production" && !process.env.SENTRY_DEV) {
-                    console.log("🔍 Sentry event (dev mode, not sent):", event.message);
+                    logger.debug({ sentryEvent: event.message }, 'Sentry event (dev mode, not sent)');
                     return null; // Don't send in dev unless explicitly enabled
                 }
                 return event;
@@ -53,10 +54,10 @@ export async function initSentry(): Promise<boolean> {
         });
 
         isInitialized = true;
-        console.log("✅ Sentry initialized");
+        logger.info('Sentry initialized');
         return true;
     } catch (error) {
-        console.warn("⚠️ Sentry initialization failed:", error);
+        logger.warn({ err: error }, 'Sentry initialization failed');
         return false;
     }
 }
@@ -77,7 +78,7 @@ export interface ErrorContext {
  */
 export function captureError(error: Error, context?: ErrorContext): string | null {
     if (!Sentry || !isInitialized) {
-        console.error("❌ Error (Sentry disabled):", error.message, context);
+        logger.error({ err: error, ...context }, `Error (Sentry disabled): ${error.message}`);
         return null;
     }
 
@@ -89,7 +90,7 @@ export function captureError(error: Error, context?: ErrorContext): string | nul
         },
     });
 
-    console.error(`❌ Error captured [${eventId}]:`, error.message);
+    logger.error({ eventId, err: error }, `Error captured [${eventId}]: ${error.message}`);
     return eventId;
 }
 
@@ -98,7 +99,7 @@ export function captureError(error: Error, context?: ErrorContext): string | nul
  */
 export function captureMessage(message: string, level: "info" | "warning" | "error" = "info", context?: ErrorContext): string | null {
     if (!Sentry || !isInitialized) {
-        console.log(`ℹ️ Message (Sentry disabled): ${message}`);
+        logger.info(`Message (Sentry disabled): ${message}`);
         return null;
     }
 

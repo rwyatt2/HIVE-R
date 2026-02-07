@@ -3,6 +3,7 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { TechPlanSchema, type TechPlan } from "../lib/artifacts.js";
+import { logger } from "../lib/logger.js";
 
 const llm = createTrackedLLM("Planner", {
   modelName: "gpt-4o",
@@ -106,7 +107,7 @@ ${artifact.risks.map(r => `
       contributors: ["Planner"],
     };
   } catch (error) {
-    console.error("❌ Planner failed:", error);
+    logger.error({ err: error, agentName: "Planner" }, "Planner failed");
     return {
       messages: [
         new HumanMessage({

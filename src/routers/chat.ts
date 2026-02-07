@@ -13,6 +13,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { randomUUID } from "crypto";
+import { logger } from "../lib/logger.js";
 
 import { graph } from "../graph.js";
 import { HIVE_MEMBERS } from "../agents/router.js";
@@ -128,7 +129,7 @@ chatRouter.post("/", async (c) => {
             history,
         });
     } catch (error) {
-        console.error("❌ Chat error:", error);
+        logger.error({ err: error }, 'Chat error');
         return c.json(
             { error: "An error occurred processing your request. Please try again." },
             500
@@ -287,7 +288,7 @@ chatRouter.post("/stream", async (c) => {
                 event: "done",
             });
         } catch (error) {
-            console.error("❌ Stream error:", error);
+            logger.error({ err: error }, 'Stream error');
             await stream.writeSSE({
                 data: JSON.stringify({
                     type: "error",

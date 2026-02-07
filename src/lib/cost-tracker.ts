@@ -24,6 +24,7 @@
 
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
+import { logger } from "./logger.js";
 import type {
     LLMUsageEntry,
     LogUsageInput,
@@ -98,7 +99,7 @@ export function initCostTrackingTable(): void {
         CREATE INDEX IF NOT EXISTS idx_llm_usage_daily   ON llm_usage(created_at, agent_name);
     `);
 
-    console.log("✅ Cost tracking table initialized");
+    logger.info('Cost tracking table initialized');
 }
 
 // ============================================================================

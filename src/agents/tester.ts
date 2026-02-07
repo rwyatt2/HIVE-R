@@ -3,6 +3,7 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { TestPlanSchema } from "../lib/artifacts.js";
+import { logger } from "../lib/logger.js";
 import { runCommandTool, runTestsTool } from "../tools/testing.js";
 
 const llm = createTrackedLLM("Tester", {
@@ -150,7 +151,7 @@ ${artifact.manualTestingNotes.map(n => `- ${n}`).join("\n")}`;
             contributors: ["Tester"],
         };
     } catch (error) {
-        console.error("❌ Tester failed:", error);
+        logger.error({ err: error, agentName: "Tester" }, "Tester failed");
         return {
             messages: [
                 new HumanMessage({

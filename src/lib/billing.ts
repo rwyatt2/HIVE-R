@@ -12,6 +12,7 @@ import Stripe from 'stripe';
 import { getDb } from './user-auth.js';
 import { randomUUID } from 'crypto';
 import { getSecret } from './secrets.js';
+import { logger } from './logger.js';
 
 // ============================================================================
 // CONFIGURATION
@@ -134,7 +135,7 @@ export function initBillingTables(): void {
         CREATE INDEX IF NOT EXISTS idx_billing_user ON billing_customers(user_id);
     `);
 
-    console.log('✅ Billing tables initialized');
+    logger.info('Billing tables initialized');
 }
 
 // ============================================================================
@@ -260,7 +261,7 @@ export async function createCheckoutSession(
     cancelUrl: string
 ): Promise<{ url: string } | null> {
     if (!stripe) {
-        console.warn('Stripe not configured');
+        logger.warn('Stripe not configured');
         return null;
     }
 
@@ -465,13 +466,13 @@ export async function handleWebhook(event: WebhookEvent): Promise<void> {
 
         case 'invoice.paid': {
             const invoice = event.data.object as { customer: string };
-            console.log(`✅ Invoice paid for customer ${invoice.customer}`);
+            logger.info({ customer: invoice.customer }, `Invoice paid for customer ${invoice.customer}`);
             break;
         }
 
         case 'invoice.payment_failed': {
             const invoice = event.data.object as { customer: string };
-            console.warn(`⚠️ Payment failed for customer ${invoice.customer}`);
+            logger.warn({ customer: invoice.customer }, `Payment failed for customer ${invoice.customer}`);
             break;
         }
     }
@@ -486,7 +487,7 @@ export function verifyWebhookSignature(
 ): WebhookEvent | null {
     const webhookSecret = getSecret('STRIPE_WEBHOOK_SECRET');
     if (!stripe || !webhookSecret) {
-        console.warn('Stripe webhook verification not configured');
+        logger.warn('Stripe webhook verification not configured');
         return null;
     }
 
@@ -497,7 +498,7 @@ export function verifyWebhookSignature(
             webhookSecret
         ) as WebhookEvent;
     } catch (error) {
-        console.error('Webhook signature verification failed:', error);
+        logger.error({ err: error }, 'Webhook signature verification failed');
         return null;
     }
 }

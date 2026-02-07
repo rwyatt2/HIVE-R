@@ -9,6 +9,7 @@ import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
 import { mkdirSync, existsSync } from "fs";
 import path from "path";
+import { logger } from "./logger.js";
 
 // ============================================================================
 // CONFIGURATION
@@ -336,6 +337,6 @@ export function cleanupOldSessions(daysOld = 30): number {
         WHERE user_id IS NULL AND updated_at < ?
     `).run(cutoffStr);
 
-    console.log(`🧹 Cleaned up ${sessionsDeleted.changes} old sessions (${messagesDeleted.changes} messages)`);
+    logger.info({ sessions: sessionsDeleted.changes, messages: messagesDeleted.changes }, `Cleaned up ${sessionsDeleted.changes} old sessions (${messagesDeleted.changes} messages)`);
     return sessionsDeleted.changes;
 }

@@ -8,6 +8,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { HIVE_AGENTS } from "./handoff.js";
+import { logger } from "../lib/logger.js";
 
 // ============================================================================
 // TYPES
@@ -65,8 +66,7 @@ export const delegateTool = tool(
             context,
         };
 
-        console.log(`📋 Delegated: ${taskId} → ${workerRole}`);
-        console.log(`   Task: ${taskDescription.substring(0, 50)}...`);
+        logger.info({ taskId, workerRole, task: taskDescription.substring(0, 50) }, `Delegated: ${taskId} → ${workerRole}`);
 
         return JSON.stringify(result);
     },

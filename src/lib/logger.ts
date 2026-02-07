@@ -1,133 +1,149 @@
 /**
  * Structured Logger for HIVE-R
- * 
- * Provides consistent logging across all agents with:
- * - Agent lifecycle events (start/end)
- * - Tool calls
- * - Routing decisions
- * - Error tracking
+ *
+ * Pino-based JSON logger with:
+ * - JSON output in production (for ELK / Datadog)
+ * - Pretty-print in development (pino-pretty)
+ * - Environment-based log levels
+ * - Child loggers for request/agent context
+ * - Convenience methods for agent lifecycle events
+ *
+ * @module logger
  */
 
-export type LogLevel = "debug" | "info" | "warn" | "error";
+import pino from "pino";
 
-interface LogContext {
-    agentName?: string;
-    threadId?: string;
-    turnCount?: number;
-    toolName?: string;
-    duration?: number;
-    [key: string]: unknown;
-}
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const IS_TEST = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+const LOG_LEVEL = process.env.LOG_LEVEL || (IS_PRODUCTION ? "info" : IS_TEST ? "silent" : "debug");
 
-const LOG_COLORS = {
-    debug: "\x1b[90m",   // gray
-    info: "\x1b[36m",    // cyan
-    warn: "\x1b[33m",    // yellow
-    error: "\x1b[31m",   // red
-    reset: "\x1b[0m",
-};
+/**
+ * Create the base Pino logger instance.
+ *
+ * - Production: JSON to stdout (one line per log, for log aggregation)
+ * - Development: Pretty-printed, colored output via pino-pretty transport
+ * - Test: Silent by default (override with LOG_LEVEL=debug)
+ */
+function createBaseLogger(): pino.Logger {
+    const baseOptions: pino.LoggerOptions = {
+        level: LOG_LEVEL,
+        timestamp: pino.stdTimeFunctions.isoTime,
+        formatters: {
+            level(label) {
+                return { level: label };
+            },
+        },
+        // Redact sensitive fields that might leak into logs
+        redact: {
+            paths: [
+                "apiKey",
+                "password",
+                "secret",
+                "token",
+                "authorization",
+                "OPENAI_API_KEY",
+                "ANTHROPIC_API_KEY",
+                "req.headers.authorization",
+            ],
+            censor: "[REDACTED]",
+        },
+    };
 
-function formatTimestamp(): string {
-    return new Date().toISOString();
-}
-
-function formatLog(level: LogLevel, message: string, context?: LogContext): string {
-    const timestamp = formatTimestamp();
-    const color = LOG_COLORS[level];
-    const reset = LOG_COLORS.reset;
-
-    let logLine = `${color}[${timestamp}] [${level.toUpperCase()}]${reset} ${message}`;
-
-    if (context) {
-        const contextStr = Object.entries(context)
-            .filter(([_, v]) => v !== undefined)
-            .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
-            .join(" ");
-        if (contextStr) {
-            logLine += ` ${color}${contextStr}${reset}`;
-        }
-    }
-
-    return logLine;
-}
-
-class Logger {
-    private level: LogLevel = "info";
-
-    setLevel(level: LogLevel) {
-        this.level = level;
-    }
-
-    private shouldLog(level: LogLevel): boolean {
-        const levels = ["debug", "info", "warn", "error"];
-        return levels.indexOf(level) >= levels.indexOf(this.level);
-    }
-
-    debug(message: string, context?: LogContext) {
-        if (this.shouldLog("debug")) {
-            console.log(formatLog("debug", message, context));
-        }
-    }
-
-    info(message: string, context?: LogContext) {
-        if (this.shouldLog("info")) {
-            console.log(formatLog("info", message, context));
-        }
-    }
-
-    warn(message: string, context?: LogContext) {
-        if (this.shouldLog("warn")) {
-            console.warn(formatLog("warn", message, context));
-        }
-    }
-
-    error(message: string, context?: LogContext) {
-        if (this.shouldLog("error")) {
-            console.error(formatLog("error", message, context));
-        }
-    }
-
-    // ✅ Agent lifecycle logging
-    agentStart(agentName: string, context?: Partial<LogContext>) {
-        this.info(`🚀 Agent starting`, { agentName, ...context });
-    }
-
-    agentEnd(agentName: string, duration: number, context?: Partial<LogContext>) {
-        this.info(`✅ Agent completed`, { agentName, duration, ...context });
-    }
-
-    agentError(agentName: string, error: Error, context?: Partial<LogContext>) {
-        this.error(`❌ Agent failed: ${error.message}`, {
-            agentName,
-            errorStack: error.stack?.split("\n").slice(0, 3).join(" "),
-            ...context
+    // In development, use pino-pretty transport for readable output
+    if (!IS_PRODUCTION && !IS_TEST) {
+        return pino({
+            ...baseOptions,
+            transport: {
+                target: "pino-pretty",
+                options: {
+                    colorize: true,
+                    translateTime: "HH:MM:ss.l",
+                    ignore: "pid,hostname",
+                    singleLine: false,
+                },
+            },
         });
     }
 
-    // ✅ Routing logging
-    routingDecision(from: string, to: string, reasoning: string) {
-        this.info(`🎯 Routing: ${from} → ${to}`, { reasoning });
-    }
-
-    // ✅ Tool logging
-    toolCall(toolName: string, agentName: string, input?: unknown) {
-        this.debug(`🔧 Tool call: ${toolName}`, { agentName, input });
-    }
-
-    toolResult(toolName: string, agentName: string, success: boolean, duration: number) {
-        const emoji = success ? "✓" : "✗";
-        this.debug(`🔧 Tool ${emoji}: ${toolName}`, { agentName, success, duration });
-    }
-
-    // ✅ Safety logging
-    safetyTrigger(reason: string, context?: LogContext) {
-        this.warn(`⚠️ Safety triggered: ${reason}`, context);
-    }
+    // Production / test: plain JSON to stdout
+    return pino(baseOptions);
 }
 
-export const logger = new Logger();
+const baseLogger = createBaseLogger();
 
-// Set log level from environment
-if (process.env.LOG_LEVEL) {
-    logger.setLevel(process.env.LOG_LEVEL as LogLevel);
+// ============================================================================
+// PUBLIC API — same interface the codebase already uses
+// ============================================================================
+
+export type LogLevel = "debug" | "info" | "warn" | "error" | "fatal" | "silent";
+
+// Extend the Pino logger with HIVE-R convenience methods
+interface HiveLogger extends pino.Logger {
+    agentStart: (agentName: string, context?: Record<string, unknown>) => void;
+    agentEnd: (agentName: string, duration: number, context?: Record<string, unknown>) => void;
+    agentError: (agentName: string, error: Error, context?: Record<string, unknown>) => void;
+    routingDecision: (from: string, to: string, reasoning: string) => void;
+    toolCall: (toolName: string, agentName: string, input?: unknown) => void;
+    toolResult: (toolName: string, agentName: string, success: boolean, duration: number) => void;
+    safetyTrigger: (reason: string, context?: Record<string, unknown>) => void;
+}
+
+// Attach convenience methods to the logger object
+const hiveLogger = baseLogger as HiveLogger;
+
+hiveLogger.agentStart = (agentName, context) => {
+    baseLogger.info({ agentName, event: "agent_start", ...context }, `Agent starting: ${agentName}`);
+};
+
+hiveLogger.agentEnd = (agentName, duration, context) => {
+    baseLogger.info({ agentName, event: "agent_end", duration, ...context }, `Agent completed: ${agentName}`);
+};
+
+hiveLogger.agentError = (agentName, error, context) => {
+    baseLogger.error(
+        { agentName, event: "agent_error", err: error, ...context },
+        `Agent failed: ${agentName} — ${error.message}`,
+    );
+};
+
+hiveLogger.routingDecision = (from, to, reasoning) => {
+    baseLogger.info({ event: "routing", from, to, reasoning }, `Routing: ${from} → ${to}`);
+};
+
+hiveLogger.toolCall = (toolName, agentName, input) => {
+    baseLogger.debug({ event: "tool_call", toolName, agentName, input }, `Tool call: ${toolName}`);
+};
+
+hiveLogger.toolResult = (toolName, agentName, success, duration) => {
+    baseLogger.debug(
+        { event: "tool_result", toolName, agentName, success, duration },
+        `Tool ${success ? "✓" : "✗"}: ${toolName}`,
+    );
+};
+
+hiveLogger.safetyTrigger = (reason, context) => {
+    baseLogger.warn({ event: "safety_trigger", ...context }, `Safety triggered: ${reason}`);
+};
+
+/**
+ * The main logger singleton.
+ *
+ * Usage:
+ *   import { logger } from "../lib/logger.js";
+ *   logger.info("Server started");
+ *   logger.info({ port: 3000 }, "Server started");
+ *   logger.agentStart("Builder", { threadId });
+ *
+ * To add per-request context:
+ *   const reqLogger = logger.child({ requestId, userId });
+ *   reqLogger.info("Processing chat request");
+ */
+export const logger: HiveLogger = hiveLogger;
+
+/**
+ * Create a child logger scoped to a specific agent.
+ * Adds `agentName` to every log line automatically.
+ */
+export function createAgentLogger(agentName: string, extra?: Record<string, unknown>) {
+    return baseLogger.child({ agentName, ...extra });
 }

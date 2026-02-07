@@ -8,6 +8,7 @@
 
 import { Hono } from 'hono';
 import { getDb, getUserById } from '../lib/user-auth.js';
+import { logger } from '../lib/logger.js';
 
 const app = new Hono();
 
@@ -30,7 +31,7 @@ export async function ownerAuthMiddleware(c: any, next: any) {
     const user = getUserById(authUser.userId);
 
     if (!user || user.role !== 'system_owner') {
-        console.warn(`⛔ Blocked non-owner access attempt: ${authUser.email}`);
+        logger.warn({ email: authUser.email }, `Blocked non-owner access attempt: ${authUser.email}`);
         return c.json({ error: 'Forbidden: Owner access required' }, 403);
     }
 

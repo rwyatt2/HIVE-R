@@ -1,6 +1,7 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
 import Database from "better-sqlite3";
 import { randomUUID } from "crypto";
+import { logger } from "./logger.js";
 
 /**
  * Simple SQLite-based Vector Memory Store
@@ -29,7 +30,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_created ON memories(created_at);
 `);
 
-console.log("💾 Vector memory enabled:", DB_PATH);
+logger.info({ dbPath: DB_PATH }, `Vector memory enabled: ${DB_PATH}`);
 
 // Initialize embeddings model
 const embeddings = new OpenAIEmbeddings({

@@ -1,5 +1,6 @@
 import { HumanMessage, BaseMessage } from "@langchain/core/messages";
 import { AgentState } from "./state.js";
+import { logger } from "./logger.js";
 
 /**
  * Safe agent wrapper with error handling and retry logic
@@ -17,7 +18,7 @@ export const safeAgentCall = async <T>(
             return await fn() as { messages: BaseMessage[]; contributors: string[] };
         } catch (error) {
             lastError = error instanceof Error ? error : new Error(String(error));
-            console.error(`⚠️ ${agentName} attempt ${attempt}/${maxRetries} failed:`, lastError.message);
+            logger.warn({ agentName, attempt, maxRetries, err: lastError }, `${agentName} attempt ${attempt}/${maxRetries} failed`);
 
             if (attempt < maxRetries) {
                 // Exponential backoff: 1s, 2s
@@ -27,7 +28,7 @@ export const safeAgentCall = async <T>(
     }
 
     // All retries exhausted, return error message
-    console.error(`❌ ${agentName} failed after ${maxRetries} attempts`);
+    logger.error({ agentName, maxRetries, err: lastError }, `${agentName} failed after ${maxRetries} attempts`);
 
     return {
         messages: [
@@ -75,7 +76,7 @@ export const createAgentResponse = (
     // Support direct handoff
     if (options?.next) {
         response.next = options.next;
-        console.log(`📡 ${agentName} requesting handoff to ${options.next}`);
+        logger.info({ agentName, next: options.next, event: 'handoff' }, `${agentName} requesting handoff to ${options.next}`);
     }
 
     return response;

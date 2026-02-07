@@ -3,6 +3,8 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { PRDArtifactSchema, type PRDArtifact } from "../lib/artifacts.js";
+import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
+import { logger } from "../lib/logger.js";
 
 const llm = createTrackedLLM("ProductManager", {
     modelName: "gpt-4o",
@@ -97,7 +99,7 @@ ${artifact.openQuestions.map(q => `- ${q}`).join("\n")}`;
             contributors: ["ProductManager"],
         };
     } catch (error) {
-        console.error("❌ ProductManager failed:", error);
+        logger.error({ err: error, agentName: "ProductManager" }, "ProductManager failed");
         return {
             messages: [
                 new HumanMessage({

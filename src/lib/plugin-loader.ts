@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, unlink
 import { join } from 'path';
 import type { AgentPlugin, PluginTool } from '../types/plugin.js';
 import * as pluginRegistry from './plugin-registry.js';
+import { logger } from './logger.js';
 
 // ============================================================================
 // CONFIGURATION
@@ -39,7 +40,7 @@ export function loadPlugins(): void {
     pluginsByAgent.clear();
 
     if (!existsSync(PLUGINS_DIR)) {
-        console.log('📦 No plugins directory found');
+        logger.info('No plugins directory found');
         return;
     }
 
@@ -52,7 +53,7 @@ export function loadPlugins(): void {
 
             // Validate required fields
             if (!plugin.id || !plugin.name || !plugin.agentName) {
-                console.warn(`⚠️ Invalid plugin file: ${file}`);
+                logger.warn({ file }, `Invalid plugin file: ${file}`);
                 continue;
             }
 
@@ -63,13 +64,13 @@ export function loadPlugins(): void {
             agentPlugins.push(plugin);
             pluginsByAgent.set(plugin.agentName, agentPlugins);
 
-            console.log(`✅ Loaded plugin: ${plugin.name} v${plugin.version} for ${plugin.agentName}`);
+            logger.info({ pluginId: plugin.id, pluginName: plugin.name, version: plugin.version, agent: plugin.agentName }, `Loaded plugin: ${plugin.name} v${plugin.version} for ${plugin.agentName}`);
         } catch (error) {
-            console.error(`❌ Failed to load plugin ${file}:`, error);
+            logger.error({ err: error, file }, `Failed to load plugin ${file}`);
         }
     }
 
-    console.log(`📦 Loaded ${loadedPlugins.size} plugins`);
+    logger.info({ count: loadedPlugins.size }, `Loaded ${loadedPlugins.size} plugins`);
 }
 
 /**
@@ -104,7 +105,7 @@ export function installPlugin(pluginId: string): AgentPlugin | null {
     // Get plugin from registry
     const plugin = pluginRegistry.getPlugin(pluginId);
     if (!plugin) {
-        console.error(`❌ Plugin not found: ${pluginId}`);
+        logger.error({ pluginId }, `Plugin not found: ${pluginId}`);
         return null;
     }
 
@@ -120,7 +121,7 @@ export function installPlugin(pluginId: string): AgentPlugin | null {
     // Reload plugins
     loadPlugins();
 
-    console.log(`✅ Installed plugin: ${plugin.name}`);
+    logger.info({ pluginId: plugin.id, pluginName: plugin.name }, `Installed plugin: ${plugin.name}`);
     return plugin;
 }
 
@@ -140,7 +141,7 @@ export function uninstallPlugin(pluginId: string): boolean {
     // Reload plugins
     loadPlugins();
 
-    console.log(`🗑️ Uninstalled plugin: ${pluginId}`);
+    logger.info({ pluginId }, `Uninstalled plugin: ${pluginId}`);
     return true;
 }
 

@@ -9,6 +9,7 @@
 
 import { getDb } from './user-auth.js';
 import { randomUUID } from 'crypto';
+import { logger } from './logger.js';
 
 // ============================================================================
 // TYPES
@@ -127,7 +128,7 @@ export function initOrgTables(): void {
         CREATE INDEX IF NOT EXISTS idx_projects_org ON projects(org_id);
     `);
 
-    console.log('✅ Organization tables initialized');
+    logger.info('Organization tables initialized');
 }
 
 // ============================================================================
