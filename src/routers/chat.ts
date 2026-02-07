@@ -28,13 +28,12 @@ const chatRouter = new Hono();
 // HELPERS
 // ============================================================================
 
-/** Extract a rate-limit key from the request (IP or auth token hash) */
+/** Extract a rate-limit key from the request (JWT user or IP fallback) */
 function getRateLimitKey(c: any): string {
-    // Prefer authenticated user identity
-    const authHeader = c.req.header("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-        // Use first 16 chars of token as key (enough to differentiate users)
-        return `user:${authHeader.slice(7, 23)}`;
+    // Prefer authenticated user identity (set by JWT middleware)
+    const user = c.get("user");
+    if (user?.userId) {
+        return `user:${user.userId}`;
     }
     // Fall back to IP
     return (

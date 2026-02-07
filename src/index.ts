@@ -13,6 +13,10 @@ import { checkpointer } from "./lib/memory.js";
 // Middleware
 import { requestLogger, rateLimiter, errorHandler, cors } from "./lib/middleware.js";
 import { authMiddleware, isAuthEnabled } from "./lib/auth.js";
+import { jwtAuthMiddleware, type AuthUser } from "./middleware/auth.js";
+
+// App type with user context
+type AppVariables = { user: AuthUser };
 
 // History
 import * as history from "./lib/history.js";
@@ -66,7 +70,7 @@ orgs.initOrgTables();
 billing.initBillingTables();
 initSemanticMemory().catch(err => console.warn('Semantic memory init failed:', err));
 
-const app = new Hono()
+const app = new Hono<{ Variables: AppVariables }>()
 
 // ✅ A+ Production Middleware
 import { securityHeaders, runSecurityAudit } from "./lib/security.js";
@@ -76,6 +80,7 @@ app.use('*', cors(["http://localhost:3001", "http://localhost:3000", "http://loc
 app.use('*', errorHandler());
 app.use('*', requestLogger());
 app.use('*', authMiddleware);  // ✅ API Key auth (set HIVE_API_KEY to enable)
+app.use('*', jwtAuthMiddleware);  // ✅ JWT user auth (enforced on all non-public routes)
 app.route('/chat', chatRouter); // ✅ Hardened Chat Router (with per-user rate limiting)
 app.route('/admin', adminRouter); // ✅ Mount Admin Router
 
@@ -592,23 +597,11 @@ app.post('/auth/logout', async (c) => {
 });
 
 /**
- * Get current user (protected)
+ * Get current user (protected — JWT enforced by middleware)
  */
 app.get('/auth/me', (c) => {
-    const authHeader = c.req.header('Authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return c.json({ error: 'No token provided' }, 401);
-    }
-
-    const token = authHeader.slice(7);
-    const payload = userAuth.verifyJWT(token);
-
-    if (!payload) {
-        return c.json({ error: 'Invalid or expired token' }, 401);
-    }
-
-    const user = userAuth.getUserById(payload.sub);
+    const authUser = c.get("user");
+    const user = userAuth.getUserById(authUser.userId);
 
     if (!user) {
         return c.json({ error: 'User not found' }, 404);
@@ -645,21 +638,9 @@ app.get('/agents/config/:name', (c) => {
 });
 
 /**
- * Update an agent's system prompt (protected)
+ * Update an agent's system prompt (protected — JWT enforced by middleware)
  */
 app.put('/agents/config/:name', async (c) => {
-    // Verify authentication
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    const token = authHeader.slice(7);
-    const payload = userAuth.verifyJWT(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid or expired token' }, 401);
-    }
-
     const name = c.req.param('name');
     const { systemPrompt } = await c.req.json() as { systemPrompt: string };
 
@@ -677,21 +658,9 @@ app.put('/agents/config/:name', async (c) => {
 });
 
 /**
- * Reset an agent's configuration to default (protected)
+ * Reset an agent's configuration to default (protected — JWT enforced by middleware)
  */
 app.post('/agents/config/:name/reset', async (c) => {
-    // Verify authentication
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    const token = authHeader.slice(7);
-    const payload = userAuth.verifyJWT(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid or expired token' }, 401);
-    }
-
     const name = c.req.param('name');
     const config = agentConfig.resetAgentConfig(name);
 
@@ -903,22 +872,11 @@ app.get('/plugins/:id', (c) => {
 });
 
 /**
- * Create a new plugin (requires auth)
+ * Create a new plugin (protected — JWT enforced by middleware)
  */
 app.post('/plugins', async (c) => {
-    // Check authentication
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
-
-    const user = userAuth.getUserById(payload.userId);
+    const authUser = c.get("user");
+    const user = userAuth.getUserById(authUser.userId);
     if (!user) {
         return c.json({ error: 'User not found' }, 401);
     }
@@ -938,27 +896,17 @@ app.post('/plugins', async (c) => {
 });
 
 /**
- * Update a plugin (requires auth, author only)
+ * Update a plugin (protected — JWT enforced by middleware, author only)
  */
 app.put('/plugins/:id', async (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
-
+    const authUser = c.get("user");
     const id = c.req.param('id');
 
     try {
         const body = await c.req.json();
         const parsed = UpdatePluginSchema.parse(body);
 
-        const plugin = pluginRegistry.updatePlugin(id, parsed, payload.userId);
+        const plugin = pluginRegistry.updatePlugin(id, parsed, authUser.userId);
         if (!plugin) {
             return c.json({ error: 'Plugin not found or not authorized' }, 404);
         }
@@ -973,22 +921,12 @@ app.put('/plugins/:id', async (c) => {
 });
 
 /**
- * Delete a plugin (requires auth, author only)
+ * Delete a plugin (protected — JWT enforced by middleware, author only)
  */
 app.delete('/plugins/:id', (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
-
+    const authUser = c.get("user");
     const id = c.req.param('id');
-    const deleted = pluginRegistry.deletePlugin(id, payload.userId);
+    const deleted = pluginRegistry.deletePlugin(id, authUser.userId);
 
     if (!deleted) {
         return c.json({ error: 'Plugin not found or not authorized' }, 404);
@@ -1043,21 +981,11 @@ app.get('/plugins/:id/ratings', (c) => {
 });
 
 /**
- * Rate a plugin (requires auth)
+ * Rate a plugin (protected — JWT enforced by middleware)
  */
 app.post('/plugins/:id/ratings', async (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
-
-    const user = userAuth.getUserById(payload.userId);
+    const authUser = c.get("user");
+    const user = userAuth.getUserById(authUser.userId);
     if (!user) {
         return c.json({ error: 'User not found' }, 401);
     }

@@ -8,7 +8,6 @@
 
 import { Hono } from 'hono';
 import { getDb, getUserById } from '../lib/user-auth.js';
-import { verifyJWT } from '../lib/user-auth.js';
 
 const app = new Hono();
 
@@ -18,29 +17,25 @@ const app = new Hono();
 
 /**
  * Middleware: Require 'system_owner' role
+ * JWT verification is handled by the global jwtAuthMiddleware.
+ * This middleware only checks that the user has the owner role.
  */
 export async function ownerAuthMiddleware(c: any, next: any) {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    const authUser = c.get('user');
+
+    if (!authUser?.userId) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const token = authHeader.split(' ')[1];
-    const payload = verifyJWT(token);
-
-    if (!payload?.sub) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
-
-    const user = getUserById(payload.sub);
+    const user = getUserById(authUser.userId);
 
     if (!user || user.role !== 'system_owner') {
-        console.warn(`⛔ Blocked non-owner access attempt: ${payload.email}`);
+        console.warn(`⛔ Blocked non-owner access attempt: ${authUser.email}`);
         return c.json({ error: 'Forbidden: Owner access required' }, 403);
     }
 
-    // Pass user to next handler
-    c.set('user', user);
+    // Pass full user to next handler
+    c.set('user', { ...authUser, role: user.role });
     await next();
 }
 
