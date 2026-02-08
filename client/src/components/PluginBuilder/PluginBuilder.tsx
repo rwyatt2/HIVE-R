@@ -1,110 +1,59 @@
 import { useState } from 'react';
-import './PluginBuilder.css';
+import { X, Check, AlertCircle, Sparkles, Terminal, Code, Download, ChevronRight } from 'lucide-react';
+import { Card } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
+// Types
 interface PluginTool {
     name: string;
     description: string;
-    parameters: Array<{
-        name: string;
-        type: 'string' | 'number' | 'boolean' | 'array' | 'object';
-        description: string;
-        required: boolean;
-    }>;
+    parameters: any[];
+    required?: boolean;
 }
 
-interface PluginFormData {
+interface PluginData {
     name: string;
-    version: string;
     description: string;
-    longDescription: string;
+    version: string;
+    author: string;
     agentName: string;
     systemPromptExtension: string;
-    tools: PluginTool[];
     tags: string[];
-    icon: string;
-    homepage: string;
-    repository: string;
+    tools: PluginTool[];
 }
-
-interface Agent {
-    name: string;
-    emoji: string;
-    role: string;
-}
-
-// ============================================================================
-// AGENT LIST
-// ============================================================================
-
-const AGENTS: Agent[] = [
-    { name: 'Router', emoji: '🧭', role: 'Routes requests to appropriate agents' },
-    { name: 'Founder', emoji: '💡', role: 'Defines vision and business goals' },
-    { name: 'PM', emoji: '📋', role: 'Creates product requirements' },
-    { name: 'UX', emoji: '🎯', role: 'Designs user experience flows' },
-    { name: 'Designer', emoji: '🎨', role: 'Creates visual designs' },
-    { name: 'Accessibility', emoji: '♿', role: 'Ensures accessibility compliance' },
-    { name: 'Planner', emoji: '📐', role: 'Plans implementation architecture' },
-    { name: 'Security', emoji: '🔒', role: 'Reviews for security issues' },
-    { name: 'Builder', emoji: '🛠️', role: 'Writes the code' },
-    { name: 'Reviewer', emoji: '👀', role: 'Reviews code quality' },
-    { name: 'Tester', emoji: '🧪', role: 'Creates and runs tests' },
-    { name: 'TechWriter', emoji: '📚', role: 'Writes documentation' },
-    { name: 'SRE', emoji: '🚀', role: 'Manages deployment' }
-];
-
-// ============================================================================
-// COMPONENT
-// ============================================================================
 
 interface PluginBuilderProps {
     onClose: () => void;
-    accessToken: string | null;
+    onSave: (plugin: any) => void;
 }
 
-export function PluginBuilder({ onClose, accessToken }: PluginBuilderProps) {
+export function PluginBuilder({ onClose, onSave }: PluginBuilderProps) {
     const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState<PluginFormData>({
+    const [formData, setFormData] = useState<PluginData>({
         name: '',
-        version: '1.0.0',
         description: '',
-        longDescription: '',
-        agentName: '',
+        version: '1.0.0',
+        author: '',
+        agentName: 'Router',
         systemPromptExtension: '',
-        tools: [],
         tags: [],
-        icon: '🔌',
-        homepage: '',
-        repository: ''
+        tools: []
     });
-    const [tagInput, setTagInput] = useState('');
-    const [publishing, setPublishing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
 
-    // Validate current step
-    const canProceed = () => {
-        switch (step) {
-            case 1:
-                return formData.name.length >= 3 && formData.description.length >= 10;
-            case 2:
-                return formData.agentName !== '';
-            case 3:
-                return true; // Optional step
-            case 4:
-                return true; // Review step
-            default:
-                return false;
-        }
-    };
+    const agents = [
+        'Router', 'Founder', 'PM', 'UX', 'Designer', 'Accessibility',
+        'Planner', 'Security', 'Builder', 'Reviewer', 'Tester', 'TechWriter', 'SRE'
+    ];
 
-    const addTag = () => {
-        if (tagInput && formData.tags.length < 5 && !formData.tags.includes(tagInput)) {
-            setFormData({ ...formData, tags: [...formData.tags, tagInput] });
-            setTagInput('');
+    const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            const val = (e.target as HTMLInputElement).value.trim();
+            if (val && !formData.tags.includes(val)) {
+                setFormData({ ...formData, tags: [...formData.tags, val] });
+                (e.target as HTMLInputElement).value = '';
+            }
         }
     };
 
@@ -118,14 +67,16 @@ export function PluginBuilder({ onClose, accessToken }: PluginBuilderProps) {
             tools: [...formData.tools, {
                 name: '',
                 description: '',
-                parameters: []
+                parameters: [],
+                required: false
             }]
         });
     };
 
-    const updateTool = (index: number, field: keyof PluginTool, value: unknown) => {
+    const updateTool = (index: number, field: keyof PluginTool, value: any) => {
         const newTools = [...formData.tools];
-        newTools[index] = { ...newTools[index], [field]: value };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (newTools[index] as any)[field] = value;
         setFormData({ ...formData, tools: newTools });
     };
 
@@ -136,370 +87,295 @@ export function PluginBuilder({ onClose, accessToken }: PluginBuilderProps) {
         });
     };
 
-    const generatePluginJSON = () => {
-        return JSON.stringify({
-            name: formData.name,
-            version: formData.version,
-            description: formData.description,
-            longDescription: formData.longDescription || undefined,
-            agentName: formData.agentName,
-            systemPromptExtension: formData.systemPromptExtension || undefined,
-            tools: formData.tools.length > 0 ? formData.tools : undefined,
-            tags: formData.tags,
-            icon: formData.icon || undefined,
-            homepage: formData.homepage || undefined,
-            repository: formData.repository || undefined
-        }, null, 2);
-    };
-
-    const publishPlugin = async () => {
-        if (!accessToken) {
-            setError('You must be logged in to publish plugins');
-            return;
-        }
-
-        setPublishing(true);
-        setError(null);
-
-        try {
-            const response = await fetch('/plugins', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: JSON.stringify({
-                    name: formData.name,
-                    version: formData.version,
-                    description: formData.description,
-                    longDescription: formData.longDescription || undefined,
-                    agentName: formData.agentName,
-                    systemPromptExtension: formData.systemPromptExtension || undefined,
-                    tools: formData.tools.length > 0 ? formData.tools : undefined,
-                    tags: formData.tags,
-                    icon: formData.icon || undefined,
-                    homepage: formData.homepage || undefined,
-                    repository: formData.repository || undefined
-                })
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || 'Failed to publish plugin');
-            }
-
-            setSuccess(true);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to publish');
-        } finally {
-            setPublishing(false);
-        }
-    };
-
     const downloadPlugin = () => {
-        const blob = new Blob([generatePluginJSON()], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(formData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${formData.name.toLowerCase().replace(/\s+/g, '-')}-plugin.json`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
 
-    if (success) {
-        return (
-            <div className="plugin-builder">
-                <div className="plugin-builder-header">
-                    <h2>🎉 Plugin Published!</h2>
-                    <button className="close-btn" onClick={onClose}>✕</button>
+    const renderStep1 = () => (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Plugin Name</label>
+                        <Input
+                            placeholder="e.g. React Optimizer"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="bg-black/20"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Version</label>
+                        <Input
+                            placeholder="1.0.0"
+                            value={formData.version}
+                            onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+                            className="bg-black/20"
+                        />
+                    </div>
                 </div>
-                <div className="plugin-builder-content success-content">
-                    <div className="success-icon">✅</div>
-                    <h3>{formData.name}</h3>
-                    <p>Your plugin has been published to the HIVE-R Marketplace.</p>
-                    <p>Users can now find and install it!</p>
-                    <button className="primary-btn" onClick={onClose}>Close</button>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Description</label>
+                    <Input
+                        placeholder="What does this plugin do?"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="bg-black/20"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Target Agent</label>
+                    <select
+                        className="w-full h-10 px-3 rounded-md bg-black/20 border border-input text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        value={formData.agentName}
+                        onChange={(e) => setFormData({ ...formData, agentName: e.target.value })}
+                    >
+                        {agents.map(agent => (
+                            <option key={agent} value={agent}>{agent}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Author</label>
+                    <Input
+                        placeholder="Your Name or Organization"
+                        value={formData.author}
+                        onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                        className="bg-black/20"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Tags (Press Enter)</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {formData.tags.map(tag => (
+                            <Badge key={tag} variant="secondary" className="gap-1">
+                                {tag}
+                                <X className="w-3 h-3 cursor-pointer hover:text-destructive" onClick={() => removeTag(tag)} />
+                            </Badge>
+                        ))}
+                    </div>
+                    <Input
+                        placeholder="Add tags..."
+                        onKeyDown={handleTagInput}
+                        className="bg-black/20"
+                    />
                 </div>
             </div>
-        );
-    }
+        </div>
+    );
+
+    const renderStep2 = () => (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div className="p-4 rounded-lg bg-primary/5 border border-primary/10 mb-4">
+                <div className="flex gap-3">
+                    <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <div>
+                        <h4 className="font-medium text-primary mb-1">System Prompt Extension</h4>
+                        <p className="text-sm text-muted-foreground">
+                            This text will be appended to the agent's system prompt to inject new knowledge or behaviors.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-2 h-full flex flex-col">
+                <textarea
+                    className="flex-1 w-full p-4 rounded-lg bg-black/40 border border-white/10 font-mono text-sm leading-relaxed focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none resize-none min-h-[300px]"
+                    placeholder="Enter the system prompt instructions here..."
+                    value={formData.systemPromptExtension}
+                    onChange={(e) => setFormData({ ...formData, systemPromptExtension: e.target.value })}
+                />
+            </div>
+        </div>
+    );
+
+    const renderStep3 = () => (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Tools & Capabilities</h3>
+                <Button variant="outline" size="sm" onClick={addTool}>
+                    + Add Tool
+                </Button>
+            </div>
+
+            {formData.tools.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-white/10 rounded-lg bg-white/5">
+                    <Terminal className="w-8 h-8 mx-auto text-muted-foreground mb-3 opacity-50" />
+                    <p className="text-muted-foreground">No custom tools defined.</p>
+                    <Button variant="link" onClick={addTool}>Add your first tool</Button>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {formData.tools.map((tool, index) => (
+                        <Card key={index} variant="glass" className="p-4 relative group">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                onClick={() => removeTool(index)}
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+
+                            <div className="grid gap-4">
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="col-span-1">
+                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Function Name</label>
+                                        <Input
+                                            value={tool.name}
+                                            onChange={(e) => updateTool(index, 'name', e.target.value)}
+                                            placeholder="my_function"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Description</label>
+                                        <Input
+                                            value={tool.description}
+                                            onChange={(e) => updateTool(index, 'description', e.target.value)}
+                                            placeholder="What does it do?"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
+    const renderReview = () => (
+        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-purple-500/10 border border-white/10">
+                <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-lg bg-white/10 flex items-center justify-center text-3xl">
+                        🔌
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold">{formData.name || 'Untitled Plugin'}</h3>
+                        <p className="text-muted-foreground">v{formData.version} • {formData.agentName}</p>
+                    </div>
+                </div>
+                <p className="mt-4 text-sm text-foreground/80 leading-relaxed">
+                    {formData.description || 'No description provided.'}
+                </p>
+                <div className="flex gap-2 mt-4">
+                    {formData.tags.map(tag => (
+                        <Badge key={tag} variant="outline" className="bg-black/20">{tag}</Badge>
+                    ))}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+                <Card variant="glass" className="p-4">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Code className="w-4 h-4 text-primary" />
+                        Prompt Extension
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                        {formData.systemPromptExtension ? `${formData.systemPromptExtension.length} characters` : 'None'}
+                    </p>
+                </Card>
+                <Card variant="glass" className="p-4">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Terminal className="w-4 h-4 text-primary" />
+                        Tools
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                        {formData.tools.length} custom tools defined
+                    </p>
+                </Card>
+            </div>
+
+            <div className="flex gap-3">
+                <Button className="flex-1" variant="gradient" onClick={() => onSave(formData)}>
+                    <Check className="w-4 h-4 mr-2" />
+                    Publish Plugin
+                </Button>
+                <Button className="flex-1" variant="outline" onClick={downloadPlugin}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download JSON
+                </Button>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="plugin-builder">
-            <div className="plugin-builder-header">
-                <h2>🔌 Plugin Builder</h2>
-                <button className="close-btn" onClick={onClose}>✕</button>
-            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <Card variant="glass-elevated" className="w-full max-w-2xl overflow-hidden border-white/10 shadow-2xl relative bg-background-elevated/95">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
+                    <div>
+                        <h2 className="text-xl font-bold flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            Plugin Builder
+                        </h2>
+                        <p className="text-sm text-muted-foreground">Create custom capabilities for your agents</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
+                        <X className="h-5 w-5" />
+                    </Button>
+                </div>
 
-            {/* Progress Steps */}
-            <div className="builder-steps">
-                {['Basics', 'Agent', 'Extensions', 'Review'].map((label, i) => (
-                    <div
-                        key={label}
-                        className={`step ${step === i + 1 ? 'active' : ''} ${step > i + 1 ? 'complete' : ''}`}
-                        onClick={() => step > i + 1 && setStep(i + 1)}
+                {/* Steps */}
+                <div className="px-6 py-4 flex gap-2 border-b border-white/5 bg-black/20">
+                    {[1, 2, 3, 4].map(s => (
+                        <div
+                            key={s}
+                            className={`flex-1 h-1 rounded-full transition-all ${step >= s ? 'bg-primary shadow-glow-sm' : 'bg-white/10'}`}
+                        />
+                    ))}
+                </div>
+
+                {/* Content */}
+                <div className="p-6 min-h-[400px]">
+                    {step === 1 && renderStep1()}
+                    {step === 2 && renderStep2()}
+                    {step === 3 && renderStep3()}
+                    {step === 4 && renderReview()}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between p-6 border-t border-white/5 bg-black/20">
+                    <Button
+                        variant="ghost"
+                        onClick={() => setStep(s => Math.max(1, s - 1))}
+                        disabled={step === 1}
                     >
-                        <span className="step-number">{step > i + 1 ? '✓' : i + 1}</span>
-                        <span className="step-label">{label}</span>
-                    </div>
-                ))}
-            </div>
+                        Back
+                    </Button>
 
-            <div className="plugin-builder-content">
-                {/* Step 1: Basic Info */}
-                {step === 1 && (
-                    <div className="builder-step">
-                        <h3>Plugin Information</h3>
-
-                        <div className="form-group">
-                            <label>Plugin Name *</label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="My Awesome Plugin"
-                                maxLength={50}
-                            />
-                            <span className="hint">{formData.name.length}/50 characters</span>
-                        </div>
-
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>Version *</label>
-                                <input
-                                    type="text"
-                                    value={formData.version}
-                                    onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                                    placeholder="1.0.0"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Icon (Emoji)</label>
-                                <input
-                                    type="text"
-                                    value={formData.icon}
-                                    onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                                    placeholder="🔌"
-                                    maxLength={10}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="form-group">
-                            <label>Short Description *</label>
-                            <input
-                                type="text"
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                placeholder="Brief description of what your plugin does"
-                                maxLength={200}
-                            />
-                            <span className="hint">{formData.description.length}/200 characters</span>
-                        </div>
-
-                        <div className="form-group">
-                            <label>Long Description</label>
-                            <textarea
-                                value={formData.longDescription}
-                                onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
-                                placeholder="Detailed description with features, use cases, etc."
-                                rows={4}
-                                maxLength={2000}
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Tags</label>
-                            <div className="tag-input">
-                                <input
-                                    type="text"
-                                    value={tagInput}
-                                    onChange={(e) => setTagInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                                    placeholder="Add a tag"
-                                    maxLength={20}
-                                />
-                                <button type="button" onClick={addTag}>Add</button>
-                            </div>
-                            <div className="tags-list">
-                                {formData.tags.map(tag => (
-                                    <span key={tag} className="tag">
-                                        {tag}
-                                        <button onClick={() => removeTag(tag)}>✕</button>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 2: Agent Selection */}
-                {step === 2 && (
-                    <div className="builder-step">
-                        <h3>Select Target Agent</h3>
-                        <p className="step-description">
-                            Choose which agent your plugin will extend.
-                            The plugin's prompt extension will be added to this agent's instructions.
-                        </p>
-
-                        <div className="agent-grid">
-                            {AGENTS.map(agent => (
-                                <div
-                                    key={agent.name}
-                                    className={`agent-card ${formData.agentName === agent.name ? 'selected' : ''}`}
-                                    onClick={() => setFormData({ ...formData, agentName: agent.name })}
-                                >
-                                    <span className="agent-emoji">{agent.emoji}</span>
-                                    <span className="agent-name">{agent.name}</span>
-                                    <span className="agent-role">{agent.role}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 3: Extensions */}
-                {step === 3 && (
-                    <div className="builder-step">
-                        <h3>Define Extensions</h3>
-
-                        <div className="form-group">
-                            <label>System Prompt Extension</label>
-                            <p className="hint">
-                                This text will be appended to the agent's system prompt.
-                                Use it to add new capabilities or modify behavior.
-                            </p>
-                            <textarea
-                                value={formData.systemPromptExtension}
-                                onChange={(e) => setFormData({ ...formData, systemPromptExtension: e.target.value })}
-                                placeholder={`Example:\n\n## Additional Guidelines\n\nWhen building React components:\n- Always use TypeScript\n- Include PropTypes validation\n- Add JSDoc comments`}
-                                rows={8}
-                                maxLength={5000}
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Custom Tools (Optional)</label>
-                            <p className="hint">
-                                Define additional tools the agent can use.
-                                Tools must have an endpoint to call.
-                            </p>
-
-                            {formData.tools.map((tool, i) => (
-                                <div key={i} className="tool-card">
-                                    <div className="tool-header">
-                                        <span>Tool {i + 1}</span>
-                                        <button onClick={() => removeTool(i)}>Remove</button>
-                                    </div>
-                                    <div className="form-row">
-                                        <input
-                                            type="text"
-                                            value={tool.name}
-                                            onChange={(e) => updateTool(i, 'name', e.target.value)}
-                                            placeholder="tool_name"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={tool.description}
-                                            onChange={(e) => updateTool(i, 'description', e.target.value)}
-                                            placeholder="Description"
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-
-                            {formData.tools.length < 5 && (
-                                <button type="button" className="add-tool-btn" onClick={addTool}>
-                                    + Add Tool
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 4: Review */}
-                {step === 4 && (
-                    <div className="builder-step">
-                        <h3>Review & Publish</h3>
-
-                        <div className="preview-card">
-                            <div className="preview-header">
-                                <span className="preview-icon">{formData.icon}</span>
-                                <div>
-                                    <h4>{formData.name}</h4>
-                                    <span className="preview-version">v{formData.version}</span>
-                                </div>
-                            </div>
-                            <p className="preview-description">{formData.description}</p>
-                            <div className="preview-meta">
-                                <span className="preview-agent">
-                                    {AGENTS.find(a => a.name === formData.agentName)?.emoji} {formData.agentName}
-                                </span>
-                                {formData.tags.map(tag => (
-                                    <span key={tag} className="preview-tag">{tag}</span>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="json-preview">
-                            <h4>Plugin JSON</h4>
-                            <pre>{generatePluginJSON()}</pre>
-                        </div>
-
-                        {error && <div className="error-message">{error}</div>}
-
-                        <div className="form-group">
-                            <label>Optional Links</label>
-                            <input
-                                type="url"
-                                value={formData.homepage}
-                                onChange={(e) => setFormData({ ...formData, homepage: e.target.value })}
-                                placeholder="Homepage URL"
-                            />
-                            <input
-                                type="url"
-                                value={formData.repository}
-                                onChange={(e) => setFormData({ ...formData, repository: e.target.value })}
-                                placeholder="Repository URL"
-                                style={{ marginTop: '8px' }}
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Footer */}
-            <div className="plugin-builder-footer">
-                {step > 1 && (
-                    <button className="secondary-btn" onClick={() => setStep(step - 1)}>
-                        ← Back
-                    </button>
-                )}
-                <div className="footer-spacer" />
-
-                {step === 4 ? (
-                    <>
-                        <button className="secondary-btn" onClick={downloadPlugin}>
-                            Download JSON
-                        </button>
-                        <button
-                            className="primary-btn"
-                            onClick={publishPlugin}
-                            disabled={publishing || !accessToken}
+                    {step < 4 ? (
+                        <Button
+                            variant="secondary"
+                            onClick={() => setStep(s => Math.min(4, s + 1))}
+                            className="gap-2"
                         >
-                            {publishing ? 'Publishing...' : accessToken ? 'Publish to Marketplace' : 'Login to Publish'}
-                        </button>
-                    </>
-                ) : (
-                    <button
-                        className="primary-btn"
-                        onClick={() => setStep(step + 1)}
-                        disabled={!canProceed()}
-                    >
-                        Next →
-                    </button>
-                )}
-            </div>
+                            Next Step <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    ) : (
+                        <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            Ready to publish?
+                        </div>
+                    )}
+                </div>
+
+            </Card>
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "../../lib/utils";
 import type { LucideIcon } from "lucide-react";
 
 interface AgentNodeProps {
@@ -29,46 +29,51 @@ export function AgentNode({
     };
 
     const statusColors = {
-        active: "bg-success border-success",
-        idle: "bg-foreground-muted border-foreground-muted",
-        error: "bg-error border-error",
+        active: "bg-electric-violet shadow-neon-violet animate-pulse",
+        idle: "bg-starlight-700",
+        error: "bg-reactor-red shadow-neon-red", // Assuming neon-red exists or fallback
     };
 
     return (
-        <div className={cn("relative group", className)}>
-            {/* Hexagon container */}
+        <div className={cn("relative group flex flex-col items-center", className)}>
+            {/* Main Node Circle */}
             <div
                 className={cn(
-                    "relative clip-path-hexagon",
+                    "relative flex items-center justify-center rounded-full transition-all duration-300",
+                    "bg-void-900 border-2 border-white/10",
                     sizeClasses[size],
-                    "bg-gradient-to-br from-primary/20 to-gradient-purple/20",
-                    "backdrop-blur-sm",
-                    "border-2 border-primary/30",
-                    "group-hover:border-primary/60",
-                    "group-hover:shadow-glow",
-                    "transition-all duration-300"
+                    // Hover Effects
+                    "group-hover:border-electric-violet/50 group-hover:shadow-neon-violet group-hover:scale-105",
+                    // Active State
+                    status === "active" && "border-electric-violet shadow-neon-violet ring-2 ring-electric-violet/20 ring-offset-2 ring-offset-void-950"
                 )}
             >
                 {/* Icon */}
-                <div className="flex items-center justify-center h-full">
-                    <Icon className={cn(iconSizeClasses[size], "text-primary")} />
-                </div>
-            </div>
-
-            {/* Status indicator */}
-            {status === "active" && (
-                <div
+                <Icon
                     className={cn(
-                        "absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-background",
-                        statusColors[status],
-                        "animate-pulse"
+                        "transition-colors duration-300",
+                        iconSizeClasses[size],
+                        status === "active" ? "text-electric-violet" : "text-starlight-400 group-hover:text-starlight-50"
                     )}
                 />
-            )}
 
-            {/* Name label (shown on hover) */}
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-xs text-muted-foreground">{name}</span>
+                {/* Status Indicator (Orbiting/Attached) */}
+                <div
+                    className={cn(
+                        "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-void-950 z-10",
+                        statusColors[status] || "bg-starlight-700"
+                    )}
+                />
+
+                {/* Shockwave Effect (Active Only) */}
+                {status === "active" && (
+                    <div className="absolute inset-0 rounded-full border border-electric-violet animate-shockwave opacity-0 pointer-events-none" />
+                )}
+            </div>
+
+            {/* Label (Always visible now, but subtle) */}
+            <div className="absolute -bottom-8 px-2 py-1 rounded bg-black/50 backdrop-blur text-xs font-medium text-starlight-400 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                {name}
             </div>
         </div>
     );

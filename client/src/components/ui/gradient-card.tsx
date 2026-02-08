@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
-import { useMousePosition } from "@/hooks/use-mouse-position";
+import { cn } from "../../lib/utils";
+import { useMousePosition } from "../../hooks/use-mouse-position";
 import type { ReactNode, CSSProperties, HTMLAttributes } from "react";
 import React from "react";
 

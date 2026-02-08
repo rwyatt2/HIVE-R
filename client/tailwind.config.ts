@@ -27,8 +27,6 @@ const config: Config = {
                 primary: {
                     DEFAULT: "hsl(var(--primary))",
                     foreground: "hsl(var(--primary-foreground))",
-                    light: "hsl(var(--primary-light))",
-                    dark: "hsl(var(--primary-dark))",
                 },
                 secondary: {
                     DEFAULT: "hsl(var(--secondary))",
@@ -54,23 +52,35 @@ const config: Config = {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
-                // Custom HIVE-R colors
-                "background-elevated": "hsl(var(--background-elevated))",
-                "background-card": "hsl(var(--background-card))",
-                "background-overlay": "hsl(var(--background-overlay))",
-                "border-subtle": "hsl(var(--border-subtle))",
-                "foreground-muted": "hsl(var(--foreground-muted))",
-                "foreground-subtle": "hsl(var(--foreground-subtle))",
-                "gradient-violet": "hsl(var(--gradient-violet))",
-                "gradient-purple": "hsl(var(--gradient-purple))",
-                "gradient-pink": "hsl(var(--gradient-pink))",
-                "warm-orange": "hsl(var(--warm-orange))",
-                "warm-amber": "hsl(var(--warm-amber))",
-                "warm-yellow": "hsl(var(--warm-yellow))",
-                success: "hsl(var(--success))",
-                warning: "hsl(var(--warning))",
-                error: "hsl(var(--error))",
-                info: "hsl(var(--info))",
+                // HIVE-R Bionic Minimalism Palette
+                void: {
+                    950: "#020202", // Canvas
+                    900: "#09090B", // Surface
+                    800: "#18181B", // Elevated
+                },
+                glass: {
+                    10: "rgba(255, 255, 255, 0.1)",
+                    20: "rgba(255, 255, 255, 0.2)",
+                },
+                starlight: {
+                    50: "#FAFAFA", // Text Primary
+                    400: "#A1A1AA", // Text Secondary
+                    700: "#52525B", // Text Tertiary
+                },
+                electric: {
+                    violet: "#6366F1",
+                    indigo: "#4338ca",
+                },
+                cyber: {
+                    cyan: "#06B6D4",
+                },
+                reactor: {
+                    red: "#EF4444",
+                },
+                honey: {
+                    DEFAULT: "#F59E0B",
+                    glow: "rgba(245, 158, 11, 0.4)",
+                },
             },
             borderRadius: {
                 lg: "var(--radius)",
@@ -90,46 +100,41 @@ const config: Config = {
                     from: { height: "var(--radix-accordion-content-height)" },
                     to: { height: "0" },
                 },
-                shimmer: {
-                    "0%": { backgroundPosition: "-1000px 0" },
-                    "100%": { backgroundPosition: "1000px 0" },
+                "pulse-border": {
+                    "0%, 100%": { borderColor: "rgba(99, 102, 241, 0.5)" },
+                    "50%": { borderColor: "rgba(99, 102, 241, 1)" },
                 },
-                pulse: {
-                    "0%, 100%": { opacity: "1" },
+                "dash": {
+                    to: { strokeDashoffset: "-100" },
+                },
+                "shockwave": {
+                    "0%": { transform: "scale(1)", opacity: "0" },
                     "50%": { opacity: "0.5" },
+                    "100%": { transform: "scale(2)", opacity: "0" },
                 },
-                "fade-in": {
-                    "0%": { opacity: "0", transform: "translateY(8px)" },
-                    "100%": { opacity: "1", transform: "translateY(0)" },
-                },
-                "slide-up": {
-                    "0%": { opacity: "0", transform: "translateY(24px)" },
-                    "100%": { opacity: "1", transform: "translateY(0)" },
-                },
-                "scale-in": {
-                    "0%": { opacity: "0", transform: "scale(0.95)" },
-                    "100%": { opacity: "1", transform: "scale(1)" },
+                "aurora": {
+                    "0%": { backgroundPosition: "0% 50%" },
+                    "50%": { backgroundPosition: "100% 50%" },
+                    "100%": { backgroundPosition: "0% 50%" },
                 },
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
-                shimmer: "shimmer 2s infinite",
-                pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-                "fade-in": "fade-in 0.2s ease-out",
-                "slide-up": "slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                "scale-in": "scale-in 0.2s ease-out",
+                "pulse-border": "pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                "dash": "dash 1s linear infinite",
+                "shockwave": "shockwave 1s ease-out forwards",
+                "aurora": "aurora 5s ease infinite",
             },
             backgroundImage: {
-                "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-                "gradient-mesh":
-                    "radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.15) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(277, 92%, 61%, 0.15) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(29, 97%, 61%, 0.2) 0px, transparent 50%), radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 96%, hsla(38, 96%, 56%, 0.1) 0px, transparent 50%)",
+                "electric-gradient": "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+                "honey-gradient": "linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)",
             },
             boxShadow: {
-                glow: "0 0 20px rgba(99, 102, 241, 0.4)",
-                "glow-sm": "0 0 12px rgba(99, 102, 241, 0.2)",
-                "glow-lg": "0 0 32px rgba(99, 102, 241, 0.3)",
-            },
+                "neon-violet": "0 0 20px rgba(99, 102, 241, 0.3)",
+                "neon-honey": "0 0 20px rgba(245, 158, 11, 0.3)",
+                "glass": "0 4px 30px rgba(0, 0, 0, 0.1)",
+            }
         },
     },
     plugins: [tailwindcssAnimate],
