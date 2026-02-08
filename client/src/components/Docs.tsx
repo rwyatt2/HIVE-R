@@ -10,7 +10,7 @@ interface DocsProps {
 export function Docs({ onClose }: DocsProps) {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <Card variant="glass-elevated" className="w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border-white/10 shadow-2xl relative">
+            <Card variant="glassmorphic" className="w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border-white/10 shadow-2xl relative">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
                     <div className="flex items-center gap-3">

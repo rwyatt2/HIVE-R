@@ -8,23 +8,29 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Zap, Shield, Rocket, Code2, Users, Eye, Layers, Bot, ChevronRight, Play, Star } from 'lucide-react';
+import {
+    ArrowRight, Zap, Shield, Rocket, Code2, Users, Eye, Layers, Bot, ChevronRight, Play, Star,
+    Globe, Briefcase, ClipboardList, Search, Palette, Accessibility, GitBranch, ShieldCheck,
+    Hammer, FlaskConical, FileText, Hexagon, MessageCircle, DollarSign, CalendarClock, BrainCircuit,
+    CheckCircle2, X, type LucideIcon
+} from 'lucide-react';
+
 
 // ─── Agent Data ─────────────────────────────────────────────────────────────
-const agents = [
-    { name: 'Router', icon: '🧭', role: 'Orchestrator', color: '#6366F1' },
-    { name: 'Founder', icon: '👔', role: 'Strategy', color: '#8B5CF6' },
-    { name: 'PM', icon: '📋', role: 'Requirements', color: '#A78BFA' },
-    { name: 'UX Researcher', icon: '🔬', role: 'User Insights', color: '#C4B5FD' },
-    { name: 'Designer', icon: '🎨', role: 'UI/UX', color: '#F472B6' },
-    { name: 'A11y', icon: '♿', role: 'Accessibility', color: '#34D399' },
-    { name: 'Planner', icon: '📐', role: 'Architecture', color: '#06B6D4' },
-    { name: 'Security', icon: '🔒', role: 'Security', color: '#EF4444' },
-    { name: 'Builder', icon: '🛠️', role: 'Code Gen', color: '#F59E0B' },
-    { name: 'Reviewer', icon: '👀', role: 'Code Review', color: '#10B981' },
-    { name: 'Tester', icon: '🧪', role: 'QA', color: '#3B82F6' },
-    { name: 'Tech Writer', icon: '✍️', role: 'Docs', color: '#64748B' },
-    { name: 'SRE', icon: '🚀', role: 'Deploy', color: '#F97316' },
+const agents: { name: string; Icon: LucideIcon; role: string; color: string }[] = [
+    { name: 'Router', Icon: Globe, role: 'Orchestrator', color: '#6366F1' },
+    { name: 'Founder', Icon: Briefcase, role: 'Strategy', color: '#8B5CF6' },
+    { name: 'PM', Icon: ClipboardList, role: 'Requirements', color: '#A78BFA' },
+    { name: 'UX Researcher', Icon: Search, role: 'User Insights', color: '#C4B5FD' },
+    { name: 'Designer', Icon: Palette, role: 'UI/UX', color: '#F472B6' },
+    { name: 'A11y', Icon: Accessibility, role: 'Accessibility', color: '#34D399' },
+    { name: 'Planner', Icon: GitBranch, role: 'Architecture', color: '#06B6D4' },
+    { name: 'Security', Icon: ShieldCheck, role: 'Security', color: '#EF4444' },
+    { name: 'Builder', Icon: Hammer, role: 'Code Gen', color: '#F59E0B' },
+    { name: 'Reviewer', Icon: Eye, role: 'Code Review', color: '#10B981' },
+    { name: 'Tester', Icon: FlaskConical, role: 'QA', color: '#3B82F6' },
+    { name: 'Tech Writer', Icon: FileText, role: 'Docs', color: '#64748B' },
+    { name: 'SRE', Icon: Rocket, role: 'Deploy', color: '#F97316' },
 ];
 
 const metrics = [
@@ -92,7 +98,7 @@ function AgentOrbit() {
                 <div className="relative">
                     <div className="absolute -inset-8 bg-electric-violet/20 rounded-full blur-2xl animate-pulse" />
                     <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-[0_0_60px_rgba(99,102,241,0.4)] border border-white/20">
-                        <span className="text-4xl">🐝</span>
+                        <Hexagon className="w-10 h-10 text-white" strokeWidth={1.5} />
                     </div>
                     <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-mono text-starlight-400 whitespace-nowrap tracking-widest uppercase">
                         HIVE-R Core
@@ -139,9 +145,10 @@ function AgentOrbit() {
                                 boxShadow: isActive ? `0 0 30px ${agent.color}40` : undefined,
                             }}
                         >
-                            <span className={`transition-all duration-300 ${isActive ? 'text-2xl' : 'text-lg'}`}>
-                                {agent.icon}
-                            </span>
+                            <agent.Icon
+                                className={`transition-all duration-300 ${isActive ? 'w-6 h-6' : 'w-5 h-5'}`}
+                                style={{ color: agent.color }}
+                            />
 
                             {/* Tooltip */}
                             <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -307,18 +314,18 @@ export function LandingPage() {
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {[
-                            { icon: '🗣️', pain: '"I explained my idea 5 times and still got the wrong thing built"', label: 'Translation gap' },
-                            { icon: '💰', pain: '"I spent $30k on a freelancer and the app breaks every week"', label: 'Wasted budget' },
-                            { icon: '📅', pain: '"My MVP was supposed to take 6 weeks — it\'s been 4 months"', label: 'Timeline creep' },
-                            { icon: '🤯', pain: '"React? Vue? PostgreSQL? I just want my product to work"', label: 'Tech overwhelm' },
-                            { icon: '🔒', pain: '"How do I know my app is secure enough to launch?"', label: 'Production anxiety' },
-                            { icon: '✅', pain: '"HIVE-R built what I described in 15 minutes. It just works."', label: 'The HIVE-R moment', highlight: true },
+                            { Icon: MessageCircle, pain: '"I explained my idea 5 times and still got the wrong thing built"', label: 'Translation gap' },
+                            { Icon: DollarSign, pain: '"I spent $30k on a freelancer and the app breaks every week"', label: 'Wasted budget' },
+                            { Icon: CalendarClock, pain: '"My MVP was supposed to take 6 weeks — it\'s been 4 months"', label: 'Timeline creep' },
+                            { Icon: BrainCircuit, pain: '"React? Vue? PostgreSQL? I just want my product to work"', label: 'Tech overwhelm' },
+                            { Icon: ShieldCheck, pain: '"How do I know my app is secure enough to launch?"', label: 'Production anxiety' },
+                            { Icon: CheckCircle2, pain: '"HIVE-R built what I described in 15 minutes. It just works."', label: 'The HIVE-R moment', highlight: true },
                         ].map(item => (
                             <div key={item.label} className={`rounded-2xl p-6 border transition-all duration-300 ${item.highlight
                                 ? 'bg-electric-violet/[0.08] border-electric-violet/25 hover:border-electric-violet/40'
                                 : 'bg-void-900/40 border-white/[0.06] hover:border-white/[0.12]'
                                 }`}>
-                                <div className="text-2xl mb-3">{item.icon}</div>
+                                <item.Icon className={`w-6 h-6 mb-3 ${item.highlight ? 'text-electric-violet' : 'text-starlight-400'}`} />
                                 <p className={`text-sm leading-relaxed italic mb-3 ${item.highlight ? 'text-white' : 'text-starlight-400'}`}>
                                     {item.pain}
                                 </p>
@@ -398,15 +405,19 @@ export function LandingPage() {
                         {/* Traditional path */}
                         <div className="bg-void-900/40 border border-white/[0.06] rounded-2xl p-8 space-y-5">
                             <div className="flex items-center gap-3 mb-2">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg">💸</div>
+                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                                    <DollarSign className="w-5 h-5 text-starlight-400" />
+                                </div>
                                 <div>
                                     <div className="font-semibold text-starlight-400">Traditional Path</div>
-                                    <div className="text-xs text-starlight-700">Freelancers & agencies</div>
+                                    <div className="text-xs text-starlight-700">Freelancers &amp; agencies</div>
                                 </div>
                             </div>
                             {['2–3 months for a basic MVP', '$15k–$50k minimum investment', 'Scope creep & missed deadlines', 'Lost in translation — your vision gets diluted'].map(item => (
                                 <div key={item} className="flex items-center gap-3 text-sm text-starlight-400">
-                                    <div className="w-5 h-5 rounded-full bg-reactor-red/10 flex items-center justify-center text-xs text-reactor-red">✗</div>
+                                    <div className="w-5 h-5 rounded-full bg-reactor-red/10 flex items-center justify-center">
+                                        <X className="w-3 h-3 text-reactor-red" />
+                                    </div>
                                     {item}
                                 </div>
                             ))}
@@ -416,7 +427,9 @@ export function LandingPage() {
                         <div className="bg-electric-violet/[0.06] border border-electric-violet/20 rounded-2xl p-8 space-y-5 relative overflow-hidden">
                             <div className="absolute -top-20 -right-20 w-40 h-40 bg-electric-violet/10 rounded-full blur-3xl" />
                             <div className="relative flex items-center gap-3 mb-2">
-                                <div className="w-10 h-10 rounded-xl bg-electric-violet/15 border border-electric-violet/30 flex items-center justify-center text-lg">🐝</div>
+                                <div className="w-10 h-10 rounded-xl bg-electric-violet/15 border border-electric-violet/30 flex items-center justify-center">
+                                    <Hexagon className="w-5 h-5 text-electric-violet" />
+                                </div>
                                 <div>
                                     <div className="font-semibold text-white">HIVE-R</div>
                                     <div className="text-xs text-electric-violet">Your AI software team</div>
@@ -429,7 +442,9 @@ export function LandingPage() {
                                 'Describe in plain English — no technical jargon needed',
                             ].map(item => (
                                 <div key={item} className="relative flex items-center gap-3 text-sm text-white">
-                                    <div className="w-5 h-5 rounded-full bg-electric-violet/20 border border-electric-violet/30 flex items-center justify-center text-xs text-electric-violet">✓</div>
+                                    <div className="w-5 h-5 rounded-full bg-electric-violet/20 border border-electric-violet/30 flex items-center justify-center">
+                                        <CheckCircle2 className="w-3 h-3 text-electric-violet" />
+                                    </div>
                                     {item}
                                 </div>
                             ))}
@@ -466,10 +481,10 @@ export function LandingPage() {
                             >
                                 <div className="flex items-center gap-3">
                                     <div
-                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl border border-white/10 shrink-0"
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center border border-white/10 shrink-0"
                                         style={{ background: `${agent.color}15` }}
                                     >
-                                        {agent.icon}
+                                        <agent.Icon className="w-5 h-5" style={{ color: agent.color }} />
                                     </div>
                                     <div className="min-w-0">
                                         <div className="text-sm font-medium text-white truncate">{agent.name}</div>
@@ -518,9 +533,10 @@ export function LandingPage() {
                                     <div className="flex -space-x-1.5">
                                         {demo.agents.map(name => {
                                             const agent = agents.find(a => a.name === name);
+                                            const IconComponent = agent?.Icon || Bot;
                                             return (
-                                                <div key={name} className="w-7 h-7 rounded-full bg-void-800 border border-white/10 flex items-center justify-center text-sm">
-                                                    {agent?.icon || '🤖'}
+                                                <div key={name} className="w-7 h-7 rounded-full bg-void-800 border border-white/10 flex items-center justify-center">
+                                                    <IconComponent className="w-3.5 h-3.5" style={{ color: agent?.color || '#6366F1' }} />
                                                 </div>
                                             );
                                         })}
@@ -578,7 +594,7 @@ export function LandingPage() {
                         {/* Brand */}
                         <div className="space-y-4 lg:col-span-1">
                             <div className="flex items-center gap-2">
-                                <span className="text-2xl">🐝</span>
+                                <Hexagon className="w-6 h-6 text-electric-violet" />
                                 <span className="text-lg font-bold">HIVE-R</span>
                             </div>
                             <p className="text-sm text-starlight-400 leading-relaxed">
@@ -639,7 +655,7 @@ export function LandingPage() {
                         </div>
                     </div>
                 </div>
-            </footer>
-        </div>
+            </footer >
+        </div >
     );
 }

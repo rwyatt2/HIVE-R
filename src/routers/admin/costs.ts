@@ -18,6 +18,7 @@ import {
 } from "../../lib/cost-tracker.js";
 import type { DailyCost, AgentCost, CostSummary } from "../../types/cost-tracking.js";
 import type { TopQuery, CostProjection } from "../../lib/cost-tracker.js";
+import { validateQuery, CostPeriodSchema, TrendDaysSchema, PaginationSchema } from "../../lib/input-validation.js";
 
 // ============================================================================
 // IN-MEMORY CACHE (5 minute TTL)
@@ -104,12 +105,17 @@ costsRouter.get("/today", (c) => {
  * Cost breakdown by agent for the requested period.
  */
 costsRouter.get("/by-agent", (c) => {
-    const period = (c.req.query("period") || "today") as "today" | "week" | "month";
-
-    // Validate period
-    if (!["today", "week", "month"].includes(period)) {
-        return c.json({ error: "Invalid period. Use: today, week, month" }, 400);
+    // Validate period param with Zod
+    const queryValidation = validateQuery(
+        CostPeriodSchema,
+        { period: c.req.query("period") },
+        'admin_costs_by_agent_query_failed'
+    );
+    if (!queryValidation.success) {
+        return c.json(queryValidation, 400);
     }
+
+    const period = queryValidation.data.period ?? "today";
 
     try {
         const result = cached<AgentCost[]>(`by-agent:${period}`, () => {
@@ -150,12 +156,17 @@ costsRouter.get("/by-agent", (c) => {
  * Daily cost aggregates over time for charting.
  */
 costsRouter.get("/trend", (c) => {
-    const daysParam = c.req.query("days");
-    const days = daysParam ? parseInt(daysParam, 10) : 30;
-
-    if (isNaN(days) || days < 1 || days > 365) {
-        return c.json({ error: "days must be between 1 and 365" }, 400);
+    // Validate days param with Zod
+    const queryValidation = validateQuery(
+        TrendDaysSchema,
+        { days: c.req.query("days") },
+        'admin_costs_trend_query_failed'
+    );
+    if (!queryValidation.success) {
+        return c.json(queryValidation, 400);
     }
+
+    const days = queryValidation.data.days ?? 30;
 
     try {
         const result = cached<CostSummary>(`trend:${days}`, () => {
@@ -189,16 +200,20 @@ costsRouter.get("/trend", (c) => {
  * Most expensive individual LLM calls.
  */
 costsRouter.get("/top-queries", (c) => {
-    const limitParam = c.req.query("limit");
-    const limit = limitParam ? parseInt(limitParam, 10) : 10;
-
-    if (isNaN(limit) || limit < 1 || limit > 100) {
-        return c.json({ error: "limit must be between 1 and 100" }, 400);
+    // Validate limit param with Zod
+    const queryValidation = validateQuery(
+        PaginationSchema,
+        { limit: c.req.query("limit") },
+        'admin_costs_top_queries_query_failed'
+    );
+    if (!queryValidation.success) {
+        return c.json(queryValidation, 400);
     }
+
+    const limit = queryValidation.data.limit ?? 10;
 
     try {
         const result = cached<TopQuery[]>(`top-queries:${limit}`, () => getTopQueries(limit));
-
         return c.json({ limit, ...result });
     } catch (err) {
         return c.json({ error: "Failed to fetch top queries", detail: (err as Error).message }, 500);

@@ -141,6 +141,178 @@ export const MemorySearchSchema = z.object({
 export type MemorySearchInput = z.infer<typeof MemorySearchSchema>;
 
 // ============================================================================
+// AUTH SCHEMAS
+// ============================================================================
+
+/**
+ * Password validation rules:
+ * - Min 8 characters
+ * - At least 1 uppercase letter
+ * - At least 1 number
+ */
+const passwordSchema = z
+    .string({ error: "Password is required" })
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number");
+
+/**
+ * Schema for /auth/register
+ */
+export const AuthRegisterSchema = z.object({
+    email: z
+        .string({ error: "Email is required" })
+        .email("Invalid email format")
+        .max(255, "Email cannot exceed 255 characters"),
+    password: passwordSchema,
+});
+
+export type AuthRegisterInput = z.infer<typeof AuthRegisterSchema>;
+
+/**
+ * Schema for /auth/login (less strict password validation - just check it exists)
+ */
+export const AuthLoginSchema = z.object({
+    email: z
+        .string({ error: "Email is required" })
+        .email("Invalid email format"),
+    password: z
+        .string({ error: "Password is required" })
+        .min(1, "Password is required"),
+});
+
+export type AuthLoginInput = z.infer<typeof AuthLoginSchema>;
+
+/**
+ * Schema for /auth/refresh
+ */
+export const RefreshTokenSchema = z.object({
+    refreshToken: z
+        .string({ error: "Refresh token is required" })
+        .min(1, "Refresh token is required"),
+});
+
+export type RefreshTokenInput = z.infer<typeof RefreshTokenSchema>;
+
+// ============================================================================
+// HISTORY SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for creating a new session
+ */
+export const SessionCreateSchema = z.object({
+    userId: z.string().uuid("userId must be a valid UUID").optional(),
+    title: z.string().max(200, "Title cannot exceed 200 characters").optional(),
+});
+
+export type SessionCreateInput = z.infer<typeof SessionCreateSchema>;
+
+/**
+ * Schema for updating session title
+ */
+export const SessionUpdateSchema = z.object({
+    title: z
+        .string({ error: "Title is required" })
+        .min(1, "Title cannot be empty")
+        .max(200, "Title cannot exceed 200 characters"),
+});
+
+export type SessionUpdateInput = z.infer<typeof SessionUpdateSchema>;
+
+/**
+ * Schema for creating a message
+ */
+export const MessageCreateSchema = z.object({
+    role: z.enum(["user", "agent"], { error: "Role must be 'user' or 'agent'" }),
+    content: z
+        .string({ error: "Content is required" })
+        .min(1, "Content cannot be empty")
+        .max(INPUT_LIMITS.MAX_MESSAGE_LENGTH, `Content cannot exceed ${INPUT_LIMITS.MAX_MESSAGE_LENGTH.toLocaleString()} characters`),
+    agentName: z.string().max(50, "Agent name cannot exceed 50 characters").optional(),
+});
+
+export type MessageCreateInput = z.infer<typeof MessageCreateSchema>;
+
+/**
+ * Schema for bulk message import
+ */
+export const BulkImportSchema = z.object({
+    messages: z
+        .array(
+            z.object({
+                role: z.enum(["user", "agent"]),
+                content: z.string().min(1).max(INPUT_LIMITS.MAX_MESSAGE_LENGTH),
+                agentName: z.string().max(50).optional(),
+                timestamp: z.string().optional(),
+            })
+        )
+        .min(1, "At least one message is required")
+        .max(1000, "Cannot import more than 1000 messages at once"),
+});
+
+export type BulkImportInput = z.infer<typeof BulkImportSchema>;
+
+// ============================================================================
+// AGENT CONFIG SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for updating agent configuration
+ */
+export const AgentConfigUpdateSchema = z.object({
+    systemPrompt: z
+        .string({ error: "System prompt is required" })
+        .min(1, "System prompt cannot be empty")
+        .max(50_000, "System prompt cannot exceed 50,000 characters"),
+});
+
+export type AgentConfigUpdateInput = z.infer<typeof AgentConfigUpdateSchema>;
+
+// ============================================================================
+// ADMIN/PAGINATION SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for pagination query params (coerces strings to numbers)
+ */
+export const PaginationSchema = z.object({
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    offset: z.coerce.number().int().min(0).optional(),
+});
+
+export type PaginationInput = z.infer<typeof PaginationSchema>;
+
+/**
+ * Schema for admin limit query param (up to 200)
+ */
+export const AdminLimitSchema = z.object({
+    limit: z.coerce.number().int().min(1, "Limit must be at least 1").max(200, "Limit cannot exceed 200").optional(),
+});
+
+export type AdminLimitInput = z.infer<typeof AdminLimitSchema>;
+
+/**
+ * Schema for cost trend days query param
+ */
+export const TrendDaysSchema = z.object({
+    days: z.coerce.number().int().min(1, "Days must be at least 1").max(365, "Days cannot exceed 365").optional(),
+});
+
+export type TrendDaysInput = z.infer<typeof TrendDaysSchema>;
+
+/**
+ * Schema for cost period query param
+ */
+export const CostPeriodSchema = z.object({
+    period: z.enum(["today", "week", "month"], {
+        error: "Period must be 'today', 'week', or 'month'"
+    }).optional(),
+});
+
+export type CostPeriodInput = z.infer<typeof CostPeriodSchema>;
+
+// ============================================================================
 // VALIDATION FUNCTIONS
 // ============================================================================
 
@@ -238,6 +410,55 @@ export function validateMemorySearch(body: unknown, ip?: string): ValidationResu
         data: parsed.data,
         sanitization: { sanitized: parsed.data.query, hadInjection: false, detectedPatterns: [] },
     };
+}
+
+/**
+ * Generic body validation function - works with any Zod schema.
+ * Use for endpoints that don't need special sanitization logic.
+ */
+export function validateBody<T>(
+    schema: z.ZodSchema<T>,
+    body: unknown,
+    eventName: string,
+    ip?: string
+): { success: true; data: T } | ValidationError {
+    const parsed = schema.safeParse(body);
+
+    if (!parsed.success) {
+        const details = parsed.error.issues.map(issue => ({
+            field: issue.path.join(".") || "body",
+            message: issue.message,
+        }));
+
+        logValidationFailure(eventName, {
+            ip,
+            errors: details,
+        });
+
+        return {
+            success: false,
+            error: details[0]?.message || "Invalid input",
+            code: "VALIDATION_ERROR",
+            details,
+        };
+    }
+
+    return {
+        success: true,
+        data: parsed.data,
+    };
+}
+
+/**
+ * Validate query parameters using a Zod schema (coercion-aware).
+ */
+export function validateQuery<T>(
+    schema: z.ZodSchema<T>,
+    query: Record<string, string | undefined>,
+    eventName: string,
+    ip?: string
+): { success: true; data: T } | ValidationError {
+    return validateBody(schema, query, eventName, ip);
 }
 
 // ============================================================================

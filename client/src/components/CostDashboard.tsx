@@ -17,7 +17,6 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, Cell,
 } from 'recharts';
-import './CostDashboard.css';
 
 // ============================================================================
 // Types

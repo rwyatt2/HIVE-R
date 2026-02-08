@@ -51,7 +51,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                     <div className="text-center mb-8">
                         <div className="relative inline-flex items-center justify-center w-16 h-16 mb-4">
                             <Hexagon className="absolute w-16 h-16 text-electric-violet/30" strokeWidth={1} />
-                            <span className="text-3xl relative z-10">🐝</span>
+                            <Hexagon className="w-8 h-8 text-electric-violet relative z-10" strokeWidth={1.5} />
                         </div>
                         <h1 className="text-2xl font-bold text-white tracking-tight">
                             HIVE<span className="text-electric-violet">-R</span>
@@ -75,7 +75,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="w-full h-11 px-4 bg-void-800/60 border border-white/[0.08] rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
+                                className="w-full h-11 px-4 bg-void-800/60 border border-white/20 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
                             />
                         </div>
                         <div>
@@ -85,7 +85,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full h-11 px-4 bg-void-800/60 border border-white/[0.08] rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
+                                className="w-full h-11 px-4 bg-void-800/60 border border-white/20 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
                             />
                         </div>
 

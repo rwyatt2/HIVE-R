@@ -4,29 +4,37 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../../lib/utils"
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
     {
         variants: {
             variant: {
-                default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm hover:shadow-glow transition-all duration-300",
-                destructive:
-                    "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-                outline:
-                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground border-gradient",
+                default:
+                    "bg-indigo-gradient text-white shadow-neon-indigo/50 hover:shadow-neon-indigo hover:scale-[1.02] hover:tracking-wide",
                 secondary:
-                    "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                ghost: "hover:bg-accent hover:text-accent-foreground",
-                link: "text-primary underline-offset-4 hover:underline",
-                gradient: "bg-gradient-to-r from-primary to-gradient-purple text-white shadow-lg hover:shadow-primary/25 hover:scale-[1.02] border-none",
-                honey: "bg-gradient-to-r from-hive-honey to-hive-glow text-white shadow-lg hover:shadow-hive-honey/25 hover:scale-[1.02] border-none",
-                glass: "glass hover:glass-elevated text-foreground border-white/10 hover:border-white/20",
-                google: "bg-white text-black hover:bg-gray-100 border border-gray-200 shadow-sm",
+                    "border-2 border-hive-indigo bg-transparent text-hive-indigo hover:bg-hive-indigo-muted hover:scale-[1.02]",
+                ghost:
+                    "bg-transparent text-hive-text-secondary hover:bg-hive-indigo-muted hover:text-hive-text-primary",
+                destructive:
+                    "bg-hive-error text-white hover:bg-hive-error/90 shadow-sm",
+                outline:
+                    "border border-hive-border bg-transparent text-hive-text-primary hover:bg-hive-surface hover:border-hive-border-light",
+                link:
+                    "text-hive-indigo underline-offset-4 hover:underline p-0 h-auto",
+                gradient:
+                    "bg-hero-gradient text-white shadow-lg hover:shadow-neon-indigo hover:scale-[1.02]",
+                honey:
+                    "bg-honey-gradient text-white shadow-lg hover:shadow-neon-honey hover:scale-[1.02]",
+                glass:
+                    "glass text-hive-text-primary hover:border-hive-border-bright",
+                google:
+                    "bg-white text-gray-800 hover:bg-gray-50 border border-gray-200 shadow-sm",
             },
             size: {
-                default: "h-10 px-4 py-2",
-                sm: "h-9 rounded-md px-3",
-                lg: "h-11 rounded-md px-8",
-                icon: "h-10 w-10",
+                default: "h-12 px-6 py-3",
+                sm: "h-9 px-4 text-xs rounded-md",
+                lg: "h-14 px-8 text-base rounded-lg",
+                icon: "h-10 w-10 rounded-lg p-0",
+                "icon-sm": "h-8 w-8 rounded-md p-0 text-xs",
             },
         },
         defaultVariants: {

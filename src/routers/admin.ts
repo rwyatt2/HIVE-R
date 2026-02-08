@@ -9,6 +9,7 @@
 import { Hono } from 'hono';
 import { getDb, getUserById } from '../lib/user-auth.js';
 import { logger } from '../lib/logger.js';
+import { validateQuery, AdminLimitSchema, PaginationSchema } from '../lib/input-validation.js';
 
 const app = new Hono();
 
@@ -86,8 +87,18 @@ app.get('/stats', (c) => {
  * List all users
  */
 app.get('/users', (c) => {
+    // Validate limit param
+    const queryValidation = validateQuery(
+        AdminLimitSchema,
+        { limit: c.req.query('limit') },
+        'admin_users_query_failed'
+    );
+    if (!queryValidation.success) {
+        return c.json(queryValidation, 400);
+    }
+
     const db = getDb();
-    const limit = 50;
+    const limit = queryValidation.data.limit ?? 50;
 
     const users = db.prepare(`
         SELECT id, email, role, created_at 
@@ -129,14 +140,18 @@ import { getAlertHistory } from "../services/budget-alerts.js";
  * Budget alert history and configuration.
  */
 app.get('/alerts', (c) => {
+    // Validate limit param with Zod
+    const queryValidation = validateQuery(
+        AdminLimitSchema,
+        { limit: c.req.query('limit') },
+        'admin_alerts_query_failed'
+    );
+    if (!queryValidation.success) {
+        return c.json(queryValidation, 400);
+    }
+
     try {
-        const limitParam = c.req.query('limit');
-        const limit = limitParam ? parseInt(limitParam, 10) : 50;
-
-        if (isNaN(limit) || limit < 1 || limit > 200) {
-            return c.json({ error: 'limit must be between 1 and 200' }, 400);
-        }
-
+        const limit = queryValidation.data.limit ?? 50;
         return c.json(getAlertHistory(limit));
     } catch (err) {
         return c.json({ error: 'Failed to fetch alert history', detail: (err as Error).message }, 500);

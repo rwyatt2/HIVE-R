@@ -1,23 +1,32 @@
 import * as React from "react"
 import { cn } from "../../lib/utils"
 
+/* ─── Card ────────────────────────────────────────────────────────────────── */
+
 const Card = React.forwardRef<
     HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement> & { variant?: "default" | "glass" | "glass-elevated" | "agent" }
->(({ className, variant = "glass", ...props }, ref) => (
+    React.HTMLAttributes<HTMLDivElement> & {
+        variant?: "default" | "glass" | "glassmorphic" | "agent" | "metric"
+    }
+>(({ className, variant = "default", ...props }, ref) => (
     <div
         ref={ref}
         className={cn(
-            "rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300",
-            variant === "glass" && "glass hover:border-white/20",
-            variant === "glass-elevated" && "glass-elevated hover:shadow-glow-sm",
-            variant === "agent" && "glass border-primary/20 hover:border-primary/50 hover:shadow-glow-sm",
+            "rounded-xl text-card-foreground transition-all duration-300",
+            variant === "default" && "glass-card",
+            variant === "glass" && "glass-card",
+            variant === "glassmorphic" && "glass-panel rounded-xl",
+            variant === "agent" &&
+            "glass-card border-hive-indigo/20 hover:border-hive-indigo/50 hover:shadow-neon-indigo/20",
+            variant === "metric" && "glass-card relative overflow-hidden",
             className
         )}
         {...props}
     />
 ))
 Card.displayName = "Card"
+
+/* ─── CardHeader ──────────────────────────────────────────────────────────── */
 
 const CardHeader = React.forwardRef<
     HTMLDivElement,
@@ -31,6 +40,8 @@ const CardHeader = React.forwardRef<
 ))
 CardHeader.displayName = "CardHeader"
 
+/* ─── CardTitle ───────────────────────────────────────────────────────────── */
+
 const CardTitle = React.forwardRef<
     HTMLParagraphElement,
     React.HTMLAttributes<HTMLHeadingElement>
@@ -38,7 +49,7 @@ const CardTitle = React.forwardRef<
     <h3
         ref={ref}
         className={cn(
-            "text-lg font-semibold leading-none tracking-tight",
+            "text-lg font-semibold leading-none tracking-tight text-hive-text-primary",
             className
         )}
         {...props}
@@ -46,17 +57,21 @@ const CardTitle = React.forwardRef<
 ))
 CardTitle.displayName = "CardTitle"
 
+/* ─── CardDescription ─────────────────────────────────────────────────────── */
+
 const CardDescription = React.forwardRef<
     HTMLParagraphElement,
     React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
     <p
         ref={ref}
-        className={cn("text-sm text-muted-foreground", className)}
+        className={cn("text-sm text-hive-text-secondary", className)}
         {...props}
     />
 ))
 CardDescription.displayName = "CardDescription"
+
+/* ─── CardContent ─────────────────────────────────────────────────────────── */
 
 const CardContent = React.forwardRef<
     HTMLDivElement,
@@ -65,6 +80,8 @@ const CardContent = React.forwardRef<
     <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
+
+/* ─── CardFooter ──────────────────────────────────────────────────────────── */
 
 const CardFooter = React.forwardRef<
     HTMLDivElement,
@@ -78,7 +95,8 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-// Metric Card Component
+/* ─── MetricCard ──────────────────────────────────────────────────────────── */
+
 interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
     title: string
     value: string
@@ -89,26 +107,50 @@ interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
     ({ className, title, value, icon, trend, trendUp, ...props }, ref) => (
-        <Card ref={ref} className={cn("relative overflow-hidden", className)} {...props}>
+        <Card
+            ref={ref}
+            variant="metric"
+            className={cn("group", className)}
+            {...props}
+        >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-hive-text-secondary">
                     {title}
                 </CardTitle>
-                {icon && <div className="text-primary h-4 w-4">{icon}</div>}
+                {icon && (
+                    <div className="text-hive-indigo h-5 w-5 opacity-80 group-hover:opacity-100 transition-opacity">
+                        {icon}
+                    </div>
+                )}
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{value}</div>
+                <div className="text-h3 font-bold text-hive-text-primary">
+                    {value}
+                </div>
                 {trend && (
-                    <p className={cn("text-xs flex items-center mt-1", trendUp ? "text-success" : "text-error")}>
+                    <p
+                        className={cn(
+                            "text-xs flex items-center gap-1 mt-1 font-medium",
+                            trendUp ? "text-hive-success" : "text-hive-error"
+                        )}
+                    >
                         {trendUp ? "↑" : "↓"} {trend}
                     </p>
                 )}
             </CardContent>
-            {/* Background decoration */}
-            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
+            {/* Decorative glow */}
+            <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-hive-indigo/5 rounded-full blur-2xl group-hover:bg-hive-indigo/10 transition-colors" />
         </Card>
     )
 )
 MetricCard.displayName = "MetricCard"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, MetricCard }
+export {
+    Card,
+    CardHeader,
+    CardFooter,
+    CardTitle,
+    CardDescription,
+    CardContent,
+    MetricCard,
+}

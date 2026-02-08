@@ -142,7 +142,7 @@ export function AgentConfigPage({ onClose }: AgentConfigPageProps) {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <Card variant="glass-elevated" className="w-full max-w-6xl h-[85vh] flex overflow-hidden border-white/10 shadow-2xl relative bg-background-elevated/95">
+            <Card variant="glassmorphic" className="w-full max-w-6xl h-[85vh] flex overflow-hidden border-white/10 shadow-2xl relative bg-background-elevated/95">
 
                 {/* Close Button */}
                 <div className="absolute top-4 right-4 z-50">

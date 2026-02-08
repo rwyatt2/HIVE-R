@@ -19,6 +19,22 @@ import { logger } from "./lib/logger.js";
 import { authMiddleware, isAuthEnabled } from "./lib/auth.js";
 import { jwtAuthMiddleware, type AuthUser } from "./middleware/auth.js";
 import { tieredRateLimiter } from "./middleware/rate-limit.js";
+import { bodySizeLimit } from "./middleware/body-size.js";
+
+// Input Validation
+import {
+    validateBody,
+    validateQuery,
+    AuthRegisterSchema,
+    AuthLoginSchema,
+    RefreshTokenSchema,
+    SessionCreateSchema,
+    SessionUpdateSchema,
+    MessageCreateSchema,
+    BulkImportSchema,
+    AgentConfigUpdateSchema,
+    PaginationSchema,
+} from "./lib/input-validation.js";
 
 // App type with user context
 type AppVariables = { user: AuthUser };
@@ -91,6 +107,7 @@ app.use('*', sentryErrorHandler());  // ✅ Sentry error capture (first to catch
 app.use('*', securityHeaders());  // ✅ Security headers (XSS, clickjacking protection)
 app.use('*', cors(["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "*"]));
 app.use('*', errorHandler());
+app.use('*', bodySizeLimit);             // ✅ Reject bodies > 10KB
 app.use('*', metricsMiddleware());         // ✅ Prometheus HTTP metrics
 app.use('*', requestLogger());
 app.use('*', authMiddleware);  // ✅ API Key auth (set HIVE_API_KEY to enable)
@@ -345,8 +362,18 @@ app.post('/thread/:threadId/approve', async (c) => {
  */
 app.get('/history/sessions', (c) => {
     const userId = c.req.query('userId'); // Optional user filter
-    const limit = parseInt(c.req.query('limit') || '50');
 
+    // Validate pagination params
+    const queryValidation = validateQuery(
+        PaginationSchema,
+        { limit: c.req.query('limit') },
+        'history_sessions_query_failed'
+    );
+    if (!queryValidation.success) {
+        return c.json(queryValidation, 400);
+    }
+
+    const limit = queryValidation.data.limit ?? 50;
     const sessions = history.getUserSessions(userId, limit);
 
     return c.json({
@@ -359,11 +386,19 @@ app.get('/history/sessions', (c) => {
  * Create a new chat session
  */
 app.post('/history/sessions', async (c) => {
-    const body = await c.req.json().catch(() => ({}));
-    const { userId, title } = body as { userId?: string; title?: string };
+    let body: unknown;
+    try {
+        body = await c.req.json();
+    } catch {
+        body = {}; // Allow empty body for session creation
+    }
 
-    const session = history.createSession(userId, title);
+    const validation = validateBody(SessionCreateSchema, body, 'history_session_create_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
+    }
 
+    const session = history.createSession(validation.data.userId, validation.data.title);
     return c.json(session, 201);
 });
 
@@ -392,10 +427,17 @@ app.get('/history/sessions/:sessionId', (c) => {
  */
 app.patch('/history/sessions/:sessionId', async (c) => {
     const sessionId = c.req.param('sessionId');
-    const { title } = await c.req.json() as { title: string };
 
-    if (!title) {
-        return c.json({ error: 'Title is required' }, 400);
+    let body: unknown;
+    try {
+        body = await c.req.json();
+    } catch {
+        return c.json({ success: false, error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
+    }
+
+    const validation = validateBody(SessionUpdateSchema, body, 'history_session_update_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
     }
 
     const session = history.getSession(sessionId);
@@ -403,8 +445,7 @@ app.patch('/history/sessions/:sessionId', async (c) => {
         return c.json({ error: 'Session not found' }, 404);
     }
 
-    history.updateSessionTitle(sessionId, title);
-
+    history.updateSessionTitle(sessionId, validation.data.title);
     return c.json({ success: true });
 });
 
@@ -428,26 +469,29 @@ app.delete('/history/sessions/:sessionId', (c) => {
  */
 app.post('/history/sessions/:sessionId/messages', async (c) => {
     const sessionId = c.req.param('sessionId');
-    const body = await c.req.json() as {
-        role: "user" | "agent";
-        content: string;
-        agentName?: string
-    };
+
+    let body: unknown;
+    try {
+        body = await c.req.json();
+    } catch {
+        return c.json({ success: false, error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
+    }
+
+    const validation = validateBody(MessageCreateSchema, body, 'history_message_create_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
+    }
 
     const session = history.getSession(sessionId);
     if (!session) {
         return c.json({ error: 'Session not found' }, 404);
     }
 
-    if (!body.role || !body.content) {
-        return c.json({ error: 'role and content are required' }, 400);
-    }
-
     const message = history.saveMessage(
         sessionId,
-        body.role,
-        body.content,
-        body.agentName
+        validation.data.role,
+        validation.data.content,
+        validation.data.agentName
     );
 
     return c.json(message, 201);
@@ -458,27 +502,26 @@ app.post('/history/sessions/:sessionId/messages', async (c) => {
  */
 app.post('/history/sessions/:sessionId/import', async (c) => {
     const sessionId = c.req.param('sessionId');
-    const { messages } = await c.req.json() as {
-        messages: Array<{
-            role: "user" | "agent";
-            content: string;
-            agentName?: string;
-            timestamp?: string;
-        }>;
-    };
+
+    let body: unknown;
+    try {
+        body = await c.req.json();
+    } catch {
+        return c.json({ success: false, error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
+    }
+
+    const validation = validateBody(BulkImportSchema, body, 'history_bulk_import_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
+    }
 
     const session = history.getSession(sessionId);
     if (!session) {
         return c.json({ error: 'Session not found' }, 404);
     }
 
-    if (!messages || !Array.isArray(messages)) {
-        return c.json({ error: 'messages array is required' }, 400);
-    }
-
-    history.bulkSaveMessages(sessionId, messages);
-
-    return c.json({ success: true, imported: messages.length });
+    history.bulkSaveMessages(sessionId, validation.data.messages);
+    return c.json({ success: true, imported: validation.data.messages.length });
 });
 
 // ============================================
@@ -490,13 +533,22 @@ app.post('/history/sessions/:sessionId/import', async (c) => {
  * Register a new user
  */
 app.post('/auth/register', async (c) => {
+    // Parse body
+    let body: unknown;
     try {
-        const { email, password } = await c.req.json() as { email: string; password: string };
+        body = await c.req.json();
+    } catch {
+        return c.json({ success: false, error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
+    }
 
-        if (!email || !password) {
-            return c.json({ error: 'Email and password are required' }, 400);
-        }
+    // Validate with Zod (email format + password strength)
+    const validation = validateBody(AuthRegisterSchema, body, 'auth_register_validation_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
+    }
 
+    try {
+        const { email, password } = validation.data;
         const user = userAuth.registerUser(email, password);
         const tokens = userAuth.loginUser(email, password);
 
@@ -514,13 +566,22 @@ app.post('/auth/register', async (c) => {
  * Login
  */
 app.post('/auth/login', async (c) => {
+    // Parse body
+    let body: unknown;
     try {
-        const { email, password } = await c.req.json() as { email: string; password: string };
+        body = await c.req.json();
+    } catch {
+        return c.json({ success: false, error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
+    }
 
-        if (!email || !password) {
-            return c.json({ error: 'Email and password are required' }, 400);
-        }
+    // Validate with Zod
+    const validation = validateBody(AuthLoginSchema, body, 'auth_login_validation_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
+    }
 
+    try {
+        const { email, password } = validation.data;
         const tokens = userAuth.loginUser(email, password);
         const payload = userAuth.verifyJWT(tokens.accessToken);
 
@@ -544,15 +605,22 @@ app.post('/auth/login', async (c) => {
  * Refresh tokens
  */
 app.post('/auth/refresh', async (c) => {
+    // Parse body
+    let body: unknown;
     try {
-        const { refreshToken } = await c.req.json() as { refreshToken: string };
+        body = await c.req.json();
+    } catch {
+        return c.json({ success: false, error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
+    }
 
-        if (!refreshToken) {
-            return c.json({ error: 'Refresh token is required' }, 400);
-        }
+    // Validate with Zod
+    const validation = validateBody(RefreshTokenSchema, body, 'auth_refresh_validation_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
+    }
 
-        const tokens = userAuth.refreshTokens(refreshToken);
-
+    try {
+        const tokens = userAuth.refreshTokens(validation.data.refreshToken);
         return c.json(tokens);
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Token refresh failed';
@@ -623,13 +691,20 @@ app.get('/agents/config/:name', (c) => {
  */
 app.put('/agents/config/:name', async (c) => {
     const name = c.req.param('name');
-    const { systemPrompt } = await c.req.json() as { systemPrompt: string };
 
-    if (!systemPrompt || typeof systemPrompt !== 'string') {
-        return c.json({ error: 'systemPrompt is required' }, 400);
+    let body: unknown;
+    try {
+        body = await c.req.json();
+    } catch {
+        return c.json({ success: false, error: 'Invalid JSON in request body', code: 'INVALID_JSON' }, 400);
     }
 
-    const config = agentConfig.updateAgentConfig(name, systemPrompt);
+    const validation = validateBody(AgentConfigUpdateSchema, body, 'agent_config_update_failed');
+    if (!validation.success) {
+        return c.json(validation, 400);
+    }
+
+    const config = agentConfig.updateAgentConfig(name, validation.data.systemPrompt);
 
     if (!config) {
         return c.json({ error: 'Agent not found' }, 404);
