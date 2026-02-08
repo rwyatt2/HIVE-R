@@ -1,0 +1,61 @@
+{
+    "header": "# Changelog\n\nAll notable changes to HIVE-R will be documented in this file.\nSee [Conventional Commits](https://conventionalcommits.org) for commit guidelines.\n",
+    "types": [
+        {
+            "type": "feat",
+            "section": "🚀 Features"
+        },
+        {
+            "type": "fix",
+            "section": "🐛 Bug Fixes"
+        },
+        {
+            "type": "perf",
+            "section": "⚡ Performance"
+        },
+        {
+            "type": "refactor",
+            "section": "♻️ Refactoring"
+        },
+        {
+            "type": "docs",
+            "section": "📝 Documentation"
+        },
+        {
+            "type": "test",
+            "section": "🧪 Tests"
+        },
+        {
+            "type": "ci",
+            "section": "🔧 CI/CD"
+        },
+        {
+            "type": "build",
+            "section": "📦 Build"
+        },
+        {
+            "type": "chore",
+            "hidden": true
+        },
+        {
+            "type": "style",
+            "hidden": true
+        },
+        {
+            "type": "revert",
+            "section": "⏪ Reverts"
+        }
+    ],
+    "commitUrlFormat": "https://github.com/rwyatt2/HIVE-R/commit/{{hash}}",
+    "compareUrlFormat": "https://github.com/rwyatt2/HIVE-R/compare/{{previousTag}}...{{currentTag}}",
+    "issueUrlFormat": "https://github.com/rwyatt2/HIVE-R/issues/{{id}}",
+    "issuePrefixes": [
+        "#"
+    ],
+    "skip": {
+        "bump": false,
+        "changelog": false,
+        "commit": false,
+        "tag": false
+    }
+}

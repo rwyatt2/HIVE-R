@@ -81,7 +81,7 @@ export function createArtifactAwareNode<TState extends {
         const { ready, missing } = checkArtifactRequirements(state.artifactStore, agentName);
 
         if (!ready) {
-            logger.warn(`${agentName} missing required artifacts`, { missing });
+            logger.warn({ missing }, `${agentName} missing required artifacts`);
             // Could return early or continue with warning
         }
 

@@ -113,7 +113,7 @@ export async function jwtAuthMiddleware(c: Context, next: Next): Promise<Respons
     const token = extractBearerToken(authHeader);
 
     if (!token) {
-        logger.warn("🔒 JWT: missing token", { path, method });
+        logger.warn({ path, method }, "🔒 JWT: missing token");
         return c.json(
             {
                 error: "Authentication required",
@@ -136,7 +136,7 @@ export async function jwtAuthMiddleware(c: Context, next: Next): Promise<Respons
             ? "Access token has expired. Use /auth/refresh to get a new one."
             : "Invalid access token.";
 
-        logger.warn(`🔒 JWT: ${code}`, { path, method });
+        logger.warn({ path, method }, `🔒 JWT: ${code}`);
         return c.json({ error: message, code }, 401);
     }
 

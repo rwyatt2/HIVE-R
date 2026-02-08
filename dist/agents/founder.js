@@ -1,11 +1,12 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
-const llm = new ChatOpenAI({
+const llm = createTrackedLLM("Founder", {
     modelName: "gpt-4o",
     temperature: 0.7,
+    enableRouting: true,
 });
 const FOUNDER_PROMPT = `${HIVE_PREAMBLE}
 
@@ -32,6 +33,6 @@ export const founderNode = async (state) => {
             ...messages,
         ]);
         return createAgentResponse(response.content, "Founder");
-    }, "Founder", "I'm unable to provide strategic direction at this time. Please retry or consult the Product Manager.");
+    }, "Founder", state.messages, undefined, "I'm unable to provide strategic direction at this time. Please retry or consult the Product Manager.");
 };
 //# sourceMappingURL=founder.js.map

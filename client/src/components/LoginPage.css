@@ -1,5 +1,5 @@
 /**
- * Login Page Styles
+ * Login Page — Design System
  */
 
 .login-page {
@@ -7,41 +7,62 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%);
+    background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.12), transparent),
+        radial-gradient(at 80% 80%, hsl(var(--gradient-violet) / 0.06), transparent),
+        radial-gradient(at 0% 100%, hsl(var(--warm-orange) / 0.04), transparent),
+        hsl(var(--background));
     padding: 20px;
 }
 
 .login-card {
     width: 100%;
     max-width: 420px;
-    background: linear-gradient(180deg, rgba(26, 26, 46, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: hsl(var(--background-card) / 0.8);
+    border: 1px solid hsl(var(--border) / 0.5);
     border-radius: 24px;
-    padding: 40px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    padding: 44px;
+    backdrop-filter: blur(20px);
+    box-shadow:
+        0 32px 64px hsl(0 0% 0% / 0.5),
+        0 0 0 1px hsl(var(--border) / 0.2);
+    animation: modalSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.97) translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .login-header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 36px;
 }
 
 .login-logo {
-    font-size: 48px;
-    margin-bottom: 12px;
+    font-size: 52px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 24px hsl(var(--warm-amber) / 0.3));
 }
 
 .login-header h1 {
     font-size: 28px;
     font-weight: 700;
-    color: #ffffff;
+    color: hsl(var(--foreground));
     margin: 0 0 8px 0;
+    letter-spacing: -0.03em;
 }
 
 .login-header p {
     font-size: 14px;
-    color: #94a3b8;
+    color: hsl(var(--foreground-muted));
     margin: 0;
 }
 
@@ -58,11 +79,11 @@
 }
 
 .login-error {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #f87171;
+    background: hsl(var(--error) / 0.1);
+    border: 1px solid hsl(var(--error) / 0.25);
+    color: hsl(var(--error));
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 14px;
     text-align: center;
 }
@@ -75,28 +96,30 @@
 
 .form-group label {
     font-size: 13px;
-    font-weight: 500;
-    color: #94a3b8;
+    font-weight: 600;
+    color: hsl(var(--foreground-muted));
+    letter-spacing: 0.01em;
 }
 
 .form-group input {
     padding: 14px 16px;
-    background: rgba(15, 15, 35, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: hsl(var(--background-overlay));
+    border: 1px solid hsl(var(--border));
     border-radius: 10px;
     font-size: 15px;
-    color: #ffffff;
+    color: hsl(var(--foreground));
     transition: all 0.2s ease;
+    font-family: var(--font-sans);
 }
 
 .form-group input::placeholder {
-    color: #64748b;
+    color: hsl(var(--foreground-subtle));
 }
 
 .form-group input:focus {
     outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
 }
 
 .form-group input:disabled {
@@ -105,23 +128,24 @@
 
 .login-submit {
     padding: 14px 24px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--gradient-purple)) 100%);
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 16px;
     font-weight: 600;
     color: white;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 50px;
+    font-family: var(--font-sans);
 }
 
 .login-submit:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 8px 24px hsl(var(--primary) / 0.4);
 }
 
 .login-submit:active:not(:disabled) {
@@ -134,31 +158,32 @@
 }
 
 .login-footer {
-    margin-top: 24px;
+    margin-top: 28px;
     text-align: center;
     padding-top: 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid hsl(var(--border) / 0.5);
 }
 
 .login-footer p {
     font-size: 14px;
-    color: #94a3b8;
+    color: hsl(var(--foreground-muted));
     margin: 0;
 }
 
 .toggle-mode {
     background: none;
     border: none;
-    color: #6366f1;
+    color: hsl(var(--primary));
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     margin-left: 6px;
     transition: color 0.2s ease;
+    font-family: var(--font-sans);
 }
 
 .toggle-mode:hover:not(:disabled) {
-    color: #8b5cf6;
+    color: hsl(var(--primary-light));
 }
 
 .login-demo {
@@ -168,25 +193,26 @@
 
 .login-demo p {
     font-size: 12px;
-    color: #64748b;
+    color: hsl(var(--foreground-subtle));
     margin-bottom: 12px;
 }
 
 .demo-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #94a3b8;
+    background: hsl(var(--border) / 0.3);
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground-muted));
     padding: 10px 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-family: var(--font-sans);
 }
 
 .demo-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: hsl(var(--border) / 0.5);
+    border-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
 }
 
 /* Typing indicator for buttons */
@@ -202,11 +228,11 @@
     height: 8px;
     background: white;
     border-radius: 50%;
-    animation: typing 1.4s infinite ease-in-out both;
+    animation: loginTyping 1.4s infinite ease-in-out both;
 }
 
 .login-loading .typing-indicator span {
-    background: #6366f1;
+    background: hsl(var(--primary));
 }
 
 .login-submit .typing-indicator span:nth-child(1),
@@ -224,13 +250,13 @@
     animation-delay: 0s;
 }
 
-@keyframes typing {
+@keyframes loginTyping {
 
     0%,
     80%,
     100% {
-        transform: scale(0.6);
-        opacity: 0.5;
+        transform: scale(0.5);
+        opacity: 0.4;
     }
 
     40% {

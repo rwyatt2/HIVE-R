@@ -1,0 +1,255 @@
+name: Performance Testing
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+  # Allow manual triggers for on-demand testing
+  workflow_dispatch:
+    inputs:
+      load_concurrent:
+        description: "Concurrent sessions"
+        default: "10"
+      load_requests:
+        description: "Requests per session"
+        default: "5"
+
+concurrency:
+  group: performance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── API Load Testing ──────────────────────────────────────
+  load-test:
+    name: API Load Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npm start &
+          echo $! > /tmp/server.pid
+
+          # Wait for server to be ready
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+              echo "✅ Server ready (attempt $i)"
+              break
+            fi
+            echo "⏳ Waiting for server (attempt $i/30)..."
+            sleep 2
+          done
+
+      - name: Run CI load test
+        run: npm run test:load:ci
+        env:
+          HIVE_URL: http://localhost:3000
+          CI_LOAD_CONCURRENT: ${{ github.event.inputs.load_concurrent || '5' }}
+          CI_LOAD_REQUESTS: ${{ github.event.inputs.load_requests || '3' }}
+          CI_TARGET_P95: "10000"
+          CI_TARGET_ERROR_RATE: "0.05"
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) 2>/dev/null || true
+          fi
+
+  # ── Artillery Scenario Testing ────────────────────────────
+  artillery-test:
+    name: Artillery Load Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only run on release candidates or manual trigger
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm ci --legacy-peer-deps
+          npm install -g artillery@latest
+
+      - name: Build & start server
+        run: |
+          npm run build
+          npm start &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/health > /dev/null 2>&1 && break
+            sleep 2
+          done
+
+      - name: Run Artillery load test
+        run: |
+          artillery run tests/performance/load-test.yml \
+            --output /tmp/artillery-report.json
+
+      - name: Generate Artillery report
+        if: always()
+        run: |
+          artillery report /tmp/artillery-report.json \
+            --output /tmp/artillery-report.html 2>/dev/null || true
+
+      - name: Check performance thresholds
+        run: |
+          if [ ! -f /tmp/artillery-report.json ]; then
+            echo "⚠️ No report generated"
+            exit 1
+          fi
+
+          P95=$(jq '.aggregate.latency.p95 // 0' /tmp/artillery-report.json)
+          ERROR_RATE=$(jq '
+            (.aggregate.counters["http.codes.4xx"] // 0) + (.aggregate.counters["http.codes.5xx"] // 0)
+            | . / ((.aggregate.counters["http.requests"] // 1) | if . == 0 then 1 else . end)
+            | . * 100
+          ' /tmp/artillery-report.json 2>/dev/null || echo "0")
+
+          echo "📊 p95 latency: ${P95}ms"
+          echo "📊 Error rate:  ${ERROR_RATE}%"
+
+          # Fail if p95 > 10s or error rate > 5%
+          if [ "$(echo "$P95 > 10000" | bc -l 2>/dev/null || echo 0)" = "1" ]; then
+            echo "❌ p95 latency ${P95}ms exceeds 10000ms threshold"
+            exit 1
+          fi
+          echo "✅ Performance thresholds met"
+
+      - name: Upload Artillery report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artillery-report
+          path: /tmp/artillery-report.*
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: pkill -f "node.*dist/index" || true
+
+  # ── Frontend Performance (Lighthouse CI) ──────────────────
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Only run when frontend files change
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.changed_files, 'client/')
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm ci --legacy-peer-deps
+          cd client && npm ci --legacy-peer-deps
+
+      - name: Build
+        run: |
+          npm run build
+          cd client && npm run build
+
+      - name: Start server
+        run: |
+          npm start &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/health > /dev/null 2>&1 && break
+            sleep 2
+          done
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Cleanup
+        if: always()
+        run: pkill -f "node.*dist/index" || true
+
+  # ── API Endpoint Benchmarks ───────────────────────────────
+  api-benchmark:
+    name: API Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npm start &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/health > /dev/null 2>&1 && break
+            sleep 2
+          done
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Run API benchmarks
+        run: npx tsx tests/performance/api-benchmark.ts
+        env:
+          HIVE_URL: http://localhost:3000
+
+      - name: Cleanup
+        if: always()
+        run: pkill -f "node.*dist/index" || true

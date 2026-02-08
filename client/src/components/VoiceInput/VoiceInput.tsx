@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import './VoiceInput.css';
 
 // ============================================================================
@@ -11,10 +11,7 @@ interface VoiceInputProps {
     disabled?: boolean;
 }
 
-interface SpeechRecognitionResult {
-    transcript: string;
-    isFinal: boolean;
-}
+
 
 // Web Speech API types
 interface SpeechRecognitionEvent extends Event {
@@ -72,7 +69,7 @@ declare global {
 export function VoiceInput({ onTranscript, onError, disabled = false }: VoiceInputProps) {
     const [isListening, setIsListening] = useState(false);
     const [interimTranscript, setInterimTranscript] = useState('');
-    const [isSupported, setIsSupported] = useState(true);
+    const [isSupported] = useState(true);
     const [useWhisper, setUseWhisper] = useState(false);
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);

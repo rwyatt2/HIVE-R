@@ -1,36 +1,36 @@
 /**
- * Agent Node Styles
+ * Agent Node — Design System
  */
 
 .agent-node {
-    background: linear-gradient(180deg, #1e1e2e 0%, #181825 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: hsl(var(--background-card));
+    border: 1px solid hsl(var(--border) / 0.6);
     border-radius: 12px;
-    padding: 12px 18px;
+    padding: 12px 20px;
     min-width: 100px;
     text-align: center;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px hsl(0 0% 0% / 0.3);
 }
 
 .agent-node:hover {
-    border-color: rgba(99, 102, 241, 0.5);
+    border-color: hsl(var(--primary) / 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 24px hsl(var(--primary) / 0.1);
 }
 
 .agent-node.selected {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3), 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3), 0 8px 24px hsl(var(--primary) / 0.15);
 }
 
-/* Active state - agent is working */
+/* Active state — agent is working */
 .agent-node.active {
-    border-color: #22c55e;
+    border-color: hsl(var(--success));
     box-shadow:
-        0 0 0 2px rgba(34, 197, 94, 0.3),
-        0 0 20px rgba(34, 197, 94, 0.2),
-        0 8px 20px rgba(0, 0, 0, 0.4);
+        0 0 0 2px hsl(var(--success) / 0.3),
+        0 0 24px hsl(var(--success) / 0.15),
+        0 8px 24px hsl(0 0% 0% / 0.3);
     animation: pulse-glow 2s ease-in-out infinite;
 }
 
@@ -39,26 +39,26 @@
     0%,
     100% {
         box-shadow:
-            0 0 0 2px rgba(34, 197, 94, 0.3),
-            0 0 20px rgba(34, 197, 94, 0.2),
-            0 8px 20px rgba(0, 0, 0, 0.4);
+            0 0 0 2px hsl(var(--success) / 0.3),
+            0 0 24px hsl(var(--success) / 0.15),
+            0 8px 24px hsl(0 0% 0% / 0.3);
     }
 
     50% {
         box-shadow:
-            0 0 0 4px rgba(34, 197, 94, 0.4),
-            0 0 40px rgba(34, 197, 94, 0.3),
-            0 8px 20px rgba(0, 0, 0, 0.4);
+            0 0 0 4px hsl(var(--success) / 0.4),
+            0 0 40px hsl(var(--success) / 0.25),
+            0 8px 24px hsl(0 0% 0% / 0.3);
     }
 }
 
-/* Thinking state - shows dots */
+/* Thinking state */
 .agent-node.thinking {
-    border-color: #f59e0b;
+    border-color: hsl(var(--warm-orange));
     box-shadow:
-        0 0 0 2px rgba(245, 158, 11, 0.3),
-        0 0 15px rgba(245, 158, 11, 0.15),
-        0 8px 20px rgba(0, 0, 0, 0.4);
+        0 0 0 2px hsl(var(--warm-orange) / 0.25),
+        0 0 16px hsl(var(--warm-orange) / 0.1),
+        0 8px 24px hsl(0 0% 0% / 0.3);
 }
 
 .agent-content {
@@ -69,31 +69,33 @@
 }
 
 .agent-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    color: hsl(var(--foreground));
     white-space: nowrap;
+    letter-spacing: -0.01em;
+    font-family: var(--font-sans);
 }
 
 .agent-node.active .agent-label {
-    color: #22c55e;
+    color: hsl(var(--success));
 }
 
 .agent-node.thinking .agent-label {
-    color: #f59e0b;
+    color: hsl(var(--warm-orange));
 }
 
 /* Thinking indicator dots */
 .thinking-indicator {
     display: flex;
-    gap: 3px;
+    gap: 4px;
     margin-top: 4px;
 }
 
 .thinking-indicator span {
     width: 5px;
     height: 5px;
-    background: #f59e0b;
+    background: hsl(var(--warm-orange));
     border-radius: 50%;
     animation: thinking-bounce 1.2s ease-in-out infinite;
 }
@@ -116,11 +118,11 @@
     60%,
     100% {
         transform: translateY(0);
-        opacity: 0.5;
+        opacity: 0.4;
     }
 
     30% {
-        transform: translateY(-4px);
+        transform: translateY(-5px);
         opacity: 1;
     }
 }
@@ -129,16 +131,16 @@
 .agent-node .react-flow__handle {
     width: 8px;
     height: 8px;
-    background: #64748b;
-    border: 2px solid #1e1e2e;
+    background: hsl(var(--foreground-subtle));
+    border: 2px solid hsl(var(--background-card));
     transition: all 0.2s ease;
 }
 
 .agent-node.active .react-flow__handle {
-    background: #22c55e;
+    background: hsl(var(--success));
 }
 
 .agent-node .react-flow__handle:hover {
-    background: #6366f1;
+    background: hsl(var(--primary));
     transform: scale(1.2);
 }

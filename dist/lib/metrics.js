@@ -1,132 +1,214 @@
 /**
- * HIVE-R Metrics Collection
- * Tracks system performance and operational health
+ * Prometheus Metrics Registry for HIVE-R
+ *
+ * Centralised metric definitions backed by prom-client.
+ * All custom metrics are prefixed with `hive_`.
+ *
+ * Usage:
+ *   import { register, recordAgentInvocation } from "../lib/metrics.js";
+ *   recordAgentInvocation("Builder");
  */
-class MetricsCollector {
-    startTime = Date.now();
-    requests = new Map();
-    agents = new Map();
-    totalRequests = 0;
-    totalErrors = 0;
-    /**
-     * Record an HTTP request
-     */
-    recordRequest(path, duration, isError) {
-        this.totalRequests++;
-        if (isError)
-            this.totalErrors++;
-        const existing = this.requests.get(path) || { count: 0, totalDuration: 0, errors: 0 };
-        existing.count++;
-        existing.totalDuration += duration;
-        if (isError)
-            existing.errors++;
-        this.requests.set(path, existing);
-    }
-    /**
-     * Record an agent invocation
-     */
-    recordAgent(agentName, duration, isError) {
-        const existing = this.agents.get(agentName) || { invocations: 0, totalDuration: 0, errors: 0 };
-        existing.invocations++;
-        existing.totalDuration += duration;
-        if (isError)
-            existing.errors++;
-        this.agents.set(agentName, existing);
-    }
-    /**
-     * Get all metrics
-     */
-    getMetrics() {
-        const uptimeMs = Date.now() - this.startTime;
-        const memory = process.memoryUsage();
-        const requestMetrics = {};
-        for (const [path, metric] of this.requests) {
-            requestMetrics[path] = {
-                count: metric.count,
-                avgDuration: Math.round(metric.totalDuration / metric.count),
-                errorRate: metric.count > 0 ? metric.errors / metric.count : 0,
-            };
-        }
-        const agentMetrics = {};
-        for (const [agent, metric] of this.agents) {
-            agentMetrics[agent] = {
-                invocations: metric.invocations,
-                avgDuration: Math.round(metric.totalDuration / metric.invocations),
-                errorRate: metric.invocations > 0 ? metric.errors / metric.invocations : 0,
-            };
-        }
-        return {
-            system: {
-                uptime: uptimeMs,
-                uptimeHuman: this.formatDuration(uptimeMs),
-                memory: {
-                    heapUsed: Math.round(memory.heapUsed / 1024 / 1024),
-                    heapTotal: Math.round(memory.heapTotal / 1024 / 1024),
-                    rss: Math.round(memory.rss / 1024 / 1024),
-                },
-                nodeVersion: process.version,
-            },
-            requests: {
-                total: this.totalRequests,
-                errors: this.totalErrors,
-                errorRate: this.totalRequests > 0 ? this.totalErrors / this.totalRequests : 0,
-                byPath: requestMetrics,
-            },
-            agents: agentMetrics,
-            timestamp: new Date().toISOString(),
-        };
-    }
-    /**
-     * Get Prometheus-format metrics
-     */
-    getPrometheusMetrics() {
-        const metrics = this.getMetrics();
-        const lines = [];
-        // System metrics
-        lines.push(`# HELP hive_uptime_seconds System uptime in seconds`);
-        lines.push(`# TYPE hive_uptime_seconds gauge`);
-        lines.push(`hive_uptime_seconds ${Math.round(metrics.system.uptime / 1000)}`);
-        lines.push(`# HELP hive_memory_heap_bytes Heap memory usage in bytes`);
-        lines.push(`# TYPE hive_memory_heap_bytes gauge`);
-        lines.push(`hive_memory_heap_bytes ${metrics.system.memory.heapUsed * 1024 * 1024}`);
-        // Request metrics
-        lines.push(`# HELP hive_requests_total Total HTTP requests`);
-        lines.push(`# TYPE hive_requests_total counter`);
-        lines.push(`hive_requests_total ${metrics.requests.total}`);
-        lines.push(`# HELP hive_errors_total Total errors`);
-        lines.push(`# TYPE hive_errors_total counter`);
-        lines.push(`hive_errors_total ${metrics.requests.errors}`);
-        // Agent metrics
-        lines.push(`# HELP hive_agent_invocations_total Agent invocations by name`);
-        lines.push(`# TYPE hive_agent_invocations_total counter`);
-        for (const [agent, data] of Object.entries(metrics.agents)) {
-            lines.push(`hive_agent_invocations_total{agent="${agent}"} ${data.invocations}`);
-        }
-        return lines.join("\n");
-    }
-    formatDuration(ms) {
-        const seconds = Math.floor(ms / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-        if (days > 0)
-            return `${days}d ${hours % 24}h`;
-        if (hours > 0)
-            return `${hours}h ${minutes % 60}m`;
-        if (minutes > 0)
-            return `${minutes}m ${seconds % 60}s`;
-        return `${seconds}s`;
-    }
-    /**
-     * Reset all metrics
-     */
-    reset() {
-        this.requests.clear();
-        this.agents.clear();
-        this.totalRequests = 0;
-        this.totalErrors = 0;
+import client from "prom-client";
+// ============================================================================
+// REGISTRY
+// ============================================================================
+export const register = new client.Registry();
+// Collect default Node.js metrics (GC, event loop lag, memory, etc.)
+client.collectDefaultMetrics({ register, prefix: "hive_" });
+// ============================================================================
+// HTTP METRICS
+// ============================================================================
+/** Total HTTP requests by method, normalised path, and status code. */
+export const httpRequestsTotal = new client.Counter({
+    name: "hive_http_requests_total",
+    help: "Total number of HTTP requests",
+    labelNames: ["method", "path", "status"],
+    registers: [register],
+});
+/** HTTP request duration in seconds (histogram with percentile buckets). */
+export const httpRequestDuration = new client.Histogram({
+    name: "hive_http_request_duration_seconds",
+    help: "HTTP request duration in seconds",
+    labelNames: ["method", "path", "status"],
+    buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+    registers: [register],
+});
+// ============================================================================
+// AGENT METRICS
+// ============================================================================
+/** Total agent invocations by agent name. */
+export const agentInvocationsTotal = new client.Counter({
+    name: "hive_agent_invocations_total",
+    help: "Total number of agent invocations",
+    labelNames: ["agent"],
+    registers: [register],
+});
+// ============================================================================
+// LLM / TOKEN METRICS
+// ============================================================================
+/** Total tokens consumed, split by model, agent, and direction (input/output). */
+export const tokenUsageTotal = new client.Counter({
+    name: "hive_token_usage_total",
+    help: "Total token usage by model and direction",
+    labelNames: ["model", "agent", "direction"],
+    registers: [register],
+});
+/** Cumulative LLM cost in USD by model and agent. */
+export const llmCostTotal = new client.Counter({
+    name: "hive_llm_call_cost_dollars_total",
+    help: "Cumulative LLM API cost in USD",
+    labelNames: ["model", "agent"],
+    registers: [register],
+});
+/** Current daily spend in USD (gauge, reset daily by the budget alert service). */
+export const dailyCostGauge = new client.Gauge({
+    name: "hive_cost_dollars",
+    help: "Current daily spend in USD",
+    registers: [register],
+});
+// ============================================================================
+// CIRCUIT BREAKER METRICS
+// ============================================================================
+/** Circuit breaker state per model: 0 = closed, 0.5 = half_open, 1 = open. */
+export const circuitBreakerState = new client.Gauge({
+    name: "hive_circuit_breaker_state",
+    help: "Circuit breaker state (0=closed, 0.5=half_open, 1=open)",
+    labelNames: ["model"],
+    registers: [register],
+});
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+/**
+ * Record an agent invocation.
+ */
+export function recordAgentInvocation(agent) {
+    agentInvocationsTotal.inc({ agent });
+}
+/**
+ * Record token usage from an LLM call.
+ */
+export function recordTokenUsage(model, agent, tokensIn, tokensOut) {
+    tokenUsageTotal.inc({ model, agent, direction: "input" }, tokensIn);
+    tokenUsageTotal.inc({ model, agent, direction: "output" }, tokensOut);
+}
+/**
+ * Record LLM call cost and update the daily spend gauge.
+ */
+export function recordCost(model, agent, costUsd) {
+    llmCostTotal.inc({ model, agent }, costUsd);
+    dailyCostGauge.inc(costUsd);
+}
+/**
+ * Set the daily cost gauge to an absolute value (e.g. from database query).
+ */
+export function updateDailyCost(costUsd) {
+    dailyCostGauge.set(costUsd);
+}
+/**
+ * Set circuit breaker state for a model.
+ * @param stateValue 0 = closed, 0.5 = half_open, 1 = open
+ */
+export function setCircuitBreakerState(model, stateValue) {
+    circuitBreakerState.set({ model }, stateValue);
+}
+/**
+ * Map CircuitState enum string to numeric gauge value.
+ */
+export function circuitStateToNumber(state) {
+    switch (state) {
+        case "CLOSED":
+            return 0;
+        case "HALF_OPEN":
+            return 0.5;
+        case "OPEN":
+            return 1;
+        default:
+            return 0;
     }
 }
-// Singleton instance
-export const metrics = new MetricsCollector();
+// ============================================================================
+// CACHE METRICS
+// ============================================================================
+/** Total cache hits by agent name. */
+export const cacheHitsTotal = new client.Counter({
+    name: "hive_cache_hits_total",
+    help: "Total semantic cache hits",
+    labelNames: ["agent"],
+    registers: [register],
+});
+/** Total cache misses by agent name. */
+export const cacheMissesTotal = new client.Counter({
+    name: "hive_cache_misses_total",
+    help: "Total semantic cache misses",
+    labelNames: ["agent"],
+    registers: [register],
+});
+/** Cache operation latency in seconds. */
+export const cacheLatency = new client.Histogram({
+    name: "hive_cache_latency_seconds",
+    help: "Semantic cache operation latency",
+    labelNames: ["operation"],
+    buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1],
+    registers: [register],
+});
+/**
+ * Record a cache hit.
+ */
+export function recordCacheHit(agent) {
+    cacheHitsTotal.inc({ agent });
+}
+/**
+ * Record a cache miss.
+ */
+export function recordCacheMiss(agent) {
+    cacheMissesTotal.inc({ agent });
+}
+/**
+ * Observe cache operation latency.
+ */
+export function observeCacheLatency(operation, durationSec) {
+    cacheLatency.observe({ operation }, durationSec);
+}
+// ============================================================================
+// MODEL ROUTING METRICS
+// ============================================================================
+/** Model routing decisions by agent, tier, and selected model. */
+export const modelRoutingTotal = new client.Counter({
+    name: "hive_model_routing_total",
+    help: "Total model routing decisions",
+    labelNames: ["agent", "tier", "model"],
+    registers: [register],
+});
+/** Estimated cost savings from routing to cheaper models (USD). */
+export const routingSavingsTotal = new client.Counter({
+    name: "hive_model_routing_savings_dollars",
+    help: "Estimated cost savings from model routing in USD",
+    registers: [register],
+});
+/** Auto-upgrade events when cheap models fail repeatedly. */
+export const modelUpgradesTotal = new client.Counter({
+    name: "hive_model_routing_upgrades_total",
+    help: "Auto-upgrade events when cheap model fails repeatedly",
+    labelNames: ["agent"],
+    registers: [register],
+});
+/**
+ * Record a model routing decision.
+ */
+export function recordModelRouting(agent, tier, model) {
+    modelRoutingTotal.inc({ agent, tier, model });
+}
+/**
+ * Record estimated savings from routing to a cheaper model.
+ */
+export function recordRoutingSavings(savingsUsd) {
+    routingSavingsTotal.inc(savingsUsd);
+}
+/**
+ * Record an auto-upgrade event.
+ */
+export function recordModelUpgrade(agent) {
+    modelUpgradesTotal.inc({ agent });
+}
 //# sourceMappingURL=metrics.js.map

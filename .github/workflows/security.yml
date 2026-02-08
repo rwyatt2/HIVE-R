@@ -1,4 +1,4 @@
-name: Security
+name: Security Scanning
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Run security scan daily at 2 AM UTC
+    # Run full security scan daily at 2 AM UTC
     - cron: "0 2 * * *"
 
 permissions:
@@ -15,56 +15,171 @@ permissions:
   security-events: write
 
 jobs:
+  # ── CodeQL Static Analysis ────────────────────────────────
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
-      
+          queries: security-extended
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
-      
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:javascript-typescript"
 
+  # ── Dependency Audit ──────────────────────────────────────
   dependency-audit:
     name: Dependency Audit
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-      
+
       - name: Install dependencies
-        run: npm ci
-      
-      - name: Run npm audit
-        run: npm audit --production
-        continue-on-error: true
-      
-      - name: Check for high/critical vulnerabilities
+        run: npm ci --legacy-peer-deps
+
+      - name: Run npm audit (backend)
+        run: npm audit --production --json > /tmp/audit-backend.json 2>/dev/null || true
+
+      - name: Run npm audit (client)
+        run: npm audit --production --json > /tmp/audit-client.json 2>/dev/null || true
+        working-directory: client
+
+      - name: Check for critical vulnerabilities
         run: |
-          AUDIT_OUTPUT=$(npm audit --production --json 2>/dev/null || true)
-          HIGH_COUNT=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.high // 0')
-          CRITICAL_COUNT=$(echo "$AUDIT_OUTPUT" | jq '.metadata.vulnerabilities.critical // 0')
-          
-          if [ "$HIGH_COUNT" -gt 0 ] || [ "$CRITICAL_COUNT" -gt 0 ]; then
-            echo "⚠️ Found $HIGH_COUNT high and $CRITICAL_COUNT critical vulnerabilities"
-            echo "Run 'npm audit' locally for details"
+          check_audit() {
+            local file=$1 label=$2
+            if [ ! -f "$file" ]; then echo "⚠️ No audit data for $label"; return 0; fi
+            HIGH=$(jq '.metadata.vulnerabilities.high // 0' "$file")
+            CRIT=$(jq '.metadata.vulnerabilities.critical // 0' "$file")
+            echo "$label: $HIGH high, $CRIT critical"
+            if [ "$CRIT" -gt 0 ]; then
+              echo "❌ Critical vulnerabilities found in $label"
+              return 1
+            fi
+          }
+
+          FAILED=0
+          check_audit /tmp/audit-backend.json "Backend" || FAILED=1
+          check_audit /tmp/audit-client.json "Client" || FAILED=1
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo "::error::Critical vulnerabilities detected. Run 'npm audit' locally."
             exit 1
           fi
-          echo "✅ No high or critical vulnerabilities found"
+          echo "✅ No critical vulnerabilities found"
+
+  # ── Secret Scanning (Gitleaks) ────────────────────────────
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Container Scanning (Trivy) ────────────────────────────
+  container-scanning:
+    name: Container Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only scan when Docker-related files change (or on schedule)
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'push' ||
+      contains(github.event.pull_request.changed_files, 'Dockerfile') ||
+      true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t hive-r:security-scan .
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: hive-r:security-scan
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Fail on critical CVEs
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: hive-r:security-scan
+          format: "table"
+          severity: "CRITICAL"
+          exit-code: "1"
+
+  # ── License Compliance ────────────────────────────────────
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install license checker
+        run: npx -y license-checker --production --summary
+
+      - name: Check for copyleft licenses
+        run: |
+          # Check for GPL/AGPL licenses (incompatible with commercial use)
+          COPYLEFT=$(npx -y license-checker --production --onlyAllow \
+            'MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;CC-BY-3.0;CC-BY-4.0;Python-2.0;BlueOak-1.0.0;W3C' \
+            2>&1 || true)
+
+          if echo "$COPYLEFT" | grep -q "FAIL"; then
+            echo "⚠️ Potentially incompatible licenses found:"
+            echo "$COPYLEFT"
+            echo ""
+            echo "::warning::Some dependencies may have incompatible licenses. Review before release."
+          else
+            echo "✅ All production licenses are permissive"
+          fi

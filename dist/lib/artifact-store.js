@@ -46,11 +46,11 @@ export function storeArtifact(store, artifact, producerAgent) {
         logger.warn(`Unknown artifact type: ${artifact.type}`);
         return store;
     }
-    logger.info(`📦 Storing artifact`, {
+    logger.info({
         type: artifact.type,
         producer: producerAgent,
         name: getArtifactName(artifact)
-    });
+    }, `📦 Storing artifact`);
     return {
         ...store,
         [key]: artifact,

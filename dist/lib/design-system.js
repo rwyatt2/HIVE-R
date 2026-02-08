@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { logger } from "./logger.js";
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -392,7 +393,7 @@ export function getDesignContext(framework = "tailwind", tokensPath) {
             }
         }
         catch (e) {
-            console.warn("⚠️ Could not load token mapper:", e);
+            logger.warn({ err: e }, 'Could not load token mapper');
         }
     }
     return `

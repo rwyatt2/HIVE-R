@@ -71,7 +71,7 @@ export function getCached(systemPrompt, userMessage, model = "gpt-4o") {
     if (entry) {
         entry.hitCount++;
         cacheHits++;
-        logger.debug(`✅ Cache HIT`, { key: key.substring(0, 8), hits: entry.hitCount });
+        logger.debug({ key: key.substring(0, 8), hits: entry.hitCount }, `✅ Cache HIT`);
         return entry.response;
     }
     cacheMisses++;
@@ -91,7 +91,7 @@ export function setCached(systemPrompt, userMessage, response, model = "gpt-4o",
         hitCount: 0,
         tokensSaved: tokensUsed,
     });
-    logger.debug(`💾 Cache SET`, { key: key.substring(0, 8), size: response.length });
+    logger.debug({ key: key.substring(0, 8), size: response.length }, `💾 Cache SET`);
 }
 /**
  * Get cache statistics

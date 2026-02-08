@@ -1,12 +1,13 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
 import { getDesignContext, getActiveFramework } from "../lib/design-system.js";
-const llm = new ChatOpenAI({
+const llm = createTrackedLLM("Designer", {
     modelName: "gpt-4o",
     temperature: 0.5,
+    enableRouting: true,
 });
 const DESIGNER_PROMPT = `${HIVE_PREAMBLE}
 
@@ -56,6 +57,6 @@ export const designerNode = async (state) => {
             ...messages,
         ]);
         return createAgentResponse(response.content, "Designer");
-    }, "Designer", "I'm unable to provide design specifications at this time. Please retry.");
+    }, "Designer", state.messages, undefined, "I'm unable to provide design specifications at this time. Please retry.");
 };
 //# sourceMappingURL=designer.js.map

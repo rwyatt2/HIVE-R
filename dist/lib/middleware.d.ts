@@ -1,6 +1,10 @@
 import type { MiddlewareHandler } from "hono";
 /**
- * Request logging middleware
+ * Request ID middleware — generates or reads X-Request-ID and adds to context + response.
+ */
+export declare const requestId: () => MiddlewareHandler;
+/**
+ * Request logging middleware — structured JSON via Pino
  */
 export declare const requestLogger: () => MiddlewareHandler;
 export declare const rateLimiter: (maxRequests?: number, windowMs?: number) => MiddlewareHandler;

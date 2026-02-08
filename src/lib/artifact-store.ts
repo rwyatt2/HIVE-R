@@ -92,11 +92,11 @@ export function storeArtifact(
         return store;
     }
 
-    logger.info(`📦 Storing artifact`, {
+    logger.info({
         type: artifact.type,
         producer: producerAgent,
         name: getArtifactName(artifact)
-    });
+    }, `📦 Storing artifact`);
 
     return {
         ...store,

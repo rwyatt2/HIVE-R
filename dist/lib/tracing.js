@@ -9,6 +9,7 @@
  * - Conversation replay data
  */
 import { logger } from "./logger.js";
+import { getSecret } from "./secrets.js";
 // ============================================================================
 // TRACE STORE (In-Memory)
 // ============================================================================
@@ -41,7 +42,7 @@ export function startTrace(threadId) {
         if (oldest)
             traces.delete(oldest);
     }
-    logger.debug("📊 Trace started", { threadId });
+    logger.debug({ threadId }, "📊 Trace started");
     return trace;
 }
 /**
@@ -54,7 +55,7 @@ export function endTrace(threadId, status = "completed", error) {
         trace.status = status;
         if (error)
             trace.error = error;
-        logger.debug("📊 Trace ended", { threadId, status, duration: trace.endTime - trace.startTime });
+        logger.debug({ threadId, status, duration: trace.endTime - trace.startTime }, "📊 Trace ended");
     }
 }
 /**
@@ -89,7 +90,7 @@ export function startSpan(threadId, name, type, input, parentId) {
             trace.agents.push(name);
         }
     }
-    logger.debug(`📊 Span started: ${name}`, { spanId, type });
+    logger.debug({ spanId, type }, `📊 Span started: ${name}`);
     return spanId;
 }
 /**
@@ -106,7 +107,7 @@ export function endSpan(spanId, output, error, metadata) {
         if (metadata)
             span.metadata = metadata;
         activeSpans.delete(spanId);
-        logger.debug(`📊 Span ended: ${span.name}`, { spanId, duration: span.duration, error: !!error });
+        logger.debug({ spanId, duration: span.duration, error: !!error }, `📊 Span ended: ${span.name}`);
     }
 }
 /**
@@ -158,7 +159,7 @@ export function getTraceSummary(trace) {
 // ============================================================================
 // LANGSMITH INTEGRATION (Optional)
 // ============================================================================
-const LANGSMITH_API_KEY = process.env.LANGSMITH_API_KEY;
+const LANGSMITH_API_KEY = getSecret("LANGSMITH_API_KEY");
 const LANGSMITH_PROJECT = process.env.LANGSMITH_PROJECT ?? "hive-r";
 /**
  * Check if LangSmith is configured
@@ -196,10 +197,10 @@ export async function sendToLangSmith(trace) {
             },
             body: JSON.stringify(payload),
         });
-        logger.debug("📊 Sent trace to LangSmith", { threadId: trace.threadId });
+        logger.debug({ threadId: trace.threadId }, "📊 Sent trace to LangSmith");
     }
     catch (error) {
-        logger.warn("Failed to send trace to LangSmith", { error: error.message });
+        logger.warn({ error: error.message }, "Failed to send trace to LangSmith");
     }
 }
 // ============================================================================

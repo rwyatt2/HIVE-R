@@ -37,6 +37,7 @@
     "skipLibCheck": true,
   },
   "exclude": [
+    "dist",
     "tests",
     "vitest.config.ts",
     "dashboard",

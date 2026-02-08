@@ -47,14 +47,14 @@ export const authMiddleware = async (c: Context, next: Next) => {
     const authHeader = c.req.header("Authorization");
 
     if (!authHeader) {
-        logger.warn("🔒 Unauthorized request - no auth header", { path });
+        logger.warn({ path }, "🔒 Unauthorized request - no auth header");
         return c.json({ error: "Authorization header required" }, 401);
     }
 
     // Parse Bearer token
     const match = authHeader.match(/^Bearer\s+(.+)$/);
     if (!match) {
-        logger.warn("🔒 Unauthorized request - invalid format", { path });
+        logger.warn({ path }, "🔒 Unauthorized request - invalid format");
         return c.json({ error: "Invalid authorization format. Use: Bearer <api-key>" }, 401);
     }
 
@@ -62,7 +62,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
 
     // Validate key
     if (providedKey !== API_KEY) {
-        logger.warn("🔒 Unauthorized request - invalid key", { path });
+        logger.warn({ path }, "🔒 Unauthorized request - invalid key");
         return c.json({ error: "Invalid API key" }, 403);
     }
 

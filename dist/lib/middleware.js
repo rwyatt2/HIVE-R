@@ -1,16 +1,30 @@
+import { randomUUID } from "crypto";
+import { logger } from "./logger.js";
 /**
- * Request logging middleware
+ * Request ID middleware — generates or reads X-Request-ID and adds to context + response.
+ */
+export const requestId = () => {
+    return async (c, next) => {
+        const id = c.req.header("x-request-id") || randomUUID();
+        c.set("requestId", id);
+        c.res.headers.set("X-Request-ID", id);
+        await next();
+    };
+};
+/**
+ * Request logging middleware — structured JSON via Pino
  */
 export const requestLogger = () => {
     return async (c, next) => {
         const start = Date.now();
         const method = c.req.method;
         const path = c.req.path;
-        console.log(`→ ${method} ${path}`);
+        const requestId = c.get("requestId");
+        logger.info({ requestId, method, path, event: "request_start" }, `→ ${method} ${path}`);
         await next();
         const duration = Date.now() - start;
         const status = c.res.status;
-        console.log(`← ${method} ${path} ${status} (${duration}ms)`);
+        logger.info({ requestId, method, path, status, duration, event: "request_end" }, `← ${method} ${path} ${status} (${duration}ms)`);
     };
 };
 const rateLimitStore = new Map();
@@ -56,7 +70,8 @@ export const errorHandler = () => {
             await next();
         }
         catch (error) {
-            console.error("❌ Unhandled error:", error);
+            const requestId = c.get("requestId");
+            logger.error({ err: error, requestId, event: "unhandled_error" }, `Unhandled error: ${error instanceof Error ? error.message : "unknown"}`);
             if (error instanceof Error) {
                 return c.json({
                     error: "Internal server error",

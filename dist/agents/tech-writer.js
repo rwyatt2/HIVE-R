@@ -1,11 +1,12 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
-const llm = new ChatOpenAI({
+const llm = createTrackedLLM("TechWriter", {
     modelName: "gpt-4o",
     temperature: 0.3,
+    enableRouting: true,
 });
 const TECH_WRITER_PROMPT = `${HIVE_PREAMBLE}
 
@@ -46,6 +47,6 @@ export const techWriterNode = async (state) => {
             ...messages,
         ]);
         return createAgentResponse(response.content, "TechWriter");
-    }, "TechWriter", "I'm unable to create documentation at this time. Please retry.");
+    }, "TechWriter", state.messages, undefined, "I'm unable to create documentation at this time. Please retry.");
 };
 //# sourceMappingURL=tech-writer.js.map

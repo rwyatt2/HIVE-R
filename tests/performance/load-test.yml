@@ -1,0 +1,110 @@
+# ──────────────────────────────────────────────────────────────
+# HIVE-R Artillery Load Test
+#
+# Run locally:  npx artillery run tests/performance/load-test.yml
+# Run in CI:    npx artillery run tests/performance/load-test.yml --output report.json
+# ──────────────────────────────────────────────────────────────
+
+config:
+  target: "http://localhost:3000"
+  phases:
+    # Phase 1: Warm-up
+    - duration: 30
+      arrivalRate: 2
+      name: "Warm-up"
+
+    # Phase 2: Ramp to sustained load
+    - duration: 30
+      arrivalRate: 2
+      rampTo: 10
+      name: "Ramp-up"
+
+    # Phase 3: Sustained load (100 concurrent users over 5 min)
+    - duration: 300
+      arrivalRate: 20
+      name: "Sustained load"
+
+    # Phase 4: Spike test
+    - duration: 30
+      arrivalRate: 50
+      name: "Spike"
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+  # Performance thresholds
+  ensure:
+    thresholds:
+      - http.response_time.p95: 10000  # p95 < 10s
+      - http.response_time.p99: 30000  # p99 < 30s
+
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+
+scenarios:
+  # ── Health Check Flow ──────────────────────────────────────
+  - name: "Health check"
+    weight: 40
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: "status"
+
+      - get:
+          url: "/health/ready"
+          expect:
+            - statusCode: 200
+
+  # ── Chat Flow ──────────────────────────────────────────────
+  - name: "Chat interaction"
+    weight: 30
+    flow:
+      - post:
+          url: "/chat"
+          json:
+            message: "Hello, can you help me?"
+            threadId: "artillery-{{ $uuid }}"
+          expect:
+            - statusCode:
+                - 200
+                - 429  # Rate limited is acceptable
+          capture:
+            - json: "$.threadId"
+              as: "threadId"
+
+      - think: 2
+
+      - post:
+          url: "/chat"
+          json:
+            message: "What can you build?"
+            threadId: "{{ threadId }}"
+          expect:
+            - statusCode:
+                - 200
+                - 429
+
+  # ── Static Assets ──────────────────────────────────────────
+  - name: "Static assets"
+    weight: 20
+    flow:
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 200
+
+  # ── Metrics Endpoint ───────────────────────────────────────
+  - name: "Metrics"
+    weight: 10
+    flow:
+      - get:
+          url: "/metrics"
+          expect:
+            - statusCode:
+                - 200
+                - 404  # May not exist

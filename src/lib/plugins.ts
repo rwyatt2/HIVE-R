@@ -83,7 +83,7 @@ class PluginRegistry {
                     }
                 }
             } catch (error) {
-                logger.error(`Failed to load plugin ${file}:`, { error: String(error) });
+                logger.error({ error: String(error) }, `Failed to load plugin ${file}:`);
             }
         }
 

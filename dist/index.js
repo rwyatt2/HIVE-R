@@ -1,3 +1,5 @@
+// OpenTelemetry — must be imported FIRST (patches Node http before other imports)
+import "./lib/tracer.js";
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
@@ -10,7 +12,10 @@ import { AgentState } from "./lib/state.js";
 import { checkpointer } from "./lib/memory.js";
 // Middleware
 import { requestLogger, rateLimiter, errorHandler, cors } from "./lib/middleware.js";
+import { logger } from "./lib/logger.js";
 import { authMiddleware, isAuthEnabled } from "./lib/auth.js";
+import { jwtAuthMiddleware } from "./middleware/auth.js";
+import { tieredRateLimiter } from "./middleware/rate-limit.js";
 // History
 import * as history from "./lib/history.js";
 // User Auth
@@ -48,10 +53,17 @@ import { initSemanticMemory, searchMemories as searchSemanticMemories, storeMemo
 import * as orgs from "./lib/organizations.js";
 import * as billing from "./lib/billing.js";
 import adminRouter from "./routers/admin.js"; // ✅ Admin Router
+import chatRouter from "./routers/chat.js"; // ✅ Hardened Chat Router
 // Initialize Phase 15 features
 orgs.initOrgTables();
 billing.initBillingTables();
-initSemanticMemory().catch(err => console.warn('Semantic memory init failed:', err));
+initSemanticMemory().catch(err => logger.warn({ err }, 'Semantic memory init failed'));
+// ✅ LLM Cost Tracking
+import { initCostTrackingTable } from "./lib/cost-tracker.js";
+initCostTrackingTable();
+// ✅ Budget Alert Service
+import { startBudgetAlerts } from "./services/budget-alerts.js";
+startBudgetAlerts();
 const app = new Hono();
 // ✅ A+ Production Middleware
 import { securityHeaders, runSecurityAudit } from "./lib/security.js";
@@ -59,64 +71,36 @@ app.use('*', sentryErrorHandler()); // ✅ Sentry error capture (first to catch 
 app.use('*', securityHeaders()); // ✅ Security headers (XSS, clickjacking protection)
 app.use('*', cors(["http://localhost:3001", "http://localhost:3000", "http://localhost:5173", "*"]));
 app.use('*', errorHandler());
+app.use('*', metricsMiddleware()); // ✅ Prometheus HTTP metrics
 app.use('*', requestLogger());
 app.use('*', authMiddleware); // ✅ API Key auth (set HIVE_API_KEY to enable)
-app.use('/chat*', rateLimiter(100, 60000)); // 100 requests/min for dev
+app.route('/chat', chatRouter); // ✅ Hardened Chat Router (with per-user rate limiting)
 app.route('/admin', adminRouter); // ✅ Mount Admin Router
 // --- Graph Setup ---
 // --- Graph Setup ---
 import { graph } from "./graph.js";
 // Import metrics
-import { metrics } from "./lib/metrics.js";
+import { register, recordAgentInvocation } from "./lib/metrics.js";
+import { metricsMiddleware } from "./lib/metrics-middleware.js";
 // Import vector memory
 import { retrieveMemories, formatMemoriesForPrompt, getMemoryStats, storeMemory } from "./lib/vector-memory.js";
-// Import health checks
-import { runHealthChecks, checkMemory } from "./lib/health.js";
+// Import health router
+import { healthRouter } from "./routers/health.js";
 // --- API Endpoints ---
 /**
- * ✅ Health check endpoint (basic)
+ * ✅ Health check routes (liveness, readiness, basic)
  */
-app.get('/health', (c) => {
-    return c.json({
-        status: "healthy",
-        version: "1.0.0",
-        agents: HIVE_MEMBERS.length,
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-    });
-});
+app.route('/health', healthRouter);
 /**
- * ✅ Liveness probe - is the process alive?
- * Used by K8s/Docker to determine if container should be restarted
+ * ✅ Prometheus metrics endpoint (no auth — Prometheus scraper needs direct access)
  */
-app.get('/health/live', (c) => {
-    return c.json({
-        status: "alive",
-        uptime: process.uptime(),
-        timestamp: Date.now(),
-    });
+app.get('/metrics', async (c) => {
+    c.header('Content-Type', register.contentType);
+    return c.text(await register.metrics());
 });
-/**
- * ✅ Readiness probe - is the service ready to accept traffic?
- * Used by K8s/Docker to determine if traffic should be routed to this instance
- */
-app.get('/health/ready', async (c) => {
-    const result = await runHealthChecks();
-    return c.json(result, result.ready ? 200 : 503);
-});
-/**
- * ✅ Metrics endpoint (JSON format)
- */
-app.get('/metrics', (c) => {
-    return c.json(metrics.getMetrics());
-});
-/**
- * ✅ Prometheus metrics endpoint
- */
-app.get('/metrics/prometheus', (c) => {
-    c.header('Content-Type', 'text/plain');
-    return c.text(metrics.getPrometheusMetrics());
-});
+// JWT auth only applies AFTER /metrics so the scraper doesn't need credentials
+app.use('*', jwtAuthMiddleware); // ✅ JWT user auth (enforced on all non-public routes)
+app.use('*', tieredRateLimiter()); // ✅ Multi-tier rate limiting (after auth for user context)
 /**
  * ✅ Memory stats endpoint
  */
@@ -240,133 +224,8 @@ app.post('/memory/search', async (c) => {
     const memories = await retrieveMemories(query, { agent, limit });
     return c.json({ memories });
 });
-/**
- * Standard chat endpoint
- */
-app.post('/chat', async (c) => {
-    const body = await c.req.json();
-    const { message, threadId } = body;
-    if (!message) {
-        return c.json({ error: "Message is required" }, 400);
-    }
-    const thread = threadId || randomUUID();
-    const config = {
-        configurable: { thread_id: thread }
-    };
-    const initialState = {
-        messages: [new HumanMessage(message)],
-    };
-    const result = await graph.invoke(initialState, config);
-    const history = result.messages.map((msg) => ({
-        agent: msg.name || "User",
-        content: msg.content,
-    }));
-    return c.json({
-        threadId: thread,
-        result: result.messages[result.messages.length - 1]?.content,
-        contributors: result.contributors || [],
-        history
-    });
-});
-/**
- * Streaming endpoint with SSE
- */
-app.post('/chat/stream', async (c) => {
-    const body = await c.req.json();
-    const { message, threadId } = body;
-    if (!message) {
-        return c.json({ error: "Message is required" }, 400);
-    }
-    const thread = threadId || randomUUID();
-    const config = {
-        configurable: { thread_id: thread }
-    };
-    const initialState = {
-        messages: [new HumanMessage(message)],
-    };
-    return streamSSE(c, async (stream) => {
-        await stream.writeSSE({
-            data: JSON.stringify({ type: "thread", threadId: thread }),
-            event: "thread"
-        });
-        const eventStream = graph.streamEvents(initialState, {
-            ...config,
-            version: "v2"
-        });
-        let currentAgent = null;
-        let previousAgent = null;
-        for await (const event of eventStream) {
-            // Agent started processing
-            if (event.event === "on_chain_start" && event.name && HIVE_MEMBERS.includes(event.name)) {
-                previousAgent = currentAgent;
-                currentAgent = event.name;
-                // Emit agent_start event
-                await stream.writeSSE({
-                    data: JSON.stringify({
-                        type: "agent_start",
-                        agent: event.name,
-                        timestamp: Date.now()
-                    }),
-                    event: "agent_start"
-                });
-                // Emit handoff event if there was a previous agent
-                if (previousAgent && previousAgent !== currentAgent) {
-                    await stream.writeSSE({
-                        data: JSON.stringify({
-                            type: "handoff",
-                            from: previousAgent,
-                            to: currentAgent,
-                            timestamp: Date.now()
-                        }),
-                        event: "handoff"
-                    });
-                }
-            }
-            // Agent finished processing
-            if (event.event === "on_chain_end" && event.name && HIVE_MEMBERS.includes(event.name)) {
-                // Emit agent_end event
-                await stream.writeSSE({
-                    data: JSON.stringify({
-                        type: "agent_end",
-                        agent: event.name,
-                        timestamp: Date.now()
-                    }),
-                    event: "agent_end"
-                });
-                // Also emit the agent's final message
-                const content = event.data?.output?.messages?.[0]?.content;
-                if (content) {
-                    await stream.writeSSE({
-                        data: JSON.stringify({
-                            type: "agent",
-                            agent: event.name,
-                            content: content,
-                        }),
-                        event: "agent"
-                    });
-                }
-            }
-            // Stream content chunks
-            if (event.event === "on_chat_model_stream") {
-                const chunk = event.data?.chunk?.content;
-                if (chunk) {
-                    await stream.writeSSE({
-                        data: JSON.stringify({
-                            type: "chunk",
-                            content: chunk,
-                            agent: currentAgent
-                        }),
-                        event: "chunk"
-                    });
-                }
-            }
-        }
-        await stream.writeSSE({
-            data: JSON.stringify({ type: "done" }),
-            event: "done"
-        });
-    });
-});
+// Chat endpoints (/chat, /chat/stream) are in src/routers/chat.ts
+// with Zod validation, prompt injection sanitization, and per-user rate limiting.
 /**
  * Get conversation history
  */
@@ -594,19 +453,11 @@ app.post('/auth/logout', async (c) => {
     }
 });
 /**
- * Get current user (protected)
+ * Get current user (protected — JWT enforced by middleware)
  */
 app.get('/auth/me', (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return c.json({ error: 'No token provided' }, 401);
-    }
-    const token = authHeader.slice(7);
-    const payload = userAuth.verifyJWT(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid or expired token' }, 401);
-    }
-    const user = userAuth.getUserById(payload.sub);
+    const authUser = c.get("user");
+    const user = userAuth.getUserById(authUser.userId);
     if (!user) {
         return c.json({ error: 'User not found' }, 404);
     }
@@ -635,19 +486,9 @@ app.get('/agents/config/:name', (c) => {
     return c.json(config);
 });
 /**
- * Update an agent's system prompt (protected)
+ * Update an agent's system prompt (protected — JWT enforced by middleware)
  */
 app.put('/agents/config/:name', async (c) => {
-    // Verify authentication
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-    const token = authHeader.slice(7);
-    const payload = userAuth.verifyJWT(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid or expired token' }, 401);
-    }
     const name = c.req.param('name');
     const { systemPrompt } = await c.req.json();
     if (!systemPrompt || typeof systemPrompt !== 'string') {
@@ -660,19 +501,9 @@ app.put('/agents/config/:name', async (c) => {
     return c.json(config);
 });
 /**
- * Reset an agent's configuration to default (protected)
+ * Reset an agent's configuration to default (protected — JWT enforced by middleware)
  */
 app.post('/agents/config/:name/reset', async (c) => {
-    // Verify authentication
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-    const token = authHeader.slice(7);
-    const payload = userAuth.verifyJWT(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid or expired token' }, 401);
-    }
     const name = c.req.param('name');
     const config = agentConfig.resetAgentConfig(name);
     if (!config) {
@@ -852,20 +683,11 @@ app.get('/plugins/:id', (c) => {
     return c.json(plugin);
 });
 /**
- * Create a new plugin (requires auth)
+ * Create a new plugin (protected — JWT enforced by middleware)
  */
 app.post('/plugins', async (c) => {
-    // Check authentication
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
-    const user = userAuth.getUserById(payload.userId);
+    const authUser = c.get("user");
+    const user = userAuth.getUserById(authUser.userId);
     if (!user) {
         return c.json({ error: 'User not found' }, 401);
     }
@@ -883,23 +705,15 @@ app.post('/plugins', async (c) => {
     }
 });
 /**
- * Update a plugin (requires auth, author only)
+ * Update a plugin (protected — JWT enforced by middleware, author only)
  */
 app.put('/plugins/:id', async (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
+    const authUser = c.get("user");
     const id = c.req.param('id');
     try {
         const body = await c.req.json();
         const parsed = UpdatePluginSchema.parse(body);
-        const plugin = pluginRegistry.updatePlugin(id, parsed, payload.userId);
+        const plugin = pluginRegistry.updatePlugin(id, parsed, authUser.userId);
         if (!plugin) {
             return c.json({ error: 'Plugin not found or not authorized' }, 404);
         }
@@ -913,20 +727,12 @@ app.put('/plugins/:id', async (c) => {
     }
 });
 /**
- * Delete a plugin (requires auth, author only)
+ * Delete a plugin (protected — JWT enforced by middleware, author only)
  */
 app.delete('/plugins/:id', (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
+    const authUser = c.get("user");
     const id = c.req.param('id');
-    const deleted = pluginRegistry.deletePlugin(id, payload.userId);
+    const deleted = pluginRegistry.deletePlugin(id, authUser.userId);
     if (!deleted) {
         return c.json({ error: 'Plugin not found or not authorized' }, 404);
     }
@@ -970,19 +776,11 @@ app.get('/plugins/:id/ratings', (c) => {
     return c.json({ ratings });
 });
 /**
- * Rate a plugin (requires auth)
+ * Rate a plugin (protected — JWT enforced by middleware)
  */
 app.post('/plugins/:id/ratings', async (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return c.json({ error: 'Authentication required' }, 401);
-    }
-    const token = authHeader.substring(7);
-    const payload = userAuth.verifyAccessToken(token);
-    if (!payload) {
-        return c.json({ error: 'Invalid token' }, 401);
-    }
-    const user = userAuth.getUserById(payload.userId);
+    const authUser = c.get("user");
+    const user = userAuth.getUserById(authUser.userId);
     if (!user) {
         return c.json({ error: 'User not found' }, 401);
     }
@@ -1271,27 +1069,13 @@ app.post('/webhooks/stripe', async (c) => {
 // Server Startup
 // ============================================
 const port = parseInt(process.env.PORT || "3000");
-console.log(`
-🐝 HIVE-R v1.0.0 — A+ Grade Server
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Agents: ${HIVE_MEMBERS.length}
-💾 Persistence: SQLite
-🌊 Streaming: Enabled
-🔒 Rate Limiting: 30 req/min
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Endpoints:
-  POST /chat           Full orchestration
-  POST /chat/stream    SSE streaming
-  GET  /health         Health check
-  
-Subgraph Workflows:
-  POST /workflow/strategy
-  POST /workflow/design
-  POST /workflow/build
-  POST /workflow/ship
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Listening on port ${port}
-`);
+logger.info({
+    agents: HIVE_MEMBERS.length,
+    persistence: 'SQLite',
+    streaming: true,
+    rateLimiting: '30 req/min',
+    port,
+}, `HIVE-R v1.0.0 server starting on port ${port}`);
 serve({
     fetch: app.fetch,
     port

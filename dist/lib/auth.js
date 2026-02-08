@@ -5,10 +5,11 @@
  * Set HIVE_API_KEY to enable; if not set, auth is disabled.
  */
 import { logger } from "./logger.js";
+import { getSecret } from "./secrets.js";
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
-const API_KEY = process.env.HIVE_API_KEY;
+const API_KEY = getSecret("HIVE_API_KEY");
 const AUTH_ENABLED = !!API_KEY;
 // Endpoints that don't require auth
 const PUBLIC_ENDPOINTS = [
@@ -36,19 +37,19 @@ export const authMiddleware = async (c, next) => {
     // Check Authorization header
     const authHeader = c.req.header("Authorization");
     if (!authHeader) {
-        logger.warn("🔒 Unauthorized request - no auth header", { path });
+        logger.warn({ path }, "🔒 Unauthorized request - no auth header");
         return c.json({ error: "Authorization header required" }, 401);
     }
     // Parse Bearer token
     const match = authHeader.match(/^Bearer\s+(.+)$/);
     if (!match) {
-        logger.warn("🔒 Unauthorized request - invalid format", { path });
+        logger.warn({ path }, "🔒 Unauthorized request - invalid format");
         return c.json({ error: "Invalid authorization format. Use: Bearer <api-key>" }, 401);
     }
     const providedKey = match[1];
     // Validate key
     if (providedKey !== API_KEY) {
-        logger.warn("🔒 Unauthorized request - invalid key", { path });
+        logger.warn({ path }, "🔒 Unauthorized request - invalid key");
         return c.json({ error: "Invalid API key" }, 403);
     }
     // Auth successful

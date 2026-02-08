@@ -1,11 +1,12 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
-const llm = new ChatOpenAI({
+const llm = createTrackedLLM("Accessibility", {
     modelName: "gpt-4o",
     temperature: 0.2,
+    enableRouting: true,
 });
 const A11Y_PROMPT = `${HIVE_PREAMBLE}
 
@@ -47,6 +48,6 @@ export const accessibilityNode = async (state) => {
             ...messages,
         ]);
         return createAgentResponse(response.content, "Accessibility");
-    }, "Accessibility", "I'm unable to provide accessibility review at this time. Please retry.");
+    }, "Accessibility", state.messages, undefined, "I'm unable to provide accessibility review at this time. Please retry.");
 };
 //# sourceMappingURL=accessibility.js.map

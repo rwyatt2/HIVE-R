@@ -1,4 +1,5 @@
 import { readFileSync, existsSync } from "fs";
+import { logger } from "./logger.js";
 /**
  * Load tokens from file
  */
@@ -10,7 +11,7 @@ export function loadTokens(path) {
         return JSON.parse(readFileSync(path, "utf-8"));
     }
     catch {
-        console.warn(`⚠️ Failed to load tokens from ${path}`);
+        logger.warn({ path }, `Failed to load tokens from ${path}`);
         return null;
     }
 }

@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
@@ -6,7 +6,8 @@ import { readFileTool, writeFileTool, listDirectoryTool } from "../tools/files.j
 import { runCommandTool } from "../tools/testing.js";
 import { getDesignContext, getActiveFramework } from "../lib/design-system.js";
 import { getStandardsForAgent } from "../lib/production-standards.js";
-const llm = new ChatOpenAI({
+import { logger } from "../lib/logger.js";
+const llm = createTrackedLLM("Builder", {
     modelName: "gpt-4o",
     temperature: 0.2,
 });
@@ -101,7 +102,7 @@ export const builderNode = async (state) => {
     const lastError = state.lastError;
     // Check if we've exceeded retries
     if (currentRetries >= MAX_RETRIES) {
-        console.error(`⚠️ Builder: Max retries (${MAX_RETRIES}) reached, handing off`);
+        logger.warn({ agentName: "Builder", retries: MAX_RETRIES, event: "max_retries" }, `Builder: Max retries (${MAX_RETRIES}) reached, handing off`);
         return {
             messages: [
                 new HumanMessage({
@@ -154,7 +155,7 @@ export const builderNode = async (state) => {
             // Check if any tool result indicates failure
             const { failed, error } = detectFailure(toolResults);
             if (failed) {
-                console.error(`🔄 Builder: Detected failure, retry ${currentRetries + 1}/${MAX_RETRIES}`);
+                logger.warn({ agentName: "Builder", retry: currentRetries + 1, maxRetries: MAX_RETRIES, event: "retry" }, `Builder: Detected failure, retry ${currentRetries + 1}/${MAX_RETRIES}`);
                 return {
                     messages: [
                         new HumanMessage({
@@ -169,7 +170,7 @@ export const builderNode = async (state) => {
                 };
             }
             // Success!
-            console.error(`✅ Builder: Task completed successfully`);
+            logger.info({ agentName: "Builder", event: "task_complete" }, "Builder: Task completed successfully");
             return {
                 messages: [
                     new HumanMessage({
@@ -194,7 +195,7 @@ export const builderNode = async (state) => {
         };
     }
     catch (error) {
-        console.error("❌ Builder failed:", error);
+        logger.error({ err: error, agentName: "Builder" }, "Builder failed");
         return {
             messages: [
                 new HumanMessage({

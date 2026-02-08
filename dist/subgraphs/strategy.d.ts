@@ -1,16 +1,16 @@
 import { BaseMessage, HumanMessage } from "@langchain/core/messages";
 export declare const strategySubgraph: import("@langchain/langgraph").CompiledStateGraph<{
     messages: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[];
-    currentStep: "done" | "founder" | "pm" | "ux";
+    currentStep: "done" | "ux" | "founder" | "pm";
 }, {
     messages?: BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[] | undefined;
-    currentStep?: "done" | "founder" | "pm" | "ux" | undefined;
+    currentStep?: "done" | "ux" | "founder" | "pm" | undefined;
 }, "ProductManager" | "Founder" | "UXResearcher" | "__start__", {
     messages: import("@langchain/langgraph").BinaryOperatorAggregate<BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[], BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[]>;
-    currentStep: import("@langchain/langgraph").BinaryOperatorAggregate<"done" | "founder" | "pm" | "ux", "done" | "founder" | "pm" | "ux">;
+    currentStep: import("@langchain/langgraph").BinaryOperatorAggregate<"done" | "ux" | "founder" | "pm", "done" | "ux" | "founder" | "pm">;
 }, {
     messages: import("@langchain/langgraph").BinaryOperatorAggregate<BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[], BaseMessage<import("@langchain/core/messages").MessageStructure<import("@langchain/core/messages").MessageToolSet>, import("@langchain/core/messages").MessageType>[]>;
-    currentStep: import("@langchain/langgraph").BinaryOperatorAggregate<"done" | "founder" | "pm" | "ux", "done" | "founder" | "pm" | "ux">;
+    currentStep: import("@langchain/langgraph").BinaryOperatorAggregate<"done" | "ux" | "founder" | "pm", "done" | "ux" | "founder" | "pm">;
 }, import("@langchain/langgraph").StateDefinition, {
     Founder: {
         messages: BaseMessage[];

@@ -53,7 +53,7 @@ export function createArtifactAwareNode(agentName, node) {
         // Check requirements
         const { ready, missing } = checkArtifactRequirements(state.artifactStore, agentName);
         if (!ready) {
-            logger.warn(`${agentName} missing required artifacts`, { missing });
+            logger.warn({ missing }, `${agentName} missing required artifacts`);
             // Could return early or continue with warning
         }
         // Format context

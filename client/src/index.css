@@ -1,68 +1,198 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import url('https://rsms.me/inter/inter.css');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
+@layer base {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    /* Font families */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+    /* Base colors (dark theme) */
+    --background: 8 8 12;
+    --foreground: 250 250 252;
+
+    /* Background layers */
+    --background-elevated: 12 12 18;
+    --background-card: 16 16 24;
+    --background-overlay: 20 20 28;
+
+    /* Borders */
+    --border: 30 30 42;
+    --border-subtle: 24 24 32;
+    --input: 30 30 42;
+    --ring: 99 102 241;
+
+    /* Text hierarchy */
+    --foreground-muted: 161 161 170;
+    --foreground-subtle: 113 113 122;
+
+    /* Primary (Indigo/Violet) */
+    --primary: 99 102 241;
+    --primary-foreground: 250 250 252;
+    --primary-light: 129 140 248;
+    --primary-dark: 67 56 202;
+
+    /* Gradient components */
+    --gradient-violet: 139 92 246;
+    --gradient-purple: 168 85 247;
+    --gradient-pink: 236 72 153;
+
+    /* Warm accents */
+    --warm-orange: 251 146 60;
+    --warm-amber: 251 191 36;
+    --warm-yellow: 250 204 21;
+
+    /* Status colors */
+    --success: 34 197 94;
+    --warning: 234 179 8;
+    --error: 239 68 68;
+    --info: 59 130 246;
+
+    /* Shadcn defaults */
+    --secondary: 30 30 42;
+    --secondary-foreground: 250 250 252;
+    --muted: 30 30 42;
+    --muted-foreground: 161 161 170;
+    --accent: 30 30 42;
+    --accent-foreground: 250 250 252;
+    --destructive: 239 68 68;
+    --destructive-foreground: 250 250 252;
+    --popover: 20 20 28;
+    --popover-foreground: 250 250 252;
+    --card: 16 16 24;
+    --card-foreground: 250 250 252;
+
+    --radius: 0.5rem;
   }
-  a:hover {
-    color: #747bff;
+
+  * {
+    @apply border-border;
   }
-  button {
-    background-color: #f9f9f9;
+
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings: 'liga' 1, 'calt' 1, 'cv08' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+
+  /* Gradient mesh background */
+  .gradient-mesh {
+    background: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, hsla(277, 92%, 61%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, hsla(29, 97%, 61%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 97% 96%, hsla(38, 96%, 56%, 0.1) 0px, transparent 50%),
+      hsl(var(--background));
+  }
+
+  /* Sunset glow effect */
+  .sunset-glow {
+    background: radial-gradient(ellipse 80% 50% at 50% -20%,
+        hsla(29, 97%, 61%, 0.3),
+        transparent);
+  }
+
+  /* Card glow (requires JS for mouse position) */
+  .card-glow {
+    background: radial-gradient(600px circle at var(--mouse-x) var(--mouse-y),
+        rgba(99, 102, 241, 0.06),
+        transparent 40%),
+      hsl(var(--background-card));
+  }
+
+  /* Button gradient */
+  .button-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--gradient-purple)) 100%);
+  }
+
+  /* Hexagon clip path */
+  .clip-path-hexagon {
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  /* Glassmorphism utilities */
+  .glass {
+    @apply backdrop-blur-xl bg-background-card/40 border border-border/50;
+  }
+
+  .glass-elevated {
+    @apply backdrop-blur-2xl bg-background-overlay/60 border border-border;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8);
+  }
+
+  .glass-subtle {
+    @apply backdrop-blur-md bg-background-elevated/30 border border-border-subtle/30 shadow-lg shadow-black/30;
+  }
+
+  /* Border gradient */
+  .border-gradient {
+    border: 1px solid transparent;
+    background: linear-gradient(hsl(var(--background-card)), hsl(var(--background-card))) padding-box,
+      linear-gradient(135deg, hsl(var(--primary)), hsl(var(--gradient-purple))) border-box;
+  }
+
+  /* Shimmer loading */
+  .shimmer {
+    background: linear-gradient(90deg,
+        hsl(var(--background-card)) 0%,
+        hsl(var(--border)) 50%,
+        hsl(var(--background-card)) 100%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Card lift on hover */
+  .card-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .card-lift:hover {
+    @apply -translate-y-1;
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.15);
+  }
+
+  /* Focus visible styles */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@layer components {
+
+  /* Scrollbar styling */
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    @apply bg-background-elevated rounded-full;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    @apply bg-border hover:bg-border-subtle rounded-full;
+  }
+
+  /* Typography utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
   }
 }

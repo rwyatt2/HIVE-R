@@ -11,7 +11,9 @@ updates:
       day: "monday"
     open-pull-requests-limit: 5
     commit-message:
-      prefix: "deps"
+      prefix: "chore(deps)"
+    reviewers:
+      - "rwyatt2"
     labels:
       - "dependencies"
       - "automated"

@@ -1,47 +1,49 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { SecurityReviewSchema } from "../lib/artifacts.js";
-const llm = new ChatOpenAI({
+import { safeAgentCall, createAgentResponse } from "../lib/utils.js";
+import { logger } from "../lib/logger.js";
+const llm = createTrackedLLM("Security", {
     modelName: "gpt-4o",
     temperature: 0.1,
 });
 const SECURITY_PROMPT = `${HIVE_PREAMBLE}
 
-You are **The Security Engineer** — a former red-team lead who's seen every attack. You think like an attacker to build like a defender.
+You are ** The Security Engineer ** — a former red - team lead who's seen every attack. You think like an attacker to build like a defender.
 
 ## Your Expertise
-- Threat modeling (STRIDE, attack trees, kill chains)
-- OWASP Top 10 and CWE — you know the numbers by heart
-- Authentication & authorization design
+    - Threat modeling(STRIDE, attack trees, kill chains)
+        - OWASP Top 10 and CWE — you know the numbers by heart
+            - Authentication & authorization design
 
 ## Your Output Format
 You MUST respond with a structured SecurityReview in JSON format:
 {
-  "type": "SecurityReview",
-  "title": "Security Review: [Feature Name]",
-  "threatModel": [
-    {
-      "threat": "Description of threat",
-      "attackVector": "How attacker would exploit",
-      "impact": "low" | "medium" | "high" | "critical",
-      "likelihood": "low" | "medium" | "high"
-    }
-  ],
-  "vulnerabilities": [
-    {
-      "id": "VULN-001",
-      "description": "What's wrong",
-      "severity": "low" | "medium" | "high" | "critical",
-      "recommendation": "How to fix"
-    }
-  ],
-  "requirements": ["Security requirements"],
-  "complianceNotes": ["Regulatory considerations"]
+    "type": "SecurityReview",
+        "title": "Security Review: [Feature Name]",
+            "threatModel": [
+                {
+                    "threat": "Description of threat",
+                    "attackVector": "How attacker would exploit",
+                    "impact": "low" | "medium" | "high" | "critical",
+                    "likelihood": "low" | "medium" | "high"
+                }
+            ],
+                "vulnerabilities": [
+                    {
+                        "id": "VULN-001",
+                        "description": "What's wrong",
+                        "severity": "low" | "medium" | "high" | "critical",
+                        "recommendation": "How to fix"
+                    }
+                ],
+                    "requirements": ["Security requirements"],
+                        "complianceNotes": ["Regulatory considerations"]
 }
 
-${CONTEXT_PROTOCOL}`;
+${CONTEXT_PROTOCOL} `;
 export const securityNode = async (state) => {
     const messages = state.messages;
     try {
@@ -70,7 +72,7 @@ ${artifact.vulnerabilities.map(v => `
 ${artifact.requirements.map(r => `- ${r}`).join("\n")}
 
 ## Compliance Notes
-${artifact.complianceNotes.map(n => `- ${n}`).join("\n")}`;
+${artifact.complianceNotes.map(n => `- ${n}`).join("\n")} `;
         return {
             messages: [
                 new HumanMessage({
@@ -83,11 +85,11 @@ ${artifact.complianceNotes.map(n => `- ${n}`).join("\n")}`;
         };
     }
     catch (error) {
-        console.error("❌ Security failed:", error);
+        logger.error({ err: error, agentName: "Security" }, "Security failed");
         return {
             messages: [
                 new HumanMessage({
-                    content: `**[Security Error]**: I encountered an error during security review. ${error instanceof Error ? error.message : "Unknown error"}`,
+                    content: `** [Security Error] **: I encountered an error during security review.${error instanceof Error ? error.message : "Unknown error"} `,
                     name: "Security",
                 }),
             ],

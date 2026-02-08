@@ -1,9 +1,10 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { createTrackedLLM } from "../middleware/cost-tracking.js";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { AgentState } from "../lib/state.js";
 import { HIVE_PREAMBLE, CONTEXT_PROTOCOL } from "../lib/prompts.js";
 import { TechPlanSchema } from "../lib/artifacts.js";
-const llm = new ChatOpenAI({
+import { logger } from "../lib/logger.js";
+const llm = createTrackedLLM("Planner", {
     modelName: "gpt-4o",
     temperature: 0.2,
 });
@@ -100,7 +101,7 @@ ${artifact.risks.map(r => `
         };
     }
     catch (error) {
-        console.error("❌ Planner failed:", error);
+        logger.error({ err: error, agentName: "Planner" }, "Planner failed");
         return {
             messages: [
                 new HumanMessage({

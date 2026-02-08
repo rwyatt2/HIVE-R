@@ -81,7 +81,7 @@ export function startTrace(threadId: string): ConversationTrace {
         if (oldest) traces.delete(oldest);
     }
 
-    logger.debug("📊 Trace started", { threadId });
+    logger.debug({ threadId }, "📊 Trace started");
     return trace;
 }
 
@@ -94,7 +94,7 @@ export function endTrace(threadId: string, status: "completed" | "failed" = "com
         trace.endTime = Date.now();
         trace.status = status;
         if (error) trace.error = error;
-        logger.debug("📊 Trace ended", { threadId, status, duration: trace.endTime - trace.startTime });
+        logger.debug({ threadId, status, duration: trace.endTime - trace.startTime }, "📊 Trace ended");
     }
 }
 
@@ -140,7 +140,7 @@ export function startSpan(
         }
     }
 
-    logger.debug(`📊 Span started: ${name}`, { spanId, type });
+    logger.debug({ spanId, type }, `📊 Span started: ${name}`);
     return spanId;
 }
 
@@ -162,7 +162,7 @@ export function endSpan(
         if (metadata) span.metadata = metadata;
 
         activeSpans.delete(spanId);
-        logger.debug(`📊 Span ended: ${span.name}`, { spanId, duration: span.duration, error: !!error });
+        logger.debug({ spanId, duration: span.duration, error: !!error }, `📊 Span ended: ${span.name}`);
     }
 }
 
@@ -270,9 +270,9 @@ export async function sendToLangSmith(trace: ConversationTrace): Promise<void> {
             body: JSON.stringify(payload),
         });
 
-        logger.debug("📊 Sent trace to LangSmith", { threadId: trace.threadId });
+        logger.debug({ threadId: trace.threadId }, "📊 Sent trace to LangSmith");
     } catch (error) {
-        logger.warn("Failed to send trace to LangSmith", { error: (error as Error).message });
+        logger.warn({ error: (error as Error).message }, "Failed to send trace to LangSmith");
     }
 }
 

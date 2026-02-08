@@ -1,37 +1,44 @@
 /**
  * Structured Logger for HIVE-R
  *
- * Provides consistent logging across all agents with:
- * - Agent lifecycle events (start/end)
- * - Tool calls
- * - Routing decisions
- * - Error tracking
+ * Pino-based JSON logger with:
+ * - JSON output in production (for ELK / Datadog)
+ * - Pretty-print in development (pino-pretty)
+ * - Environment-based log levels
+ * - Child loggers for request/agent context
+ * - Convenience methods for agent lifecycle events
+ *
+ * @module logger
  */
-export type LogLevel = "debug" | "info" | "warn" | "error";
-interface LogContext {
-    agentName?: string;
-    threadId?: string;
-    turnCount?: number;
-    toolName?: string;
-    duration?: number;
-    [key: string]: unknown;
+import pino from "pino";
+export type LogLevel = "debug" | "info" | "warn" | "error" | "fatal" | "silent";
+interface HiveLogger extends pino.Logger {
+    agentStart: (agentName: string, context?: Record<string, unknown>) => void;
+    agentEnd: (agentName: string, duration: number, context?: Record<string, unknown>) => void;
+    agentError: (agentName: string, error: Error, context?: Record<string, unknown>) => void;
+    routingDecision: (from: string, to: string, reasoning: string) => void;
+    toolCall: (toolName: string, agentName: string, input?: unknown) => void;
+    toolResult: (toolName: string, agentName: string, success: boolean, duration: number) => void;
+    safetyTrigger: (reason: string, context?: Record<string, unknown>) => void;
 }
-declare class Logger {
-    private level;
-    setLevel(level: LogLevel): void;
-    private shouldLog;
-    debug(message: string, context?: LogContext): void;
-    info(message: string, context?: LogContext): void;
-    warn(message: string, context?: LogContext): void;
-    error(message: string, context?: LogContext): void;
-    agentStart(agentName: string, context?: Partial<LogContext>): void;
-    agentEnd(agentName: string, duration: number, context?: Partial<LogContext>): void;
-    agentError(agentName: string, error: Error, context?: Partial<LogContext>): void;
-    routingDecision(from: string, to: string, reasoning: string): void;
-    toolCall(toolName: string, agentName: string, input?: unknown): void;
-    toolResult(toolName: string, agentName: string, success: boolean, duration: number): void;
-    safetyTrigger(reason: string, context?: LogContext): void;
-}
-export declare const logger: Logger;
+/**
+ * The main logger singleton.
+ *
+ * Usage:
+ *   import { logger } from "../lib/logger.js";
+ *   logger.info("Server started");
+ *   logger.info({ port: 3000 }, "Server started");
+ *   logger.agentStart("Builder", { threadId });
+ *
+ * To add per-request context:
+ *   const reqLogger = logger.child({ requestId, userId });
+ *   reqLogger.info("Processing chat request");
+ */
+export declare const logger: HiveLogger;
+/**
+ * Create a child logger scoped to a specific agent.
+ * Adds `agentName` to every log line automatically.
+ */
+export declare function createAgentLogger(agentName: string, extra?: Record<string, unknown>): pino.Logger<never, boolean>;
 export {};
 //# sourceMappingURL=logger.d.ts.map
