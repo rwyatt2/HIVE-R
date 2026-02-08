@@ -1,5 +1,9 @@
 # 🐝 HIVE-R
 
+[![CI - Test](https://github.com/rwyatt2/HIVE-R/actions/workflows/ci-test.yml/badge.svg)](https://github.com/rwyatt2/HIVE-R/actions/workflows/ci-test.yml)
+[![CI - Build](https://github.com/rwyatt2/HIVE-R/actions/workflows/ci-build.yml/badge.svg)](https://github.com/rwyatt2/HIVE-R/actions/workflows/ci-build.yml)
+[![CI - Docker](https://github.com/rwyatt2/HIVE-R/actions/workflows/ci-docker.yml/badge.svg)](https://github.com/rwyatt2/HIVE-R/actions/workflows/ci-docker.yml)
+
 **Your Portable AI Software Team.**
 
 HIVE-R is an autonomous 13-agent swarm that works together to build software. From "Idea" to "Production Code", seamlessly.

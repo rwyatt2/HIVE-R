@@ -1,0 +1,66 @@
+name: CI - Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Backend, Client & Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # ── Backend Build ────────────────────────────────────────
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Build backend (TypeScript → dist/)
+        run: npm run build
+
+      - name: Verify dist output
+        run: |
+          test -f dist/index.js || (echo "❌ dist/index.js not found" && exit 1)
+          echo "✅ Backend build output verified"
+
+      # ── Client Build ─────────────────────────────────────────
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Build client (Vite)
+        run: npm run build
+        working-directory: client
+
+      - name: Verify client output
+        run: |
+          test -d client/dist || (echo "❌ client/dist not found" && exit 1)
+          echo "✅ Client build output verified"
+
+      # ── Docker Build ─────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: hive-r:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

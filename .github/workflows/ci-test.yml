@@ -1,0 +1,81 @@
+name: CI - Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck, Lint & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # ── Backend ──────────────────────────────────────────────
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        env:
+          OPENAI_API_KEY: test-key-ci
+          NODE_ENV: test
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: backend
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      # ── Client ───────────────────────────────────────────────
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Lint client (ESLint)
+        run: npm run lint
+        working-directory: client
+
+      - name: Typecheck client
+        run: npx tsc -b
+        working-directory: client
+
+      # ── Security ─────────────────────────────────────────────
+      - name: npm audit (backend)
+        run: npm audit --audit-level=high --omit=dev || true
+
+      - name: npm audit (client)
+        run: npm audit --audit-level=high --omit=dev || true
+        working-directory: client
+
+      # ── Summary ──────────────────────────────────────────────
+      - name: Test Summary
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Vitest Results
+          path: coverage/junit.xml
+          reporter: jest-junit
+        continue-on-error: true
