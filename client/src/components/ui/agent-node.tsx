@@ -71,8 +71,8 @@ export function AgentNode({
                 )}
             </div>
 
-            {/* Label (Always visible now, but subtle) */}
-            <div className="absolute -bottom-8 px-2 py-1 rounded bg-black/50 backdrop-blur text-xs font-medium text-starlight-400 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+            {/* Label (Always visible) */}
+            <div className="mt-2 px-2 py-0.5 rounded-md bg-void-950/80 backdrop-blur-sm text-[11px] font-medium text-starlight-300 whitespace-nowrap border border-white/5">
                 {name}
             </div>
         </div>

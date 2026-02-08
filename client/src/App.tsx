@@ -5,19 +5,19 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ReactFlow,
   Controls,
   Background,
   applyNodeChanges,
   applyEdgeChanges,
-  type Node,
-  type Edge,
   type OnNodesChange,
   type OnEdgesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './App.css';
+import { getAgentGraphData } from './lib/graph-layout';
 import { Docs } from './components/Docs';
 import { AgentNode } from './components/AgentNode';
 import { CustomEdge } from './components/CustomEdge';
@@ -50,42 +50,8 @@ const edgeTypes = {
 // INITIAL GRAPH DATA
 // ============================================================================
 
-const initialNodes: Node[] = [
-  { id: 'Router', position: { x: 300, y: 0 }, data: { label: '🧭 Router' }, type: 'agent' },
-  { id: 'Founder', position: { x: 50, y: 100 }, data: { label: '👔 Founder' }, type: 'agent' },
-  { id: 'ProductManager', position: { x: 200, y: 100 }, data: { label: '📋 PM' }, type: 'agent' },
-  { id: 'UXResearcher', position: { x: 350, y: 100 }, data: { label: '🔬 UX Researcher' }, type: 'agent' },
-  { id: 'Designer', position: { x: 500, y: 100 }, data: { label: '🎨 Designer' }, type: 'agent' },
-  { id: 'Accessibility', position: { x: 650, y: 100 }, data: { label: '♿ A11y' }, type: 'agent' },
-  { id: 'Planner', position: { x: 50, y: 200 }, data: { label: '📐 Planner' }, type: 'agent' },
-  { id: 'Security', position: { x: 200, y: 200 }, data: { label: '🔒 Security' }, type: 'agent' },
-  { id: 'Builder', position: { x: 350, y: 200 }, data: { label: '🛠️ Builder' }, type: 'agent' },
-  { id: 'Reviewer', position: { x: 500, y: 200 }, data: { label: '👀 Reviewer' }, type: 'agent' },
-  { id: 'Tester', position: { x: 650, y: 200 }, data: { label: '🧪 Tester' }, type: 'agent' },
-  { id: 'TechWriter', position: { x: 50, y: 300 }, data: { label: '✍️ Tech Writer' }, type: 'agent' },
-  { id: 'SRE', position: { x: 200, y: 300 }, data: { label: '🚀 SRE' }, type: 'agent' },
-  { id: 'DataAnalyst', position: { x: 350, y: 300 }, data: { label: '📊 Data Analyst' }, type: 'agent' },
-];
-
-const initialEdges: Edge[] = [
-  { id: 'e-router-founder', source: 'Router', target: 'Founder', type: 'custom-edge' },
-  { id: 'e-router-pm', source: 'Router', target: 'ProductManager', type: 'custom-edge' },
-  { id: 'e-router-ux', source: 'Router', target: 'UXResearcher', type: 'custom-edge' },
-  { id: 'e-router-designer', source: 'Router', target: 'Designer', type: 'custom-edge' },
-  { id: 'e-router-a11y', source: 'Router', target: 'Accessibility', type: 'custom-edge' },
-  { id: 'e-router-planner', source: 'Router', target: 'Planner', type: 'custom-edge' },
-  { id: 'e-router-security', source: 'Router', target: 'Security', type: 'custom-edge' },
-  { id: 'e-router-builder', source: 'Router', target: 'Builder', type: 'custom-edge' },
-  { id: 'e-router-reviewer', source: 'Router', target: 'Reviewer', type: 'custom-edge' },
-  { id: 'e-router-tester', source: 'Router', target: 'Tester', type: 'custom-edge' },
-  { id: 'e-router-techwriter', source: 'Router', target: 'TechWriter', type: 'custom-edge' },
-  { id: 'e-router-sre', source: 'Router', target: 'SRE', type: 'custom-edge' },
-  { id: 'e-router-dataanalyst', source: 'Router', target: 'DataAnalyst', type: 'custom-edge' },
-  // Direct handoffs
-  { id: 'e-designer-builder', source: 'Designer', target: 'Builder', type: 'custom-edge', data: { variant: 'gradient' } },
-  { id: 'e-builder-tester', source: 'Builder', target: 'Tester', type: 'custom-edge', data: { variant: 'gradient' } },
-  { id: 'e-tester-builder', source: 'Tester', target: 'Builder', type: 'custom-edge', data: { variant: 'gradient' } },
-];
+// Get auto-layouted graph data using Dagre
+const { nodes: initialNodes, edges: initialEdges } = getAgentGraphData();
 
 // ============================================================================
 // CHAT INTERFACE
@@ -116,13 +82,23 @@ function ChatPanel({
 
   return (
     <Card variant="default" className="flex flex-col h-full rounded-2xl border-white/5 overflow-hidden shadow-2xl bg-void-900/40 backdrop-blur-xl">
-      <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">💬</span>
-          <h2 className="font-semibold text-starlight-50">Studio Chat</h2>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-white/[0.03]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 flex items-center justify-center bg-electric-violet/10 rounded-lg">
+            <span className="text-lg">💬</span>
+          </div>
+          <h2 className="font-semibold text-base text-starlight-100">Studio Chat</h2>
         </div>
-        <Button variant="ghost" size="sm" onClick={onOpenDocs} title="Getting Started" className="text-starlight-400 hover:text-white">
-          <Book className="h-4 w-4 mr-2" /> Docs
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onOpenDocs}
+          title="Getting Started"
+          className="text-starlight-400 hover:text-white hover:bg-white/5 px-3 py-1.5 h-auto"
+        >
+          <Book className="h-4 w-4 mr-1.5" />
+          <span className="text-sm">Docs</span>
         </Button>
       </div>
 
@@ -133,16 +109,30 @@ function ChatPanel({
         className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
       >
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
-            <div className="w-16 h-16 flex items-center justify-center bg-primary/10 rounded-2xl mb-2">
+          <div className="flex flex-col items-center justify-center h-full text-center px-6 py-8 space-y-5">
+            <div className="w-16 h-16 flex items-center justify-center bg-electric-violet/10 rounded-2xl ring-1 ring-electric-violet/20">
               <span className="text-4xl">🐝</span>
             </div>
-            <h3 className="text-xl font-bold">Welcome to HIVE-R Studio!</h3>
-            <p className="text-muted-foreground max-w-sm">I coordinate a team of 13 AI specialists. What would you like to build today?</p>
-            <div className="flex flex-wrap justify-center gap-2 mt-4">
-              {["Build a landing page", "Create a Python game", "Analyze data"].map(suggestion => (
-                <Button key={suggestion} variant="secondary" size="sm" onClick={() => onSend(suggestion)}>
-                  {suggestion}
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-starlight-50">Welcome to HIVE-R Studio!</h3>
+              <p className="text-sm text-starlight-400 max-w-[280px] leading-relaxed">
+                I coordinate a team of 13 AI specialists. What would you like to build today?
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-2.5 w-full max-w-[220px]">
+              {[
+                "Build a landing page",
+                "Create a Python game",
+                "Analyze data"
+              ].map((label) => (
+                <Button
+                  key={label}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onSend(label)}
+                  className="w-full h-9 px-4 text-sm bg-white/[0.02] border-white/10 hover:bg-electric-violet/10 hover:border-electric-violet/30 hover:text-electric-violet transition-all"
+                >
+                  {label}
                 </Button>
               ))}
             </div>
@@ -173,23 +163,24 @@ function ChatPanel({
         )}
       </div>
 
-      <div className="p-4 border-t border-white/5 bg-white/5 backdrop-blur-md">
+      {/* Input Area */}
+      <div className="p-4 border-t border-white/5 bg-white/[0.02]">
         <form className="relative" onSubmit={handleSubmit}>
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Summon the swarm..."
+            placeholder="What would you like to build?"
             disabled={isLoading}
-            className="pr-12 h-14 bg-void-950/50 border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 rounded-xl text-starlight-50 placeholder:text-starlight-700 font-mono shadow-inner"
+            className="pl-5 pr-14 h-12 bg-void-950/50 border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 rounded-xl text-sm text-starlight-50 placeholder:text-starlight-600 shadow-inner"
           />
           <Button
             type="submit"
             size="icon"
             disabled={isLoading || !input.trim()}
             aria-label={isLoading ? 'Sending message' : 'Send message'}
-            className="absolute right-2 top-2 h-10 w-10 bg-electric-violet hover:bg-electric-indigo text-white shadow-neon-violet transition-all duration-300 hover:scale-105"
+            className="absolute right-1.5 top-1.5 h-9 w-9 bg-electric-violet hover:bg-electric-indigo text-white shadow-neon-violet transition-all duration-200 hover:scale-105 disabled:opacity-30"
           >
-            {isLoading ? <StopCircle className="h-5 w-5 animate-pulse" /> : <Send className="h-5 w-5" />}
+            {isLoading ? <StopCircle className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
           </Button>
         </form>
       </div>
@@ -209,6 +200,7 @@ interface AppProps {
 }
 
 function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false }: AppProps) {
+  const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
@@ -396,7 +388,7 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
         onNewSession: createNewSession,
         onSelectSession: switchSession,
         onDeleteSession: deleteSession,
-        onNavigate: (path) => console.log('Navigate to', path), // TODO: Real routing
+        onNavigate: (path) => navigate(path),
         activePath: 'studio'
       }}
     >

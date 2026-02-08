@@ -18,13 +18,13 @@ export function LayoutShell({ children, sidebarProps, noScroll = false }: Layout
     const onToggle = sidebarProps?.onToggle ?? (() => setCollapsed(prev => !prev))
 
     return (
-        <div className="relative flex h-screen w-full overflow-hidden bg-background font-sans text-foreground">
+        <div className="relative flex h-screen w-full overflow-hidden bg-background font-sans text-foreground p-3 md:p-4 gap-3 md:gap-4">
             {/* Background Pattern */}
             <div className="absolute inset-0 z-0 bg-neural-mesh pointer-events-none" />
             <div className="absolute inset-0 z-0 gradient-mesh opacity-30 pointer-events-none" />
 
             {/* Sidebar (Desktop) */}
-            <div className="hidden md:block z-40">
+            <div className="hidden md:flex h-full shrink-0 z-40">
                 <SideNav
                     {...sidebarProps}
                     collapsed={isCollapsed}

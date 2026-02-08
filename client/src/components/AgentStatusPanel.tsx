@@ -168,7 +168,7 @@ export function AgentStatusPanel({
     const hasActivity = activeAgent || queue.length > 0 || completed.length > 0;
 
     return (
-        <div className="bg-void-900/60 backdrop-blur-xl border border-white/[0.06] rounded-xl p-4">
+        <div className="bg-void-900/60 backdrop-blur-xl border border-white/[0.06] rounded-xl p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-white flex items-center gap-2">
@@ -199,9 +199,12 @@ export function AgentStatusPanel({
                     <CompletionTimeline completed={completed} />
                 </>
             ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-starlight-500">
-                    <span className="text-3xl mb-2">💤</span>
-                    <p className="text-sm">No agent activity</p>
+                <div className="flex flex-col items-center justify-center py-6 text-starlight-500">
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.03] mb-3">
+                        <Activity className="w-5 h-5 text-starlight-600" />
+                    </div>
+                    <p className="text-sm text-starlight-500">No agent activity</p>
+                    <p className="text-xs text-starlight-600 mt-0.5">Start a conversation to see agents working</p>
                 </div>
             )}
         </div>

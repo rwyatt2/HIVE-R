@@ -27,14 +27,14 @@ export function CustomEdge({
 
     return (
         <>
-            {/* Base Path (Dim) */}
+            {/* Base Path */}
             <BaseEdge
                 path={edgePath}
                 markerEnd={markerEnd}
                 style={{
                     ...style,
-                    strokeWidth: 2,
-                    stroke: 'rgba(255, 255, 255, 0.1)', // border-white/10 equivalent
+                    strokeWidth: 1.5,
+                    stroke: 'rgba(139, 92, 246, 0.35)', // Electric violet at 35% opacity - much more visible
                 }}
             />
 

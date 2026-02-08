@@ -3,18 +3,82 @@
  * Centralized constants for spacing, typography, and animations
  */
 
+/**
+ * 4pt Grid Spacing System
+ * All spacing values are multiples of 4px for consistent rhythm
+ */
+export const spacing = {
+    none: '0',
+    xs: '4px',      // 1 unit - tight internal spacing
+    sm: '8px',      // 2 units - small gaps, inline elements
+    md: '12px',     // 3 units - compact sections, list items
+    base: '16px',   // 4 units - default element padding
+    lg: '20px',     // 5 units - enhanced breathing room
+    xl: '24px',     // 6 units - card padding, section gaps
+    '2xl': '32px',  // 8 units - large section separations
+    '3xl': '40px',  // 10 units - major layout divisions
+    '4xl': '48px',  // 12 units - panel/viewport margins
+} as const;
+
+/**
+ * Tailwind class mappings for 4pt grid
+ * Use these semantic tokens for consistent spacing
+ */
+export const spacingClasses = {
+    // Gaps (flexbox/grid)
+    gapTight: 'gap-1',      // 4px
+    gapSmall: 'gap-2',      // 8px
+    gapDefault: 'gap-3',    // 12px
+    gapMedium: 'gap-4',     // 16px
+    gapLarge: 'gap-6',      // 24px
+    gapSection: 'gap-8',    // 32px
+
+    // Padding
+    padTight: 'p-1',        // 4px
+    padSmall: 'p-2',        // 8px
+    padDefault: 'p-3',      // 12px
+    padMedium: 'p-4',       // 16px
+    padLarge: 'p-5',        // 20px
+    padXLarge: 'p-6',       // 24px
+
+    // Margins
+    marginTight: 'm-1',     // 4px
+    marginSmall: 'm-2',     // 8px
+    marginDefault: 'm-3',   // 12px
+    marginMedium: 'm-4',    // 16px
+} as const;
+
 export const componentSpacing = {
-    cardPadding: "p-6",
-    cardGap: "gap-4",
-    sectionGap: "space-y-8",
-    inputHeight: "h-10",
-    buttonHeight: "h-10",
-    iconSize: "w-4 h-4",
-    iconSizeMd: "w-5 h-5",
-    iconSizeLg: "w-6 h-6",
-    avatarSm: "w-8 h-8",
-    avatarMd: "w-10 h-10",
-    avatarLg: "w-16 h-16",
+    // Container/Layout spacing
+    viewportPadding: 'p-2 md:p-3',
+    layoutGap: 'gap-2 md:gap-3',
+    containerPadding: 'p-4 md:p-6',
+    panelPadding: 'p-4',
+    cardPadding: 'p-5',
+    cardGap: 'gap-4',
+    sectionGap: 'space-y-6',
+
+    // Navigation spacing
+    navPadding: 'p-3',
+    navItemGap: 'gap-1',
+    navItemPadding: 'px-3 py-2.5',
+
+    // Interactive elements (44px min touch target)
+    inputHeight: 'h-11',
+    inputPadding: 'px-3 py-2',
+    buttonHeight: 'h-10',
+    buttonPadding: 'px-4 py-2',
+    minTouchTarget: 'min-h-11 min-w-11',
+
+    // Icon sizes
+    iconSize: 'w-4 h-4',
+    iconSizeMd: 'w-5 h-5',
+    iconSizeLg: 'w-6 h-6',
+
+    // Avatar sizes
+    avatarSm: 'w-8 h-8',
+    avatarMd: 'w-10 h-10',
+    avatarLg: 'w-16 h-16',
 } as const;
 
 export const headingStyles = {
