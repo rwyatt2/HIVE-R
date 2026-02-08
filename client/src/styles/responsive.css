@@ -1,0 +1,219 @@
+/* Responsive Design Utilities */
+
+/* Breakpoint Variables */
+:root {
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+}
+
+/* ===== TOUCH TARGETS ===== */
+/* Minimum 44x44px for iOS/WCAG compliance */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+@media (min-width: 768px) {
+    .touch-target {
+        min-height: 40px;
+        min-width: 40px;
+    }
+}
+
+/* ===== SAFE AREA PADDING ===== */
+/* For devices with notches/home indicators */
+.safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+}
+
+.safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-left {
+    padding-left: env(safe-area-inset-left, 0);
+}
+
+.safe-area-right {
+    padding-right: env(safe-area-inset-right, 0);
+}
+
+/* ===== FLUID TYPOGRAPHY ===== */
+.text-fluid-sm {
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+}
+
+.text-fluid-base {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.text-fluid-lg {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+.text-fluid-xl {
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
+}
+
+.text-fluid-2xl {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.text-fluid-3xl {
+    font-size: clamp(1.875rem, 5vw, 3rem);
+}
+
+/* ===== RESPONSIVE SPACING ===== */
+.p-responsive {
+    padding: 1rem;
+}
+
+@media (min-width: 768px) {
+    .p-responsive {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .p-responsive {
+        padding: 2rem;
+    }
+}
+
+.gap-responsive {
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .gap-responsive {
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .gap-responsive {
+        gap: 2rem;
+    }
+}
+
+/* ===== HIDE/SHOW UTILITIES ===== */
+.hide-on-mobile {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .hide-on-mobile {
+        display: block;
+    }
+
+    .show-on-mobile {
+        display: none;
+    }
+}
+
+.hide-on-desktop {
+    display: block;
+}
+
+@media (min-width: 1024px) {
+    .hide-on-desktop {
+        display: none;
+    }
+
+    .show-on-desktop {
+        display: block;
+    }
+}
+
+/* ===== RESPONSIVE GRID ===== */
+.grid-responsive {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .grid-responsive-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 768px) {
+    .grid-responsive {
+        gap: 1.5rem;
+    }
+
+    .grid-responsive-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid-responsive-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-responsive-4 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1280px) {
+    .grid-responsive-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ===== MOBILE MODAL ===== */
+@media (max-width: 639px) {
+    .modal-responsive {
+        position: fixed;
+        inset: 0;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+}
+
+/* ===== TOUCH FEEDBACK ===== */
+@media (hover: none) {
+    .touch-feedback:active {
+        transform: scale(0.97);
+        opacity: 0.9;
+    }
+}
+
+/* Disable hover effects on touch devices */
+@media (hover: none) {
+    .hover-effect:hover {
+        background-color: inherit;
+    }
+}
+
+/* ===== SCROLL CONTAINER ===== */
+.scroll-container-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.scroll-container-x::-webkit-scrollbar {
+    display: none;
+}
+
+/* ===== STACK TO ROW ===== */
+.stack-to-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .stack-to-row {
+        flex-direction: row;
+        align-items: center;
+    }
+}

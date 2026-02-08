@@ -1,0 +1,73 @@
+/* =============================================================================
+   CARD COMPONENT (BEM)
+   ============================================================================= */
+
+/* Block */
+.card {
+    background: var(--glass-high-bg);
+    border: 1px solid var(--glass-high-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-glass);
+    overflow: hidden;
+}
+
+/* Elements */
+.card__header {
+    padding: var(--spacing-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.card__title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.card__subtitle {
+    margin: var(--spacing-1) 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.card__body {
+    padding: var(--spacing-4);
+}
+
+.card__footer {
+    padding: var(--spacing-4);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-2);
+}
+
+/* Modifiers */
+.card--elevated {
+    box-shadow: var(--shadow-xl);
+}
+
+.card--bordered {
+    border: 2px solid var(--color-primary-600);
+}
+
+.card--compact .card__header,
+.card--compact .card__body,
+.card--compact .card__footer {
+    padding: var(--spacing-2);
+}
+
+.card--interactive {
+    cursor: pointer;
+    transition: transform var(--transition-base) var(--transition-timing);
+}
+
+.card--interactive:hover {
+    transform: translateY(-2px);
+}
+
+.card--surface {
+    background: var(--color-bg-secondary);
+    backdrop-filter: none;
+}

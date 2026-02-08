@@ -608,4 +608,6 @@ function getDateOffset(days: number): string {
  */
 export function _resetDb(newDb?: Database.Database): void {
     db = newDb || null;
+    dailyCostStmt = null; // Clear cached prepared statement
 }
+

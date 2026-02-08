@@ -28,7 +28,23 @@ let testDb: Database.Database;
 beforeEach(() => {
     testDb = new Database(":memory:");
     _resetDb(testDb);
-    initCostTrackingTable();
+    // Create the table directly on testDb since _resetDb sets this as the active db
+    testDb.exec(`
+        CREATE TABLE IF NOT EXISTS llm_usage (
+            id            TEXT PRIMARY KEY,
+            agent_name    TEXT NOT NULL,
+            model         TEXT NOT NULL,
+            tokens_in     INTEGER NOT NULL,
+            tokens_out    INTEGER NOT NULL,
+            cost_usd      REAL NOT NULL,
+            latency_ms    INTEGER NOT NULL,
+            thread_id     TEXT,
+            user_id       TEXT,
+            metadata      TEXT,
+            created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_llm_usage_created ON llm_usage(created_at);
+    `);
 });
 
 afterEach(() => {
@@ -72,6 +88,7 @@ function insertUsage(overrides: {
 
     return result;
 }
+
 
 // ============================================================================
 // calculateCost

@@ -1,57 +1,59 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  hive:
-    build: .
+  hive-r:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      cache_from:
+        - node:20-alpine
+        - hive-r:latest
+
+    image: hive-r:latest
+    container_name: hive-r
+    restart: unless-stopped
+
     ports:
       - "3000:3000"
+
     environment:
       - NODE_ENV=production
-      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
-      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-hive-r}
       - DATABASE_PATH=/app/data/hive.db
-    secrets:
-      - openai_api_key
-      - hive_api_key
-      - github_token
-      - langchain_api_key
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
     volumes:
       - hive-data:/app/data
-    restart: unless-stopped
+      - hive-logs:/app/logs
+
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000/health" ]
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 40s
 
-  redis:
-    image: redis/redis-stack:latest
-    container_name: hive-redis
-    ports:
-      - "6379:6379"
-      - "8001:8001" # RedisInsight UI
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    networks:
+      - hive-network
 
-# Docker Secrets — create files in ./secrets/ directory
-# Each file contains the raw secret value (no trailing newline)
-secrets:
-  openai_api_key:
-    file: ./secrets/openai_api_key.txt
-  hive_api_key:
-    file: ./secrets/hive_api_key.txt
-  github_token:
-    file: ./secrets/github_token.txt
-  langchain_api_key:
-    file: ./secrets/langchain_api_key.txt
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   hive-data:
-  redis-data:
+    driver: local
+  hive-logs:
+    driver: local
+
+networks:
+  hive-network:
+    driver: bridge

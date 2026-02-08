@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Build artifacts (we build in Docker)
+dist/
+build/
+*.log
+
+# Development
+.git/
+.github/
+.vscode/
+.idea/
+.cursor/
+.gemini/
+
+# Tests
+tests/
+coverage/
+*.test.ts
+*.test.tsx
+*.spec.ts
+playwright-report/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Source maps
+*.map
+
+# TypeScript source (we only need compiled JS)
+src/
+client/src/
+tsconfig*.json
+
+# Storybook
+.storybook/
+storybook-static/

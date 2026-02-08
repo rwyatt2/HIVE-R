@@ -12,12 +12,14 @@ import { NavBar } from './components/NavBar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { LoginPage } from './components/LoginPage';
+import { KeyboardManager } from './components/KeyboardManager';
 import './index.css';
 
 // ─── Lazy Loaded Pages ──────────────────────────────────────────────────────
 // These pages are split into separate chunks and loaded on demand
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const HistoryPage = lazy(() => import('./pages/HistoryPage').then(m => ({ default: m.HistoryPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const BillingPage = lazy(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage').then(m => ({ default: m.OrganizationPage })));
@@ -151,6 +153,15 @@ function AppRoutes() {
                     </Layout>
                 </ProtectedRoute>
             } />
+            <Route path="/history" element={
+                <ProtectedRoute>
+                    <Layout>
+                        <PageSuspense>
+                            <HistoryPage />
+                        </PageSuspense>
+                    </Layout>
+                </ProtectedRoute>
+            } />
             <Route path="/settings" element={
                 <ProtectedRoute>
                     <Layout>
@@ -207,7 +218,9 @@ function AppRoutes() {
 export function AppRouter() {
     return (
         <BrowserRouter>
-            <AppRoutes />
+            <KeyboardManager>
+                <AppRoutes />
+            </KeyboardManager>
         </BrowserRouter>
     );
 }
