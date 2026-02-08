@@ -1,0 +1,203 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - "v*" # Trigger on version tags (v1.0.0, v1.2.3-rc.1)
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # Never cancel a production deploy
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/hive-r
+  PROD_URL: ${{ secrets.PROD_URL }}
+
+jobs:
+  deploy:
+    name: Deploy ${{ github.ref_name }} to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production # Requires manual approval in GitHub
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate tag format
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "❌ Invalid tag format: $TAG (expected v*.*.*)"
+            exit 1
+          fi
+          echo "✅ Deploying version: $TAG"
+
+      # ── Build & Push ─────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push versioned image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}
+
+      # ── Blue-Green Deploy ────────────────────────────────────
+      - name: Deploy with blue-green strategy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          envs: IMAGE_NAME
+          script: |
+            set -e
+            TAG="${{ github.ref_name }}"
+            IMAGE="${{ env.IMAGE_NAME }}:${TAG}"
+
+            echo "═══════════════════════════════════════════"
+            echo "  🚀 Production Deploy: ${TAG}"
+            echo "═══════════════════════════════════════════"
+
+            # Save current image for rollback
+            CURRENT_IMAGE=$(docker service inspect hive_app --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}' 2>/dev/null || echo "none")
+            echo "📌 Current image: ${CURRENT_IMAGE}"
+            echo "${CURRENT_IMAGE}" > /tmp/hive-rollback-image
+
+            echo "📦 Pulling new image..."
+            docker pull "${IMAGE}"
+
+            echo "🔄 Updating service (blue-green)..."
+            docker service update \
+              --image "${IMAGE}" \
+              --update-parallelism 1 \
+              --update-delay 30s \
+              --update-order start-first \
+              --update-failure-action rollback \
+              --rollback-parallelism 1 \
+              --rollback-delay 10s \
+              --rollback-order start-first \
+              hive_app
+
+            echo "✅ Service update initiated"
+
+      # ── Health Checks ────────────────────────────────────────
+      - name: Wait for new containers
+        run: sleep 30
+
+      - name: Health check (with retry)
+        id: health
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${{ env.PROD_URL }}/health/ready" || true)
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ Production health check passed (attempt $i)"
+              echo "healthy=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "⏳ Attempt $i/10: status=$HTTP_STATUS, retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Health check failed after 10 attempts"
+          echo "healthy=false" >> $GITHUB_OUTPUT
+          exit 1
+
+      # ── Rollback on Failure ──────────────────────────────────
+      - name: Rollback on health check failure
+        if: failure() && steps.health.outputs.healthy == 'false'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            echo "🔴 ROLLING BACK..."
+
+            ROLLBACK_IMAGE=$(cat /tmp/hive-rollback-image 2>/dev/null || echo "")
+            if [ -z "$ROLLBACK_IMAGE" ] || [ "$ROLLBACK_IMAGE" = "none" ]; then
+              echo "⚠️ No previous image found, using docker service rollback..."
+              docker service rollback hive_app
+            else
+              echo "⬅️ Rolling back to: ${ROLLBACK_IMAGE}"
+              docker service update --image "${ROLLBACK_IMAGE}" hive_app
+            fi
+
+            echo "⏳ Waiting for rollback..."
+            sleep 20
+
+            # Verify rollback health
+            HEALTH=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost:3000/health || true)
+            if [ "$HEALTH" = "200" ]; then
+              echo "✅ Rollback successful, service healthy"
+            else
+              echo "🔴 CRITICAL: Rollback health check failed!"
+            fi
+
+      # ── Create GitHub Release ────────────────────────────────
+      - name: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') }}
+
+      # ── Notify ───────────────────────────────────────────────
+      - name: Notify Slack - Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "🚀 *Production deploy succeeded*",
+              "attachments": [{
+                "color": "good",
+                "fields": [
+                  { "title": "Version", "value": "${{ github.ref_name }}", "short": true },
+                  { "title": "Author", "value": "${{ github.actor }}", "short": true },
+                  { "title": "Production", "value": "${{ env.PROD_URL }}", "short": false },
+                  { "title": "Release", "value": "https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}", "short": false }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify Slack - Failure / Rollback
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "🔴 *Production deploy FAILED — ROLLBACK TRIGGERED*",
+              "attachments": [{
+                "color": "danger",
+                "fields": [
+                  { "title": "Version", "value": "${{ github.ref_name }}", "short": true },
+                  { "title": "Author", "value": "${{ github.actor }}", "short": true },
+                  { "title": "Run", "value": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

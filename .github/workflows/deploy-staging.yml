@@ -1,0 +1,160 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/hive-r
+  STAGING_URL: ${{ secrets.STAGING_URL }}
+
+jobs:
+  # Gate: only deploy if CI passes
+  ci-check:
+    name: Wait for CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI - Test
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: "Typecheck, Lint & Test"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 15
+
+      - name: Wait for CI - Build
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-name: "Build Backend, Client & Docker"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 15
+
+  deploy:
+    name: Deploy to Staging
+    needs: ci-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Build & Push ─────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:staging
+            ${{ env.IMAGE_NAME }}:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Deploy via SSH ───────────────────────────────────────
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            set -e
+            echo "📦 Pulling image..."
+            docker pull ${{ env.IMAGE_NAME }}:staging
+
+            echo "🔄 Updating service..."
+            if docker service ls | grep -q hive_app; then
+              docker service update \
+                --image ${{ env.IMAGE_NAME }}:staging \
+                --update-parallelism 1 \
+                --update-delay 10s \
+                --update-failure-action rollback \
+                hive_app
+            else
+              echo "⚠️ Service not found, starting with docker compose..."
+              cd /opt/hive-r
+              docker compose pull
+              docker compose up -d
+            fi
+
+            echo "✅ Deploy command completed"
+
+      # ── Smoke Tests ──────────────────────────────────────────
+      - name: Wait for service to stabilize
+        run: sleep 15
+
+      - name: Smoke test - health
+        run: |
+          for i in 1 2 3 4 5 6; do
+            HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${{ env.STAGING_URL }}/health" || true)
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ Health check passed (attempt $i)"
+              exit 0
+            fi
+            echo "⏳ Attempt $i: status=$HTTP_STATUS, retrying in 5s..."
+            sleep 5
+          done
+          echo "❌ Health check failed after 6 attempts"
+          exit 1
+
+      - name: Smoke test - readiness
+        run: |
+          HTTP_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "${{ env.STAGING_URL }}/health/ready" || true)
+          [ "$HTTP_STATUS" = "200" ] && echo "✅ Readiness OK" || echo "⚠️ Readiness returned $HTTP_STATUS"
+
+      # ── Notify ───────────────────────────────────────────────
+      - name: Notify Slack - Success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "✅ *Staging deploy succeeded*",
+              "attachments": [{
+                "color": "good",
+                "fields": [
+                  { "title": "Commit", "value": "${{ github.sha }}", "short": true },
+                  { "title": "Author", "value": "${{ github.actor }}", "short": true },
+                  { "title": "URL", "value": "${{ env.STAGING_URL }}", "short": false }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify Slack - Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "❌ *Staging deploy FAILED*",
+              "attachments": [{
+                "color": "danger",
+                "fields": [
+                  { "title": "Commit", "value": "${{ github.sha }}", "short": true },
+                  { "title": "Author", "value": "${{ github.actor }}", "short": true },
+                  { "title": "Run", "value": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}", "short": false }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
