@@ -67,7 +67,7 @@
     "zod": "^4.3.6"
   },
   "optionalDependencies": {
-    "@sentry/node": "^8.0.0"
+    "@sentry/node": "^10.38.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.1",
