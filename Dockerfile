@@ -4,7 +4,7 @@
 # =============================================================================
 
 # Stage 1: Dependencies (production only)
-FROM node:20-alpine AS dependencies
+FROM node:25-alpine AS dependencies
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN npm ci --only=production && \
 
 # -----------------------------------------------------------------------------
 # Stage 2: Builder
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -43,7 +43,7 @@ RUN cd client && npm run build
 
 # -----------------------------------------------------------------------------
 # Stage 3: Production
-FROM node:20-alpine AS production
+FROM node:25-alpine AS production
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init && \
