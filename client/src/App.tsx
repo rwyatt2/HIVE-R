@@ -28,11 +28,13 @@ import { PluginBuilder } from './components/PluginBuilder';
 import { Marketplace } from './components/PluginMarketplace';
 import { useChatPersistence, type Message } from './hooks/useChatPersistence';
 import { useAgentStream, type StreamEvent } from './hooks/useAgentStream';
+import { useAgentStatus } from './hooks/useAgentStatus';
 import { useAuth } from './contexts/AuthContext';
 import { LayoutShell } from './components/layout/layout-shell';
 import { Card } from './components/ui/card';
 import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
+import { AgentStatusPanel } from './components/AgentStatusPanel';
 import { Send, Book, Sparkles, StopCircle } from 'lucide-react';
 
 // Register custom node types
@@ -124,7 +126,12 @@ function ChatPanel({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+      <div
+        role="log"
+        aria-live="polite"
+        aria-label="Chat messages"
+        className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+      >
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4">
             <div className="w-16 h-16 flex items-center justify-center bg-primary/10 rounded-2xl mb-2">
@@ -179,6 +186,7 @@ function ChatPanel({
             type="submit"
             size="icon"
             disabled={isLoading || !input.trim()}
+            aria-label={isLoading ? 'Sending message' : 'Send message'}
             className="absolute right-2 top-2 h-10 w-10 bg-electric-violet hover:bg-electric-indigo text-white shadow-neon-violet transition-all duration-300 hover:scale-105"
           >
             {isLoading ? <StopCircle className="h-5 w-5 animate-pulse" /> : <Send className="h-5 w-5" />}
@@ -231,8 +239,14 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
     isLoading
   } = useChatPersistence();
 
+  // Agent status tracking
+  const { activeAgent: statusActiveAgent, queue, completed, processEvent } = useAgentStatus();
+
   // Handle stream events
   const handleStreamEvent = useCallback((event: StreamEvent) => {
+    // Forward to status tracker
+    processEvent(event);
+
     switch (event.type) {
       case 'agent_start':
         setActiveAgent(event.agent || null);
@@ -253,7 +267,7 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
         addMessage('agent', event.content || 'An error occurred', 'System');
         break;
     }
-  }, [addMessage]);
+  }, [addMessage, processEvent]);
 
   // Handle incoming messages from stream
   const handleStreamMessage = useCallback((content: string, agent: string) => {
@@ -388,13 +402,21 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
     >
       <div className="flex h-full gap-6 p-4 md:p-6 overflow-hidden">
         {/* Chat Area - 30% */}
-        <div className="hidden md:flex flex-col w-[400px] h-full shrink-0">
+        <div className="hidden md:flex flex-col w-[400px] h-full shrink-0 gap-4">
           <ChatPanel
             messages={displayMessages}
             onSend={handleSend}
             onOpenDocs={() => setShowDocs(true)}
             isLoading={isProcessing}
             activeAgent={activeAgent}
+          />
+
+          {/* Agent Status Panel */}
+          <AgentStatusPanel
+            activeAgent={statusActiveAgent}
+            queue={queue}
+            completed={completed}
+            isStreaming={isProcessing}
           />
         </div>
 

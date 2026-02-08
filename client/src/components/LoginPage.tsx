@@ -2,12 +2,14 @@
  * Login Page — Glassmorphic Authentication
  * 
  * Gorgeous login/register form with the Bionic Minimalism design.
- * Pure Tailwind — no external component dependencies.
+ * Features password strength indicator and inline validation.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowRight, Sparkles, Hexagon } from 'lucide-react';
+import { PasswordStrength, usePasswordStrength } from './PasswordStrength';
+import { ArrowRight, Sparkles, Hexagon, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginPageProps {
     onSuccess: () => void;
@@ -16,13 +18,44 @@ interface LoginPageProps {
 export function LoginPage({ onSuccess }: LoginPageProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
-    const { login, register, isLoading } = useAuth();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [localError, setLocalError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+    const { login, register } = useAuth();
+    const { isValid: passwordValid } = usePasswordStrength(password);
+
+    // Email validation
+    const isEmailValid = useMemo(() => {
+        if (!email) return true; // Don't show error for empty
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }, [email]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLocalError('');
+        setFieldErrors({});
+
+        // Validate email
+        if (!email || !isEmailValid) {
+            setFieldErrors({ email: 'Please enter a valid email address' });
+            return;
+        }
+
+        // Validate password for registration
+        if (!isLogin && !passwordValid) {
+            setFieldErrors({ password: 'Password does not meet requirements' });
+            return;
+        }
+
+        if (!password) {
+            setFieldErrors({ password: 'Password is required' });
+            return;
+        }
+
+        setIsSubmitting(true);
 
         try {
             if (isLogin) {
@@ -31,8 +64,11 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                 await register(email, password);
             }
             onSuccess();
-        } catch {
-            setLocalError('Authentication failed. Please check your credentials.');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Authentication failed';
+            setLocalError(message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -54,9 +90,11 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                             <Hexagon className="w-8 h-8 text-electric-violet relative z-10" strokeWidth={1.5} />
                         </div>
                         <h1 className="text-2xl font-bold text-white tracking-tight">
-                            HIVE<span className="text-electric-violet">-R</span>
+                            {isLogin ? 'Welcome Back' : 'Create Account'}
                         </h1>
-                        <p className="text-sm text-starlight-400 mt-1">Your Portable AI Software Team</p>
+                        <p className="text-sm text-starlight-400 mt-1">
+                            {isLogin ? 'Sign in to your account' : 'Join HIVE-R today'}
+                        </p>
                     </div>
 
                     {/* Error message */}
@@ -68,33 +106,87 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Email field */}
                         <div>
-                            <input
-                                type="email"
-                                placeholder="Email address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full h-11 px-4 bg-void-800/60 border border-white/20 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
-                            />
+                            <div className="relative">
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight-500" />
+                                <input
+                                    type="email"
+                                    placeholder="Email address"
+                                    value={email}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        setFieldErrors({});
+                                    }}
+                                    required
+                                    className={`w-full h-12 pl-10 pr-4 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${fieldErrors.email || (!isEmailValid && email)
+                                        ? 'border-reactor-red/50 focus:border-reactor-red focus:ring-1 focus:ring-reactor-red/30'
+                                        : 'border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30'
+                                        }`}
+                                />
+                            </div>
+                            {(fieldErrors.email || (!isEmailValid && email)) && (
+                                <p className="mt-1.5 text-xs text-reactor-red animate-in fade-in duration-200">
+                                    {fieldErrors.email || 'Please enter a valid email address'}
+                                </p>
+                            )}
                         </div>
+
+                        {/* Password field */}
                         <div>
-                            <input
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full h-11 px-4 bg-void-800/60 border border-white/20 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
-                            />
+                            <div className="relative">
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight-500" />
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="Password"
+                                    value={password}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value);
+                                        setFieldErrors({});
+                                    }}
+                                    required
+                                    className={`w-full h-12 pl-10 pr-12 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${fieldErrors.password
+                                        ? 'border-reactor-red/50 focus:border-reactor-red focus:ring-1 focus:ring-reactor-red/30'
+                                        : 'border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30'
+                                        }`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-starlight-500 hover:text-starlight-300 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+                            {fieldErrors.password && (
+                                <p className="mt-1.5 text-xs text-reactor-red animate-in fade-in duration-200">
+                                    {fieldErrors.password}
+                                </p>
+                            )}
+
+                            {/* Password strength indicator for registration */}
+                            {!isLogin && <PasswordStrength password={password} />}
                         </div>
+
+                        {/* Forgot password link (login mode only) */}
+                        {isLogin && (
+                            <div className="text-right">
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-xs text-starlight-400 hover:text-electric-violet transition-colors"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
+                        )}
 
                         <button
                             type="submit"
-                            disabled={isLoading}
-                            className="w-full h-11 bg-electric-violet hover:bg-electric-indigo disabled:opacity-50 text-white text-sm font-medium rounded-lg shadow-neon-violet hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all duration-300 flex items-center justify-center gap-2"
+                            disabled={isSubmitting}
+                            className="w-full h-12 bg-electric-violet hover:bg-electric-indigo disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg shadow-neon-violet hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all duration-300 flex items-center justify-center gap-2"
                         >
-                            {isLoading ? (
+                            {isSubmitting ? (
                                 <span className="flex items-center gap-2">
                                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     Please wait...
@@ -125,7 +217,11 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
 
                         <button
                             className="w-full text-sm text-starlight-400 hover:text-electric-violet py-2 transition-colors"
-                            onClick={() => setIsLogin(!isLogin)}
+                            onClick={() => {
+                                setIsLogin(!isLogin);
+                                setLocalError('');
+                                setFieldErrors({});
+                            }}
                         >
                             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
                         </button>

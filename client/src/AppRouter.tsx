@@ -1,26 +1,53 @@
 /**
  * App Router
  * 
- * Main routing component for the unified HIVE-R frontend.
- * Handles navigation between landing, studio, dashboard, and settings.
+ * Main routing component with code splitting and lazy loading.
+ * Heavy pages are loaded on demand to reduce initial bundle size.
  */
 
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { NavBar } from './components/NavBar';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { LandingPage, DashboardPage, SettingsPage } from './pages';
+import { LoadingSpinner } from './components/LoadingSpinner';
 import { LoginPage } from './components/LoginPage';
-import { Docs } from './components/Docs';
-import StudioApp from './App';
 import './index.css';
+
+// ─── Lazy Loaded Pages ──────────────────────────────────────────────────────
+// These pages are split into separate chunks and loaded on demand
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const BillingPage = lazy(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
+const OrganizationPage = lazy(() => import('./pages/OrganizationPage').then(m => ({ default: m.OrganizationPage })));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
+const Docs = lazy(() => import('./components/Docs').then(m => ({ default: m.Docs })));
+
+// StudioApp contains ReactFlow - the heaviest dependency
+const StudioApp = lazy(() => import('./App'));
+
+// ─── Suspense Wrapper ───────────────────────────────────────────────────────
+function PageSuspense({ children }: { children: React.ReactNode }) {
+    return (
+        <Suspense fallback={<LoadingSpinner fullScreen label="Loading..." />}>
+            {children}
+        </Suspense>
+    );
+}
 
 // Layout wrapper that shows NavBar on most pages
 function Layout({ children, hideNav = false }: { children: React.ReactNode; hideNav?: boolean }) {
     return (
         <>
+            <a href="#main-content" className="skip-link">
+                Skip to main content
+            </a>
             {!hideNav && <NavBar />}
-            {children}
+            <main id="main-content" tabIndex={-1}>
+                {children}
+            </main>
         </>
     );
 }
@@ -30,7 +57,9 @@ function DocsPage() {
     return (
         <Layout>
             <div className="pt-20 min-h-screen bg-hive-bg-dark">
-                <Docs onClose={() => window.history.back()} />
+                <PageSuspense>
+                    <Docs onClose={() => window.history.back()} />
+                </PageSuspense>
             </div>
         </Layout>
     );
@@ -40,7 +69,9 @@ function DocsPage() {
 function DemoPage() {
     return (
         <Layout hideNav>
-            <StudioApp demoMode />
+            <PageSuspense>
+                <StudioApp demoMode />
+            </PageSuspense>
         </Layout>
     );
 }
@@ -56,17 +87,7 @@ function AppRoutes() {
 
     // Show loading while checking auth
     if (isLoading) {
-        return (
-            <div className="fixed inset-0 bg-hive-bg-dark flex flex-col items-center justify-center gap-4 z-50">
-                <div className="relative">
-                    <div className="absolute -inset-4 bg-hive-indigo/10 rounded-full blur-xl animate-pulse" />
-                    <div className="relative w-16 h-16 rounded-full bg-hive-surface border border-hive-border-light flex items-center justify-center shadow-neon-indigo">
-                        <span className="text-3xl animate-bounce">🐝</span>
-                    </div>
-                </div>
-                <p className="text-sm text-hive-text-secondary font-mono tracking-wide">Initializing...</p>
-            </div>
-        );
+        return <LoadingSpinner fullScreen label="Initializing..." />;
     }
 
     return (
@@ -75,11 +96,15 @@ function AppRoutes() {
             <Route path="/" element={
                 isAuthenticated ? (
                     <Layout hideNav>
-                        <StudioApp />
+                        <PageSuspense>
+                            <StudioApp />
+                        </PageSuspense>
                     </Layout>
                 ) : (
                     <Layout>
-                        <LandingPage />
+                        <PageSuspense>
+                            <LandingPage />
+                        </PageSuspense>
                     </Layout>
                 )
             } />
@@ -92,33 +117,73 @@ function AppRoutes() {
             } />
             <Route path="/demo" element={<DemoPage />} />
             <Route path="/docs" element={<DocsPage />} />
+            <Route path="/forgot-password" element={
+                <Layout>
+                    <PageSuspense>
+                        <ForgotPasswordPage />
+                    </PageSuspense>
+                </Layout>
+            } />
+            <Route path="/reset-password" element={
+                <Layout>
+                    <PageSuspense>
+                        <ResetPasswordPage />
+                    </PageSuspense>
+                </Layout>
+            } />
 
             {/* Protected routes */}
             <Route path="/app" element={
                 <ProtectedRoute>
                     <Layout hideNav>
-                        <StudioApp />
+                        <PageSuspense>
+                            <StudioApp />
+                        </PageSuspense>
                     </Layout>
                 </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
                 <ProtectedRoute>
                     <Layout>
-                        <DashboardPage />
+                        <PageSuspense>
+                            <DashboardPage />
+                        </PageSuspense>
                     </Layout>
                 </ProtectedRoute>
             } />
             <Route path="/settings" element={
                 <ProtectedRoute>
                     <Layout>
-                        <SettingsPage />
+                        <PageSuspense>
+                            <SettingsPage />
+                        </PageSuspense>
                     </Layout>
                 </ProtectedRoute>
             } />
             <Route path="/plugins" element={
                 <ProtectedRoute>
                     <Layout hideNav>
-                        <StudioApp showMarketplaceOnLoad />
+                        <PageSuspense>
+                            <StudioApp showMarketplaceOnLoad />
+                        </PageSuspense>
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            <Route path="/billing" element={
+                <ProtectedRoute>
+                    <Layout>
+                        <PageSuspense>
+                            <BillingPage />
+                        </PageSuspense>
+                    </Layout>
+                </ProtectedRoute>
+            } />
+            <Route path="/organization" element={
+                <ProtectedRoute>
+                    <Layout>
+                        <PageSuspense>
+                            <OrganizationPage />
+                        </PageSuspense>
                     </Layout>
                 </ProtectedRoute>
             } />

@@ -7,8 +7,9 @@
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, Settings, Menu, X, Hexagon } from 'lucide-react';
+import { LogOut, Settings, Menu, X, Hexagon, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { prefetchRoute } from '../lib/router-utils';
 
 export function NavBar() {
     const { user, logout } = useAuth();
@@ -38,6 +39,7 @@ export function NavBar() {
 
     return (
         <nav
+            aria-label="Main navigation"
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
                 ? 'glass-nav shadow-glass-heavy'
                 : 'bg-transparent'
@@ -67,28 +69,28 @@ export function NavBar() {
                     <div className="hidden md:flex items-center gap-1">
                         {user ? (
                             <>
-                                <Link to="/app" className={navLinkClass('/app')}>
+                                <Link to="/app" className={navLinkClass('/app')} aria-current={isActive('/app') ? 'page' : undefined} onMouseEnter={() => prefetchRoute('/app')}>
                                     Studio
                                     {isActive('/app') && (
-                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" />
+                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" aria-hidden="true" />
                                     )}
                                 </Link>
-                                <Link to="/dashboard" className={navLinkClass('/dashboard')}>
+                                <Link to="/dashboard" className={navLinkClass('/dashboard')} aria-current={isActive('/dashboard') ? 'page' : undefined} onMouseEnter={() => prefetchRoute('/dashboard')}>
                                     Dashboard
                                     {isActive('/dashboard') && (
-                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" />
+                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" aria-hidden="true" />
                                     )}
                                 </Link>
-                                <Link to="/plugins" className={navLinkClass('/plugins')}>
+                                <Link to="/plugins" className={navLinkClass('/plugins')} aria-current={isActive('/plugins') ? 'page' : undefined}>
                                     Plugins
                                     {isActive('/plugins') && (
-                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" />
+                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" aria-hidden="true" />
                                     )}
                                 </Link>
-                                <Link to="/docs" className={navLinkClass('/docs')}>
+                                <Link to="/docs" className={navLinkClass('/docs')} aria-current={isActive('/docs') ? 'page' : undefined} onMouseEnter={() => prefetchRoute('/docs')}>
                                     Docs
                                     {isActive('/docs') && (
-                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" />
+                                        <span className="absolute bottom-0 left-4 right-4 h-[3px] bg-hive-honey rounded-full" aria-hidden="true" />
                                     )}
                                 </Link>
                             </>
@@ -134,9 +136,16 @@ export function NavBar() {
                                 >
                                     <LogOut className="w-[18px] h-[18px]" />
                                 </button>
-                                {/* User Avatar */}
-                                <div className="w-10 h-10 rounded-full bg-indigo-gradient flex items-center justify-center text-sm font-bold text-white ml-1 ring-2 ring-hive-indigo/30 hover:ring-hive-indigo/60 transition-all cursor-pointer">
-                                    {user.email?.charAt(0).toUpperCase() || 'U'}
+                                {/* User Avatar + Role Badge */}
+                                <div className="relative">
+                                    <div className="w-10 h-10 rounded-full bg-indigo-gradient flex items-center justify-center text-sm font-bold text-white ring-2 ring-hive-indigo/30 hover:ring-hive-indigo/60 transition-all cursor-pointer">
+                                        {user.email?.charAt(0).toUpperCase() || 'U'}
+                                    </div>
+                                    {user.role === 'system_owner' && (
+                                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-hive-honey flex items-center justify-center ring-2 ring-void-900" title="System Owner">
+                                            <Shield className="w-3 h-3 text-void-900" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (

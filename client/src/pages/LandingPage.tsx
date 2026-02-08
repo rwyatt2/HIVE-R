@@ -627,7 +627,7 @@ export function LandingPage() {
                             },
                         ].map(col => (
                             <div key={col.title}>
-                                <h4 className="text-sm font-semibold text-white mb-4 tracking-wide">{col.title}</h4>
+                                <h3 className="text-sm font-semibold text-white mb-4 tracking-wide">{col.title}</h3>
                                 <ul className="space-y-3">
                                     {col.links.map(link => (
                                         <li key={link.label}>

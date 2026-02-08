@@ -13,6 +13,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 interface User {
     id: string;
     email: string;
+    role?: 'user' | 'system_owner';
     createdAt: string;
 }
 
@@ -29,6 +30,7 @@ interface AuthContextValue {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
     getAccessToken: () => string | null;
 }
 
@@ -40,6 +42,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const ACCESS_TOKEN_KEY = 'hive-access-token';
 const REFRESH_TOKEN_KEY = 'hive-refresh-token';
 const USER_KEY = 'hive-user';
+const TOKEN_REFRESH_INTERVAL = 14 * 60 * 1000; // 14 minutes (tokens expire at 15min)
 
 // ============================================================================
 // CONTEXT
@@ -159,6 +162,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [tryRefresh]);
 
     /**
+     * Auto-refresh tokens every 14 minutes while authenticated
+     */
+    useEffect(() => {
+        if (!user) return;
+
+        const intervalId = setInterval(async () => {
+            const refreshed = await tryRefresh();
+            if (!refreshed) {
+                // Token refresh failed - user session expired
+                clearTokens();
+            }
+        }, TOKEN_REFRESH_INTERVAL);
+
+        return () => clearInterval(intervalId);
+    }, [user, tryRefresh, clearTokens]);
+
+    /**
      * Login with email and password
      */
     const login = useCallback(async (email: string, password: string): Promise<void> => {
@@ -217,6 +237,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTokens();
     }, [clearTokens]);
 
+    /**
+     * Request password reset email
+     */
+    const forgotPassword = useCallback(async (email: string): Promise<void> => {
+        const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to send reset email');
+        }
+    }, []);
+
     const value: AuthContextValue = {
         user,
         isAuthenticated: !!user,
@@ -224,6 +260,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        forgotPassword,
         getAccessToken
     };
 
