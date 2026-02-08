@@ -18,6 +18,7 @@ import { requestLogger, rateLimiter, errorHandler, cors } from "./lib/middleware
 import { logger } from "./lib/logger.js";
 import { authMiddleware, isAuthEnabled } from "./lib/auth.js";
 import { jwtAuthMiddleware, type AuthUser } from "./middleware/auth.js";
+import { tieredRateLimiter } from "./middleware/rate-limit.js";
 
 // App type with user context
 type AppVariables = { user: AuthUser };
@@ -127,6 +128,7 @@ app.get('/metrics', async (c) => {
 
 // JWT auth only applies AFTER /metrics so the scraper doesn't need credentials
 app.use('*', jwtAuthMiddleware);  // ✅ JWT user auth (enforced on all non-public routes)
+app.use('*', tieredRateLimiter());  // ✅ Multi-tier rate limiting (after auth for user context)
 
 /**
  * ✅ Memory stats endpoint
