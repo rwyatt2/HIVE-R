@@ -1,0 +1,91 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:base"
+    ],
+    "dependencyDashboard": true,
+    "dependencyDashboardTitle": "🔧 Dependency Updates Dashboard",
+    "packageRules": [
+        {
+            "description": "Auto-merge patch updates",
+            "matchUpdateTypes": [
+                "patch"
+            ],
+            "automerge": true,
+            "automergeType": "pr"
+        },
+        {
+            "description": "Auto-merge devDependencies minor updates",
+            "matchDepTypes": [
+                "devDependencies"
+            ],
+            "matchUpdateTypes": [
+                "minor"
+            ],
+            "automerge": true
+        },
+        {
+            "description": "Group all non-major dependencies",
+            "matchUpdateTypes": [
+                "patch",
+                "minor"
+            ],
+            "groupName": "all non-major dependencies"
+        },
+        {
+            "description": "React ecosystem",
+            "matchPackagePatterns": [
+                "^react",
+                "^@types/react"
+            ],
+            "groupName": "React ecosystem",
+            "automerge": false
+        },
+        {
+            "description": "LangChain ecosystem",
+            "matchPackagePatterns": [
+                "^langchain",
+                "^@langchain"
+            ],
+            "groupName": "LangChain ecosystem",
+            "automerge": false,
+            "labels": [
+                "langchain"
+            ]
+        },
+        {
+            "description": "Testing libraries",
+            "matchPackagePatterns": [
+                "vitest",
+                "playwright",
+                "@testing-library"
+            ],
+            "groupName": "testing libraries",
+            "automerge": true
+        },
+        {
+            "description": "Security updates - immediate",
+            "matchUpdateTypes": [
+                "patch"
+            ],
+            "matchDepTypes": [
+                "dependencies"
+            ],
+            "labels": [
+                "security"
+            ],
+            "schedule": [
+                "at any time"
+            ]
+        }
+    ],
+    "schedule": [
+        "before 6am on Monday"
+    ],
+    "prConcurrentLimit": 5,
+    "semanticCommits": "enabled",
+    "labels": [
+        "dependencies"
+    ],
+    "stabilityDays": 3
+}
