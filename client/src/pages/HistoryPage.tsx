@@ -22,23 +22,27 @@ export function HistoryPage() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-64px)] bg-hive-bg-dark">
-            {/* Sidebar */}
-            <aside className="w-80 border-r border-white/10 glass-high-contrast">
-                <SessionList
-                    selectedId={selectedSessionId}
-                    onSelectSession={setSelectedSessionId}
-                    onNewChat={handleNewChat}
-                />
-            </aside>
+        <div className="min-h-screen bg-void-950 pt-24 pb-16 px-6">
+            <div className="max-w-6xl mx-auto">
+                <div className="flex h-[calc(100vh-160px)] bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl overflow-hidden">
+                    {/* Sidebar */}
+                    <aside className="w-80 border-r border-white/6 bg-void-900/60">
+                        <SessionList
+                            selectedId={selectedSessionId}
+                            onSelectSession={setSelectedSessionId}
+                            onNewChat={handleNewChat}
+                        />
+                    </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col">
-                <SessionDetail
-                    sessionId={selectedSessionId}
-                    onResume={handleResume}
-                />
-            </main>
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col">
+                        <SessionDetail
+                            sessionId={selectedSessionId}
+                            onResume={handleResume}
+                        />
+                    </main>
+                </div>
+            </div>
         </div>
     );
 }

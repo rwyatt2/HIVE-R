@@ -15,12 +15,12 @@ export function DashboardLayout({
     className,
 }: DashboardLayoutProps) {
     return (
-        <div className="min-h-screen bg-background gradient-mesh">
+        <div className="min-h-screen bg-void-950 gradient-mesh">
             <div className="flex h-screen overflow-hidden">
                 {/* Sidebar */}
                 {sidebar && (
-                    <aside className="w-64 border-r border-border/50 backdrop-blur-xl bg-background-elevated/30 flex-shrink-0">
-                        <div className="h-full overflow-y-auto scrollbar-custom p-4">
+                    <aside className="w-64 border-r border-white/6 backdrop-blur-xl bg-void-900/40 shrink-0">
+                        <div className="h-full overflow-y-auto scrollbar-custom p-5">
                             {sidebar}
                         </div>
                     </aside>
@@ -30,15 +30,15 @@ export function DashboardLayout({
                 <div className="flex-1 flex flex-col overflow-hidden">
                     {/* Header */}
                     {header && (
-                        <header className="border-b border-border/50 backdrop-blur-xl bg-background-elevated/30">
-                            <div className="h-16 px-6 flex items-center">{header}</div>
+                    <header className="border-b border-white/6 backdrop-blur-xl bg-void-900/40">
+                        <div className="h-18 px-6 flex items-center">{header}</div>
                         </header>
                     )}
 
                     {/* Main content */}
                     <main
                         className={cn(
-                            "flex-1 overflow-y-auto scrollbar-custom p-6",
+                            "flex-1 overflow-y-auto scrollbar-custom p-6 md:p-8",
                             className
                         )}
                     >

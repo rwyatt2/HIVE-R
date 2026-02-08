@@ -304,7 +304,7 @@ export function LandingPage() {
             </section>
 
             {/* ─── PAIN POINTS ─────────────────────────────────────── */}
-            <section className="relative py-24 lg:py-32">
+            <section id="features" className="relative py-24 lg:py-32">
                 <div className="max-w-5xl mx-auto px-6 lg:px-12">
                     <div className="text-center mb-16 space-y-4">
                         <h2 className="text-3xl lg:text-4xl font-bold tracking-tight">
@@ -339,7 +339,7 @@ export function LandingPage() {
             </section>
 
             {/* ─── HOW IT WORKS ─────────────────────────────────────── */}
-            <section className="relative py-32 lg:py-40">
+            <section id="how-it-works" className="relative py-32 lg:py-40">
                 <div className="max-w-6xl mx-auto px-6 lg:px-12">
                     {/* Section header */}
                     <div className="text-center mb-20 space-y-4">

@@ -38,7 +38,7 @@ function UsageBar({ label, used, limit, icon: Icon }: {
                         ? 'bg-reactor-red'
                         : isWarning
                             ? 'bg-honey'
-                            : 'bg-gradient-to-r from-cyber-cyan to-electric-violet'
+                            : 'bg-linear-to-r from-cyber-cyan to-electric-violet'
                         }`}
                     style={{ width: `${percentage}%` }}
                 />
@@ -68,9 +68,9 @@ function TierCard({ tier, isCurrent, onSelect }: {
     const isPro = tier.id === 'pro';
 
     return (
-        <div className={`relative p-6 rounded-xl border transition-all ${isCurrent
+        <div className={`relative p-6 rounded-2xl border transition-all ${isCurrent
             ? 'bg-electric-violet/10 border-electric-violet/30'
-            : 'bg-void-900/40 border-white/[0.06] hover:border-white/[0.1]'
+            : 'bg-void-900/40 border-white/6 hover:border-white/12'
             }`}>
             {isPro && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-electric-violet text-white text-xs font-medium rounded-full">
@@ -106,10 +106,10 @@ function TierCard({ tier, isCurrent, onSelect }: {
             <button
                 onClick={onSelect}
                 disabled={isCurrent}
-                className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${isCurrent
+                className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${isCurrent
                     ? 'bg-white/10 text-starlight-400 cursor-default'
                     : isPro
-                        ? 'bg-electric-violet hover:bg-electric-indigo text-white'
+                        ? 'bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)]'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
             >
@@ -147,7 +147,7 @@ export function BillingPage() {
                 {/* Current Plan + Usage Row */}
                 <div className="grid lg:grid-cols-2 gap-6">
                     {/* Current Plan Card */}
-                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6">
+                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-electric-violet/10 border border-electric-violet/20 flex items-center justify-center">
@@ -162,7 +162,7 @@ export function BillingPage() {
                             </div>
                             <button
                                 onClick={() => setShowUpgradeModal(true)}
-                                className="px-3 py-1.5 text-xs font-medium bg-electric-violet/10 text-electric-violet border border-electric-violet/20 rounded-lg hover:bg-electric-violet/20 transition-colors"
+                                className="px-4 py-2 text-xs font-semibold bg-white/4 text-starlight-400 border border-white/10 rounded-lg hover:text-white hover:bg-white/8 transition-colors"
                             >
                                 Change Plan
                             </button>
@@ -186,7 +186,7 @@ export function BillingPage() {
                     </div>
 
                     {/* Usage Metrics Card */}
-                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6">
+                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-xl bg-cyber-cyan/10 border border-cyber-cyan/20 flex items-center justify-center">
                                 <Zap className="w-5 h-5 text-cyber-cyan" />
@@ -214,7 +214,7 @@ export function BillingPage() {
                                         used={usage.tokens.used}
                                         limit={usage.tokens.limit}
                                     />
-                                    <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                                    <div className="flex items-center justify-between pt-2 border-t border-white/6">
                                         <div className="flex items-center gap-2 text-sm text-starlight-400">
                                             <DollarSign className="w-4 h-4" />
                                             <span>Cost This Period</span>
@@ -230,8 +230,8 @@ export function BillingPage() {
                 </div>
 
                 {/* Billing History */}
-                <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between p-6 border-b border-white/6">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-honey/10 border border-honey/20 flex items-center justify-center">
                                 <FileText className="w-4 h-4 text-honey" />
@@ -243,7 +243,7 @@ export function BillingPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-white/[0.04]">
+                                <tr className="border-b border-white/4">
                                     <th className="text-left text-xs font-medium text-starlight-400 uppercase tracking-wider px-6 py-3">Date</th>
                                     <th className="text-left text-xs font-medium text-starlight-400 uppercase tracking-wider px-6 py-3">Amount</th>
                                     <th className="text-left text-xs font-medium text-starlight-400 uppercase tracking-wider px-6 py-3">Status</th>
@@ -253,7 +253,7 @@ export function BillingPage() {
                             <tbody>
                                 {invoices.length > 0 ? (
                                     invoices.map(invoice => (
-                                        <tr key={invoice.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                                        <tr key={invoice.id} className="border-b border-white/3 hover:bg-white/2 transition-colors">
                                             <td className="px-6 py-4 text-sm text-white">
                                                 <div className="flex items-center gap-2">
                                                     <Clock className="w-4 h-4 text-starlight-400" />
@@ -296,7 +296,7 @@ export function BillingPage() {
                 {/* Upgrade Modal */}
                 {showUpgradeModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <div className="bg-void-900 border border-white/[0.1] rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="bg-void-900/70 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                             <h2 className="text-2xl font-bold text-white mb-2">Choose Your Plan</h2>
                             <p className="text-starlight-400 mb-8">Select the plan that best fits your needs</p>
 

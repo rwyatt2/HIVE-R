@@ -9,6 +9,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { NavBar } from './components/NavBar';
+import { LayoutShell } from './components/layout/layout-shell';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { LoginPage } from './components/LoginPage';
@@ -23,6 +24,7 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage').then(m => ({ defaul
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const BillingPage = lazy(() => import('./pages/BillingPage').then(m => ({ default: m.BillingPage })));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage').then(m => ({ default: m.OrganizationPage })));
+const PluginsPage = lazy(() => import('./pages/PluginsPage').then(m => ({ default: m.PluginsPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const Docs = lazy(() => import('./components/Docs').then(m => ({ default: m.Docs })));
@@ -56,14 +58,26 @@ function Layout({ children, hideNav = false }: { children: React.ReactNode; hide
 
 // Docs page wrapper (converts modal to page)
 function DocsPage() {
+    const navigate = useNavigate();
     return (
-        <Layout>
-            <div className="pt-20 min-h-screen bg-hive-bg-dark">
+        <LayoutShell
+            constrainWidth={false}
+            sidebarProps={{
+                onNavigate: (path) => navigate(path),
+                activePath: 'docs',
+                hideSessions: true,
+                sessions: [],
+                currentSessionId: null,
+                onNewSession: () => { },
+                onSelectSession: () => { },
+            }}
+        >
+            <div className="h-full w-full py-4 md:py-6">
                 <PageSuspense>
-                    <Docs onClose={() => window.history.back()} />
+                    <Docs variant="page" />
                 </PageSuspense>
             </div>
-        </Layout>
+        </LayoutShell>
     );
 }
 
@@ -86,6 +100,7 @@ function LoginPageWrapper() {
 // Main router
 function AppRoutes() {
     const { isAuthenticated, isLoading } = useAuth();
+    const navigate = useNavigate();
 
     // Show loading while checking auth
     if (isLoading) {
@@ -146,11 +161,22 @@ function AppRoutes() {
             } />
             <Route path="/dashboard" element={
                 <ProtectedRoute>
-                    <Layout>
+                    <LayoutShell
+                        constrainWidth={false}
+                        sidebarProps={{
+                            onNavigate: (path) => navigate(path),
+                            activePath: 'dashboard',
+                            hideSessions: true,
+                            sessions: [],
+                            currentSessionId: null,
+                            onNewSession: () => { },
+                            onSelectSession: () => { },
+                        }}
+                    >
                         <PageSuspense>
                             <DashboardPage />
                         </PageSuspense>
-                    </Layout>
+                    </LayoutShell>
                 </ProtectedRoute>
             } />
             <Route path="/history" element={
@@ -164,20 +190,42 @@ function AppRoutes() {
             } />
             <Route path="/settings" element={
                 <ProtectedRoute>
-                    <Layout>
+                    <LayoutShell
+                        constrainWidth={false}
+                        sidebarProps={{
+                            onNavigate: (path) => navigate(path),
+                            activePath: 'settings',
+                            hideSessions: true,
+                            sessions: [],
+                            currentSessionId: null,
+                            onNewSession: () => { },
+                            onSelectSession: () => { },
+                        }}
+                    >
                         <PageSuspense>
                             <SettingsPage />
                         </PageSuspense>
-                    </Layout>
+                    </LayoutShell>
                 </ProtectedRoute>
             } />
             <Route path="/plugins" element={
                 <ProtectedRoute>
-                    <Layout hideNav>
+                    <LayoutShell
+                        constrainWidth={false}
+                        sidebarProps={{
+                            onNavigate: (path) => navigate(path),
+                            activePath: 'plugins',
+                            hideSessions: true,
+                            sessions: [],
+                            currentSessionId: null,
+                            onNewSession: () => { },
+                            onSelectSession: () => { },
+                        }}
+                    >
                         <PageSuspense>
-                            <StudioApp showMarketplaceOnLoad />
+                            <PluginsPage />
                         </PageSuspense>
-                    </Layout>
+                    </LayoutShell>
                 </ProtectedRoute>
             } />
             <Route path="/billing" element={

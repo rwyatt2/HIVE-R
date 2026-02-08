@@ -33,8 +33,13 @@ export function useHistory() {
 
             if (!response.ok) throw new Error('Failed to fetch sessions');
 
-            const data: PaginatedResponse<ChatSession> = await response.json();
-            setSessions(data.data);
+            const data = await response.json() as PaginatedResponse<ChatSession> & { sessions?: ChatSession[] };
+            const nextSessions = Array.isArray(data.data)
+                ? data.data
+                : Array.isArray(data.sessions)
+                    ? data.sessions
+                    : [];
+            setSessions(nextSessions);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
@@ -119,10 +124,15 @@ export function useSessionMessages(sessionId: string | null) {
 
             if (!response.ok) throw new Error('Failed to load messages');
 
-            const data: PaginatedResponse<ChatMessage> = await response.json();
-            setMessages(prev => [...prev, ...data.data]);
+            const data = await response.json() as PaginatedResponse<ChatMessage> & { messages?: ChatMessage[] };
+            const nextMessages = Array.isArray(data.data)
+                ? data.data
+                : Array.isArray(data.messages)
+                    ? data.messages
+                    : [];
+            setMessages(prev => [...prev, ...nextMessages]);
             setCursor(data.nextCursor ?? null);
-            setHasMore(data.hasMore);
+            setHasMore(Boolean(data.hasMore));
         } catch (err) {
             console.error('Failed to load messages:', err);
         } finally {

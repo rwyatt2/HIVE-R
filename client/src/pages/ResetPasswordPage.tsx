@@ -75,8 +75,8 @@ export function ResetPasswordPage() {
                 <div className="absolute inset-0 bg-neural-mesh opacity-50" />
 
                 <div className="relative w-full max-w-md z-10">
-                    <div className="absolute -inset-px bg-gradient-to-b from-white/[0.08] to-transparent rounded-2xl" />
-                    <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/[0.06] p-8 shadow-2xl text-center">
+                    <div className="absolute -inset-px bg-linear-to-b from-white/8 to-transparent rounded-2xl" />
+                    <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/6 p-8 shadow-2xl text-center">
                         <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-reactor-red/10 flex items-center justify-center">
                             <AlertCircle className="w-8 h-8 text-reactor-red" />
                         </div>
@@ -86,7 +86,7 @@ export function ResetPasswordPage() {
                         </p>
                         <Link
                             to="/forgot-password"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-electric-violet hover:bg-electric-indigo text-white text-sm font-medium rounded-lg transition-colors"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300"
                         >
                             Request New Link
                         </Link>
@@ -100,12 +100,12 @@ export function ResetPasswordPage() {
         <div className="min-h-screen flex items-center justify-center bg-void-950 relative overflow-hidden px-6 pt-20">
             {/* Background fx */}
             <div className="absolute inset-0 bg-neural-mesh opacity-50" />
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric-violet/[0.06] rounded-full blur-[150px]" />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric-violet/6 rounded-full blur-[150px]" />
 
             {/* Card */}
             <div className="relative w-full max-w-md z-10">
-                <div className="absolute -inset-px bg-gradient-to-b from-white/[0.08] to-transparent rounded-2xl" />
-                <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/[0.06] p-8 shadow-2xl">
+                <div className="absolute -inset-px bg-linear-to-b from-white/8 to-transparent rounded-2xl" />
+                <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/6 p-8 shadow-2xl">
 
                     {isSuccess ? (
                         /* Success State */
@@ -149,22 +149,22 @@ export function ResetPasswordPage() {
                                 {/* New Password */}
                                 <div>
                                     <div className="relative">
-                                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight-500" />
+                                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-starlight-500" />
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             placeholder="New password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             required
-                                            className="w-full h-12 pl-10 pr-12 bg-void-800/60 border border-white/10 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
+                                            className="w-full h-12 pl-11 pr-12 bg-void-800/60 border border-white/10 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
                                             aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-starlight-500 hover:text-starlight-300 transition-colors"
+                                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-starlight-500 hover:text-white transition-colors"
                                         >
-                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
                                     <PasswordStrength password={password} />
@@ -172,14 +172,14 @@ export function ResetPasswordPage() {
 
                                 {/* Confirm Password */}
                                 <div className="relative">
-                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight-500" />
+                                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-starlight-500" />
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         placeholder="Confirm new password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         required
-                                        className={`w-full h-12 pl-10 pr-4 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${confirmPassword && password !== confirmPassword
+                                        className={`w-full h-12 pl-11 pr-4 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${confirmPassword && password !== confirmPassword
                                             ? 'border-reactor-red/50 focus:border-reactor-red focus:ring-1 focus:ring-reactor-red/30'
                                             : 'border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30'
                                             }`}
@@ -194,7 +194,7 @@ export function ResetPasswordPage() {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting || !passwordValid || password !== confirmPassword}
-                                    className="w-full h-12 bg-electric-violet hover:bg-electric-indigo disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg shadow-neon-violet transition-all duration-300 flex items-center justify-center gap-2"
+                                    className="w-full h-12 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300 flex items-center justify-center gap-2"
                                 >
                                     {isSubmitting ? (
                                         <span className="flex items-center gap-2">

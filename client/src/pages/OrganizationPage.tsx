@@ -55,8 +55,8 @@ function InviteModal({ onClose, onInvite }: {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="bg-void-900 border border-white/[0.1] rounded-2xl p-6 w-full max-w-md">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-void-900/70 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 w-full max-w-md">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white">Invite Team Member</h2>
                     <button onClick={onClose} className="p-1 text-starlight-400 hover:text-white transition-colors">
@@ -75,7 +75,7 @@ function InviteModal({ onClose, onInvite }: {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="colleague@company.com"
-                            className="w-full h-10 px-3 bg-void-800 border border-white/10 rounded-lg text-white placeholder:text-starlight-700 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30"
+                            className="w-full h-12 px-4 bg-void-800/60 border border-white/10 rounded-lg text-white placeholder:text-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30"
                             required
                         />
                     </div>
@@ -88,7 +88,7 @@ function InviteModal({ onClose, onInvite }: {
                             id="invite-role"
                             value={role}
                             onChange={(e) => setRole(e.target.value as MemberRole)}
-                            className="w-full h-10 px-3 bg-void-800 border border-white/10 rounded-lg text-white focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30"
+                            className="w-full h-12 px-4 bg-void-800/60 border border-white/10 rounded-lg text-white focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30"
                         >
                             <option value="member">Member — Can use agents</option>
                             <option value="admin">Admin — Can manage members</option>
@@ -113,13 +113,13 @@ function InviteModal({ onClose, onInvite }: {
                         <button
                             type="submit"
                             disabled={isLoading || !email.trim()}
-                            className="flex-1 py-2.5 bg-electric-violet hover:bg-electric-indigo text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="flex-1 py-2.5 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isLoading ? (
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <>
-                                    <Mail className="w-4 h-4" />
+                                    <Mail className="w-5 h-5" />
                                     Send Invitation
                                 </>
                             )}
@@ -169,15 +169,15 @@ export function OrganizationPage() {
                     </div>
                     <button
                         onClick={() => setShowInviteModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-electric-violet hover:bg-electric-indigo text-white text-sm font-medium rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300"
                     >
-                        <UserPlus className="w-4 h-4" />
+                        <UserPlus className="w-5 h-5" />
                         Invite Member
                     </button>
                 </div>
 
                 {/* Org Details */}
-                <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6">
+                <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6">
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-xl bg-electric-violet/10 border border-electric-violet/20 flex items-center justify-center">
                             <Users className="w-8 h-8 text-electric-violet" />
@@ -194,22 +194,22 @@ export function OrganizationPage() {
                 </div>
 
                 {/* Members List */}
-                <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between p-6 border-b border-white/6">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/20 flex items-center justify-center">
-                                <Users className="w-4 h-4 text-cyber-cyan" />
+                                <Users className="w-5 h-5 text-cyber-cyan" />
                             </div>
                             <h2 className="text-sm font-semibold text-white">Team Members</h2>
                         </div>
                         <span className="text-xs text-starlight-400">{members.length} members</span>
                     </div>
 
-                    <div className="divide-y divide-white/[0.04]">
+                    <div className="divide-y divide-white/4">
                         {members.map(member => (
-                            <div key={member.id} className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors">
+                            <div key={member.id} className="flex items-center justify-between p-4 hover:bg-white/2 transition-colors">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-electric-violet to-cyber-cyan flex items-center justify-center text-white font-medium">
+                                    <div className="w-10 h-10 rounded-full bg-linear-to-br from-electric-violet to-cyber-cyan flex items-center justify-center text-white font-medium">
                                         {(member.name || member.email).charAt(0).toUpperCase()}
                                     </div>
                                     <div>
@@ -248,8 +248,8 @@ export function OrganizationPage() {
 
                 {/* Pending Invitations */}
                 {invitations.length > 0 && (
-                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl overflow-hidden">
-                        <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl overflow-hidden">
+                        <div className="flex items-center justify-between p-6 border-b border-white/6">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-honey/10 border border-honey/20 flex items-center justify-center">
                                     <Mail className="w-4 h-4 text-honey" />
@@ -261,9 +261,9 @@ export function OrganizationPage() {
                             </span>
                         </div>
 
-                        <div className="divide-y divide-white/[0.04]">
+                        <div className="divide-y divide-white/4">
                             {invitations.map(invitation => (
-                                <div key={invitation.id} className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors">
+                                <div key={invitation.id} className="flex items-center justify-between p-4 hover:bg-white/2 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-starlight-400/10 border border-dashed border-starlight-400/30 flex items-center justify-center">
                                             <Mail className="w-4 h-4 text-starlight-400" />

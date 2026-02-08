@@ -5,26 +5,36 @@
  * Pure Tailwind with Bionic Minimalism design tokens.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Building2, CreditCard, Key, Save, Plus, Zap } from 'lucide-react';
+import { User, Building2, CreditCard, Key, Save, Plus, Zap, Bell } from 'lucide-react';
 
-type SettingsTab = 'profile' | 'organization' | 'billing' | 'api';
+type SettingsTab = 'profile' | 'organization' | 'billing' | 'api' | 'notifications';
 
 const tabs: { id: SettingsTab; label: string; icon: typeof User }[] = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'organization', label: 'Organization', icon: Building2 },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'api', label: 'API Keys', icon: Key },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
 ];
 
 export function SettingsPage() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    useEffect(() => {
+        const tabParam = searchParams.get('tab') as SettingsTab | null;
+        if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [searchParams]);
 
     return (
-        <div className="min-h-screen bg-void-950 pt-24 pb-16 px-6">
-            <div className="max-w-5xl mx-auto space-y-8">
+        <div className="h-full w-full py-4 md:py-6">
+            <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
                 {/* Header */}
                 <div className="space-y-2">
                     <h1 className="text-3xl font-bold text-white tracking-tight">Settings</h1>
@@ -40,13 +50,16 @@ export function SettingsPage() {
                             return (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
+                                    onClick={() => {
+                                        setActiveTab(tab.id)
+                                        setSearchParams(tab.id === 'profile' ? {} : { tab: tab.id })
+                                    }}
                                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
                                             ? 'bg-electric-violet/10 text-electric-violet border border-electric-violet/20'
-                                            : 'text-starlight-400 hover:text-white hover:bg-white/[0.04]'
+                                            : 'text-starlight-400 hover:text-white hover:bg-white/6'
                                         }`}
                                 >
-                                    <Icon className="w-4 h-4" />
+                                    <Icon className="w-5 h-5" />
                                     {tab.label}
                                 </button>
                             );
@@ -55,7 +68,7 @@ export function SettingsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                        <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6 lg:p-8">
+                        <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6 lg:p-8">
                             {/* Profile */}
                             {activeTab === 'profile' && (
                                 <div className="space-y-6">
@@ -64,8 +77,8 @@ export function SettingsPage() {
                                         <p className="text-sm text-starlight-400">Manage your personal information</p>
                                     </div>
 
-                                    <div className="flex items-center gap-5 pb-6 border-b border-white/[0.06]">
-                                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-electric-violet to-[#8B5CF6] flex items-center justify-center text-2xl font-bold text-white shadow-neon-violet">
+                                    <div className="flex items-center gap-5 pb-6 border-b border-white/6">
+                                        <div className="w-16 h-16 rounded-full bg-linear-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center text-2xl font-bold text-white shadow-[0_0_40px_rgba(99,102,241,0.3)]">
                                             {user?.email?.charAt(0).toUpperCase() || 'U'}
                                         </div>
                                         <div>
@@ -81,7 +94,7 @@ export function SettingsPage() {
                                                 type="email"
                                                 value={user?.email || ''}
                                                 disabled
-                                                className="w-full h-10 px-4 bg-void-800/40 border border-white/[0.06] rounded-lg text-sm text-starlight-400 cursor-not-allowed"
+                                                className="w-full h-12 px-4 bg-void-800/60 border border-white/10 rounded-lg text-sm text-starlight-400 cursor-not-allowed"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -89,13 +102,13 @@ export function SettingsPage() {
                                             <input
                                                 type="text"
                                                 placeholder="Your name"
-                                                className="w-full h-10 px-4 bg-void-800/60 border border-white/[0.08] rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
+                                                className="w-full h-12 px-4 bg-void-800/60 border border-white/10 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
                                             />
                                         </div>
                                     </div>
 
-                                    <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-electric-violet hover:bg-electric-indigo text-white text-sm font-medium rounded-lg transition-colors shadow-neon-violet">
-                                        <Save className="w-4 h-4" />
+                                    <button className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300">
+                                        <Save className="w-5 h-5" />
                                         Save Changes
                                     </button>
                                 </div>
@@ -110,13 +123,13 @@ export function SettingsPage() {
                                     </div>
 
                                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                                        <div className="w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-6">
+                                        <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-6">
                                             <Building2 className="w-10 h-10 text-starlight-700" />
                                         </div>
                                         <h3 className="text-lg font-semibold text-white mb-2">Create an Organization</h3>
                                         <p className="text-sm text-starlight-400 max-w-sm mb-6">Collaborate with your team on HIVE-R projects</p>
-                                        <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-electric-violet hover:bg-electric-indigo text-white text-sm font-medium rounded-lg transition-colors">
-                                            <Plus className="w-4 h-4" />
+                                        <button className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300">
+                                            <Plus className="w-5 h-5" />
                                             Create Organization
                                         </button>
                                     </div>
@@ -132,7 +145,7 @@ export function SettingsPage() {
                                     </div>
 
                                     {/* Current Plan */}
-                                    <div className="bg-void-800/40 border border-white/[0.06] rounded-xl p-5 flex items-center justify-between">
+                                    <div className="bg-void-800/40 border border-white/6 rounded-2xl p-5 flex items-center justify-between">
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <h3 className="text-sm font-semibold text-white">Free Plan</h3>
@@ -140,8 +153,8 @@ export function SettingsPage() {
                                             </div>
                                             <p className="text-xs text-starlight-400 mt-1">1,000 requests/month • 100K tokens/month</p>
                                         </div>
-                                        <button className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-electric-violet to-[#8B5CF6] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity shadow-neon-violet">
-                                            <Zap className="w-4 h-4" />
+                                        <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-[0_0_40px_rgba(99,102,241,0.3)]">
+                                            <Zap className="w-5 h-5" />
                                             Upgrade to Pro
                                         </button>
                                     </div>
@@ -150,7 +163,7 @@ export function SettingsPage() {
                                     <div className="space-y-3">
                                         <h3 className="text-sm font-semibold text-white">This Month's Usage</h3>
                                         <div className="h-3 bg-void-800 rounded-full overflow-hidden">
-                                            <div className="h-full w-1/4 bg-gradient-to-r from-electric-violet to-cyber-cyan rounded-full transition-all duration-700" />
+                                            <div className="h-full w-1/4 bg-linear-to-r from-electric-violet to-cyber-cyan rounded-full transition-all duration-700" />
                                         </div>
                                         <div className="flex justify-between text-xs text-starlight-400 font-mono">
                                             <span>250 / 1,000 requests</span>
@@ -169,14 +182,56 @@ export function SettingsPage() {
                                     </div>
 
                                     <div className="flex flex-col items-center justify-center py-16 text-center">
-                                        <div className="w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-6">
+                                        <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center mb-6">
                                             <Key className="w-10 h-10 text-starlight-700" />
                                         </div>
                                         <p className="text-sm text-starlight-400 mb-6">No API keys yet</p>
-                                        <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-electric-violet hover:bg-electric-indigo text-white text-sm font-medium rounded-lg transition-colors">
-                                            <Plus className="w-4 h-4" />
+                                        <button className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300">
+                                            <Plus className="w-5 h-5" />
                                             Generate API Key
                                         </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Notifications */}
+                            {activeTab === 'notifications' && (
+                                <div className="space-y-6">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-white mb-1">Notification Settings</h2>
+                                        <p className="text-sm text-starlight-400">Control how we keep you updated</p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {[
+                                            {
+                                                label: 'Product updates',
+                                                description: 'New features, product announcements, and improvements.'
+                                            },
+                                            {
+                                                label: 'Billing alerts',
+                                                description: 'Usage thresholds, invoices, and payment updates.'
+                                            },
+                                            {
+                                                label: 'Security notifications',
+                                                description: 'Login activity and security‑related alerts.'
+                                            }
+                                        ].map(item => (
+                                            <label
+                                                key={item.label}
+                                                className="flex items-center justify-between gap-4 p-4 rounded-xl border border-white/6 bg-void-900/40 hover:border-white/12 transition"
+                                            >
+                                                <div className="space-y-1">
+                                                    <div className="text-sm font-medium text-white">{item.label}</div>
+                                                    <div className="text-xs text-starlight-400">{item.description}</div>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    defaultChecked
+                                                    className="h-5 w-5 accent-electric-violet"
+                                                />
+                                            </label>
+                                        ))}
                                     </div>
                                 </div>
                             )}

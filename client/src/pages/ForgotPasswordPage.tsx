@@ -44,12 +44,12 @@ export function ForgotPasswordPage() {
         <div className="min-h-screen flex items-center justify-center bg-void-950 relative overflow-hidden px-6 pt-20">
             {/* Background fx */}
             <div className="absolute inset-0 bg-neural-mesh opacity-50" />
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric-violet/[0.06] rounded-full blur-[150px]" />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric-violet/6 rounded-full blur-[150px]" />
 
             {/* Card */}
             <div className="relative w-full max-w-md z-10">
-                <div className="absolute -inset-px bg-gradient-to-b from-white/[0.08] to-transparent rounded-2xl" />
-                <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/[0.06] p-8 shadow-2xl">
+                <div className="absolute -inset-px bg-linear-to-b from-white/8 to-transparent rounded-2xl" />
+                <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/6 p-8 shadow-2xl">
 
                     {isSuccess ? (
                         /* Success State */
@@ -92,7 +92,7 @@ export function ForgotPasswordPage() {
 
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="relative">
-                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight-500" />
+                                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-starlight-500" />
                                     <input
                                         type="email"
                                         placeholder="Email address"
@@ -102,14 +102,14 @@ export function ForgotPasswordPage() {
                                             setError('');
                                         }}
                                         required
-                                        className="w-full h-12 pl-10 pr-4 bg-void-800/60 border border-white/10 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
+                                        className="w-full h-12 pl-11 pr-4 bg-void-800/60 border border-white/10 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
                                     />
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full h-12 bg-electric-violet hover:bg-electric-indigo disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg shadow-neon-violet transition-all duration-300 flex items-center justify-center gap-2"
+                                    className="w-full h-12 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300 flex items-center justify-center gap-2"
                                 >
                                     {isSubmitting ? (
                                         <span className="flex items-center gap-2">

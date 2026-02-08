@@ -69,6 +69,7 @@ export function getDb(): Database.Database {
                 id TEXT PRIMARY KEY,
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
+                role TEXT DEFAULT 'user' CHECK(role IN ('user', 'system_owner')),
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
             
@@ -84,6 +85,18 @@ export function getDb(): Database.Database {
             CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
             CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at);
         `);
+
+        // Ensure role column exists for older databases
+        const columns = db
+            .prepare("PRAGMA table_info(users)")
+            .all() as { name: string }[];
+        const hasRole = columns.some((col) => col.name === "role");
+        if (!hasRole) {
+            db.exec(`
+                ALTER TABLE users
+                ADD COLUMN role TEXT DEFAULT 'user' CHECK(role IN ('user', 'system_owner'));
+            `);
+        }
     }
     return db;
 }

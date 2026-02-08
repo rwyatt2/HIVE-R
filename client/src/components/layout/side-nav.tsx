@@ -3,14 +3,13 @@ import { cn } from "../../lib/utils"
 import { Button } from "../ui/button"
 import {
     LayoutDashboard,
-    Settings,
     Hexagon,
     Puzzle,
-    LogOut,
     Plus,
     MessageCircle,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    BookOpen
 } from "lucide-react"
 
 interface SideNavProps {
@@ -23,6 +22,7 @@ interface SideNavProps {
     onNewSession: () => void
     onSelectSession: (id: string) => void
     onDeleteSession?: (id: string) => void
+    hideSessions?: boolean
 }
 
 export function SideNav({
@@ -33,32 +33,33 @@ export function SideNav({
     sessions = [],
     currentSessionId,
     onNewSession,
-    onSelectSession
+    onSelectSession,
+    hideSessions = false
 }: SideNavProps) {
     return (
         <div
             className={cn(
-                "relative flex flex-col h-screen bg-hive-bg-dark/95 backdrop-blur-2xl border-r border-hive-border-subtle transition-all duration-300 z-40",
+                "relative flex flex-col h-screen bg-void-950/95 backdrop-blur-2xl border-r border-white/6 transition-all duration-300 z-40",
                 collapsed ? "w-[80px]" : "w-[280px]"
             )}
         >
             {/* ── Logo Area ── */}
-            <div className="flex items-center justify-between h-[72px] px-5 border-b border-hive-border-subtle">
-                <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between h-[72px] pl-8 pr-5 py-4 border-b border-white/6 shrink-0 relative">
+                <div className="flex items-center gap-3 min-w-0">
                     {/* Hexagon Logo - same as landing page */}
                     <div className="relative">
                         <Hexagon
-                            className="w-8 h-8 text-hive-indigo fill-hive-indigo/10"
+                            className="w-8 h-8 text-electric-violet fill-electric-violet/10"
                             strokeWidth={1.5}
                         />
                         <Hexagon
-                            className="absolute inset-0 w-8 h-8 text-hive-indigo/60 m-auto scale-50"
+                            className="absolute inset-0 w-8 h-8 text-electric-violet/60 m-auto scale-50"
                             strokeWidth={2}
                         />
                     </div>
                     {!collapsed && (
-                        <span className="text-lg font-bold tracking-tight text-hive-text-primary">
-                            HIVE<span className="text-hive-indigo">-R</span>
+                        <span className="text-lg font-bold tracking-tight text-white">
+                            HIVE<span className="text-electric-violet">-R</span>
                         </span>
                     )}
                 </div>
@@ -67,19 +68,36 @@ export function SideNav({
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-hive-text-secondary hover:text-hive-text-primary hover:bg-hive-surface/50 rounded-lg"
+                    className={cn(
+                        "h-8 w-8 text-starlight-400 hover:text-white hover:bg-white/6 rounded-lg",
+                        collapsed && "opacity-0 pointer-events-none"
+                    )}
                     onClick={onToggle}
+                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                     {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                 </Button>
+
+                {/* Always-available toggle when collapsed */}
+                {collapsed && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-void-900/80 border border-white/10 text-starlight-400 hover:text-white hover:bg-void-900"
+                        onClick={onToggle}
+                        aria-label="Expand sidebar"
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </Button>
+                )}
             </div>
 
             {/* ── Main Navigation ── */}
-            <div className="flex-1 py-4 px-3 overflow-y-auto">
+            <div className={cn("flex-1 py-6 pr-6 overflow-y-auto min-h-0", collapsed ? "pl-5" : "pl-8")}>
                 {/* Platform Section */}
                 <div className="mb-6">
                     {!collapsed && (
-                        <h4 className="text-xs font-medium text-hive-text-tertiary uppercase tracking-wider mb-3 px-3">
+                        <h4 className="text-xs font-medium text-starlight-500 uppercase tracking-wider mb-4 pl-2">
                             Platform
                         </h4>
                     )}
@@ -106,66 +124,59 @@ export function SideNav({
                             onClick={() => onNavigate('/plugins')}
                         />
                         <NavItem
-                            icon={Settings}
-                            label="Settings"
-                            active={activePath === 'settings'}
+                            icon={BookOpen}
+                            label="Docs"
+                            active={activePath === 'docs'}
                             collapsed={collapsed}
-                            onClick={() => onNavigate('/settings')}
+                            onClick={() => onNavigate('/docs')}
                         />
+                        
                     </nav>
                 </div>
 
-                {/* Divider */}
-                {!collapsed && <div className="mx-3 my-6 h-px bg-hive-border-subtle" />}
+                {!hideSessions && (
+                    <>
+                        {/* Divider */}
+                        {!collapsed && <div className="mx-1 my-6 h-px bg-white/6" />}
 
-                {/* Sessions Section */}
-                <div>
-                    {!collapsed && (
-                        <div className="flex items-center justify-between mb-4 px-3">
-                            <h4 className="text-xs font-medium text-hive-text-tertiary uppercase tracking-wider">
-                                Sessions
-                            </h4>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-hive-text-secondary hover:text-hive-text-primary hover:bg-hive-surface/50 rounded-lg"
-                                onClick={onNewSession}
-                            >
-                                <Plus className="h-4 w-4" />
-                            </Button>
+                        {/* Sessions Section */}
+                        <div>
+                            {!collapsed && (
+                                <div className="flex items-center justify-between mb-4 pl-2">
+                                    <h4 className="text-xs font-medium text-starlight-500 uppercase tracking-wider">
+                                        Sessions
+                                    </h4>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-starlight-400 hover:text-white hover:bg-white/6 rounded-lg"
+                                        onClick={onNewSession}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                            <nav className="space-y-1">
+                                {sessions.length === 0 && !collapsed && (
+                                    <p className="text-xs text-starlight-500 py-3 pl-8 pr-4">No sessions yet</p>
+                                )}
+                                {sessions.map(session => (
+                                    <NavItem
+                                        key={session.id}
+                                        icon={MessageCircle}
+                                        label={session.name || "New Session"}
+                                        active={currentSessionId === session.id}
+                                        collapsed={collapsed}
+                                        onClick={() => onSelectSession(session.id)}
+                                    />
+                                ))}
+                            </nav>
                         </div>
-                    )}
-                    <nav className="space-y-1">
-                        {sessions.length === 0 && !collapsed && (
-                            <p className="text-xs text-hive-text-tertiary py-2 px-3">No sessions yet</p>
-                        )}
-                        {sessions.map(session => (
-                            <NavItem
-                                key={session.id}
-                                icon={MessageCircle}
-                                label={session.name || "New Session"}
-                                active={currentSessionId === session.id}
-                                collapsed={collapsed}
-                                onClick={() => onSelectSession(session.id)}
-                            />
-                        ))}
-                    </nav>
-                </div>
+                    </>
+                )}
             </div>
 
-            {/* ── Footer ── */}
-            <div className="p-3 border-t border-hive-border-subtle">
-                <Button
-                    variant="ghost"
-                    className={cn(
-                        "w-full h-11 justify-start text-hive-text-secondary hover:text-hive-error hover:bg-hive-error/10 transition-all rounded-lg px-3",
-                        collapsed && "justify-center px-0"
-                    )}
-                >
-                    <LogOut className={cn("h-[18px] w-[18px]", !collapsed && "mr-3")} />
-                    {!collapsed && <span className="text-sm font-medium">Sign Out</span>}
-                </Button>
-            </div>
+            
         </div>
     )
 }
@@ -183,23 +194,23 @@ function NavItem({ icon: Icon, label, active, collapsed, onClick }: NavItemProps
         <button
             onClick={onClick}
             className={cn(
-                "relative w-full flex items-center h-12 px-4 gap-4 rounded-lg transition-all duration-200",
+                "relative w-full flex items-center h-12 pl-8 pr-6 gap-5 rounded-lg transition-all duration-200",
                 active
-                    ? "text-hive-text-primary bg-hive-surface/30"
-                    : "text-hive-text-secondary hover:text-hive-text-primary hover:bg-hive-surface/30",
-                collapsed && "justify-center px-0 gap-0"
+                    ? "text-white bg-white/6"
+                    : "text-starlight-400 hover:text-white hover:bg-white/6",
+                collapsed && "justify-center pl-0 pr-0 gap-0 min-w-0"
             )}
         >
             <Icon className={cn(
                 "w-5 h-5 shrink-0 flex-none",
-                active && "text-hive-indigo"
+                active && "text-electric-violet"
             )} />
             {!collapsed && (
                 <>
                     <span className="truncate text-sm font-medium">{label}</span>
                     {/* Active indicator - honey bar like landing page */}
                     {active && (
-                        <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-hive-honey rounded-l-full" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-honey rounded-l-full" aria-hidden />
                     )}
                 </>
             )}

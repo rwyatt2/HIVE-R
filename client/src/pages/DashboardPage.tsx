@@ -32,7 +32,17 @@ interface HealthData {
     uptime: number;
 }
 
-const HIVE_SERVER = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getApiCandidates = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    return [
+        import.meta.env.VITE_API_URL,
+        origin || null,
+        hostname ? `http://${hostname}:3000` : null,
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ].filter((value, index, self): value is string => Boolean(value) && self.indexOf(value) === index);
+};
 
 // ─── Stat Card Component ────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, subtitle, color = 'electric-violet' }: {
@@ -51,11 +61,11 @@ function StatCard({ icon: Icon, label, value, subtitle, color = 'electric-violet
     };
 
     return (
-        <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl p-5 hover:border-white/[0.1] transition-all group">
+        <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6 hover:border-white/12 transition-all group">
             <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-medium text-starlight-400 tracking-wide uppercase">{label}</span>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${colorMap[color] || colorMap['electric-violet']}`}>
-                    <Icon className="w-4 h-4" />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colorMap[color] || colorMap['electric-violet']}`}>
+                    <Icon className="w-5 h-5" />
                 </div>
             </div>
             <div className="text-2xl font-bold text-white font-mono tracking-tight">{value}</div>
@@ -68,26 +78,41 @@ export function DashboardPage() {
     const [health, setHealth] = useState<HealthData | null>(null);
     const [metrics, setMetrics] = useState<Metrics | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [apiBase, setApiBase] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
-            try {
-                const token = localStorage.getItem('hive-access-token');
-                const headers: HeadersInit = token
-                    ? { Authorization: `Bearer ${token}` }
-                    : {};
+            const token = localStorage.getItem('hive-access-token');
+            const headers: HeadersInit = token
+                ? { Authorization: `Bearer ${token}` }
+                : {};
+            const candidates = getApiCandidates();
+            const bases = apiBase ? [apiBase, ...candidates] : candidates;
 
-                const [healthRes, metricsRes] = await Promise.all([
-                    fetch(`${HIVE_SERVER}/health`, { headers }),
-                    fetch(`${HIVE_SERVER}/metrics`, { headers }),
-                ]);
+            for (const base of bases) {
+                try {
+                    const [healthRes, metricsRes] = await Promise.all([
+                        fetch(`${base}/health`, { headers }),
+                        fetch(`${base}/metrics/summary`, { headers }),
+                    ]);
 
-                if (healthRes.ok) setHealth(await healthRes.json());
-                if (metricsRes.ok) setMetrics(await metricsRes.json());
-                setError(null);
-            } catch {
-                setError('Cannot connect to HIVE-R server');
+                    const healthOk = healthRes.ok;
+                    const metricsOk = metricsRes.ok;
+
+                    if (healthOk) setHealth(await healthRes.json());
+                    if (metricsOk) setMetrics(await metricsRes.json());
+
+                    if (healthOk || metricsOk) {
+                        setError(null);
+                        setApiBase(base);
+                        return;
+                    }
+                } catch {
+                    continue;
+                }
             }
+
+            setError('Cannot connect to HIVE-R server');
         };
 
         fetchData();
@@ -97,14 +122,17 @@ export function DashboardPage() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-void-950 pt-24 px-6">
+            <div className="h-full w-full py-4 md:py-6">
                 <div className="max-w-lg mx-auto text-center space-y-6">
                     <div className="w-20 h-20 mx-auto rounded-2xl bg-reactor-red/10 border border-reactor-red/20 flex items-center justify-center">
                         <AlertCircle className="w-10 h-10 text-reactor-red" />
                     </div>
                     <h1 className="text-2xl font-bold text-white">Server Unreachable</h1>
-                    <p className="text-starlight-400">{error}</p>
-                    <div className="bg-void-900/60 border border-white/[0.06] rounded-xl p-4">
+                    <p className="text-starlight-400">
+                        {error}
+                        {apiBase && <span className="block mt-2 text-xs font-mono text-starlight-500">Tried: {apiBase}</span>}
+                    </p>
+                    <div className="bg-void-900/60 border border-white/6 rounded-2xl p-5">
                         <code className="text-sm font-mono text-cyber-cyan">npm run dev</code>
                         <p className="text-xs text-starlight-400 mt-2">Run this in the HIVE-R root directory</p>
                     </div>
@@ -120,8 +148,8 @@ export function DashboardPage() {
     const agentEntries = metrics?.agents ? Object.entries(metrics.agents) : [];
 
     return (
-        <div className="min-h-screen bg-void-950 pt-24 pb-16 px-6">
-            <div className="max-w-6xl mx-auto space-y-8">
+        <div className="h-full w-full py-4 md:py-6">
+            <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
                 {/* Header */}
                 <div className="space-y-2">
                     <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
@@ -162,11 +190,11 @@ export function DashboardPage() {
                 {/* Memory + Performance Row */}
                 <div className="grid lg:grid-cols-2 gap-6">
                     {/* Memory Usage */}
-                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6">
+                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/20 flex items-center justify-center">
-                                    <HardDrive className="w-4 h-4 text-cyber-cyan" />
+                                <div className="w-10 h-10 rounded-xl bg-cyber-cyan/10 border border-cyber-cyan/20 flex items-center justify-center">
+                                    <HardDrive className="w-5 h-5 text-cyber-cyan" />
                                 </div>
                                 <h2 className="text-sm font-semibold text-white">Memory Usage</h2>
                             </div>
@@ -176,7 +204,7 @@ export function DashboardPage() {
                         <div className="space-y-3">
                             <div className="h-3 bg-void-800 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-gradient-to-r from-cyber-cyan to-electric-violet rounded-full transition-all duration-1000"
+                                    className="h-full bg-linear-to-r from-cyber-cyan to-electric-violet rounded-full transition-all duration-1000"
                                     style={{ width: `${memoryPercent}%` }}
                                 />
                             </div>
@@ -188,10 +216,10 @@ export function DashboardPage() {
                     </div>
 
                     {/* Quick Stats */}
-                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl p-6">
+                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-8 h-8 rounded-lg bg-electric-violet/10 border border-electric-violet/20 flex items-center justify-center">
-                                <BarChart3 className="w-4 h-4 text-electric-violet" />
+                            <div className="w-10 h-10 rounded-xl bg-electric-violet/10 border border-electric-violet/20 flex items-center justify-center">
+                                <BarChart3 className="w-5 h-5 text-electric-violet" />
                             </div>
                             <h2 className="text-sm font-semibold text-white">System Info</h2>
                         </div>
@@ -212,8 +240,8 @@ export function DashboardPage() {
                 </div>
 
                 {/* Agent Activity Table */}
-                <div className="bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl overflow-hidden">
+                    <div className="flex items-center justify-between p-6 border-b border-white/6">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-honey/10 border border-honey/20 flex items-center justify-center">
                                 <TrendingUp className="w-4 h-4 text-honey" />
@@ -226,7 +254,7 @@ export function DashboardPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-white/[0.04]">
+                                <tr className="border-b border-white/4">
                                     <th className="text-left text-xs font-medium text-starlight-400 uppercase tracking-wider px-6 py-3">Agent</th>
                                     <th className="text-left text-xs font-medium text-starlight-400 uppercase tracking-wider px-6 py-3">Invocations</th>
                                     <th className="text-left text-xs font-medium text-starlight-400 uppercase tracking-wider px-6 py-3">Avg Duration</th>
@@ -236,7 +264,7 @@ export function DashboardPage() {
                             <tbody>
                                 {agentEntries.length > 0 ? (
                                     agentEntries.map(([agent, data]) => (
-                                        <tr key={agent} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                                        <tr key={agent} className="border-b border-white/3 hover:bg-white/2 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-2 h-2 rounded-full bg-emerald-400" />

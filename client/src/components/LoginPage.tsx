@@ -76,13 +76,13 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
         <div className="min-h-screen flex items-center justify-center bg-void-950 relative overflow-hidden px-6">
             {/* Background fx */}
             <div className="absolute inset-0 bg-neural-mesh opacity-50" />
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric-violet/[0.06] rounded-full blur-[150px]" />
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyber-cyan/[0.04] rounded-full blur-[120px]" />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-electric-violet/6 rounded-full blur-[150px]" />
+            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyber-cyan/4 rounded-full blur-[120px]" />
 
             {/* Card */}
             <div className="relative w-full max-w-md z-10">
-                <div className="absolute -inset-px bg-gradient-to-b from-white/[0.08] to-transparent rounded-2xl" />
-                <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/[0.06] p-8 shadow-2xl">
+                <div className="absolute -inset-px bg-linear-to-b from-white/8 to-transparent rounded-2xl" />
+                <div className="relative bg-void-900/80 backdrop-blur-2xl rounded-2xl border border-white/6 p-8 shadow-2xl">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <div className="relative inline-flex items-center justify-center w-16 h-16 mb-4">
@@ -109,7 +109,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                         {/* Email field */}
                         <div>
                             <div className="relative">
-                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight-500" />
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-starlight-500" />
                                 <input
                                     type="email"
                                     placeholder="Email address"
@@ -119,7 +119,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                                         setFieldErrors({});
                                     }}
                                     required
-                                    className={`w-full h-12 pl-10 pr-4 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${fieldErrors.email || (!isEmailValid && email)
+                                    className={`w-full h-12 pl-11 pr-4 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${fieldErrors.email || (!isEmailValid && email)
                                         ? 'border-reactor-red/50 focus:border-reactor-red focus:ring-1 focus:ring-reactor-red/30'
                                         : 'border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30'
                                         }`}
@@ -135,7 +135,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                         {/* Password field */}
                         <div>
                             <div className="relative">
-                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-starlight-500" />
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-starlight-500" />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     placeholder="Password"
@@ -145,7 +145,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                                         setFieldErrors({});
                                     }}
                                     required
-                                    className={`w-full h-12 pl-10 pr-12 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${fieldErrors.password
+                                    className={`w-full h-12 pl-11 pr-12 bg-void-800/60 border rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none transition-all ${fieldErrors.password
                                         ? 'border-reactor-red/50 focus:border-reactor-red focus:ring-1 focus:ring-reactor-red/30'
                                         : 'border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30'
                                         }`}
@@ -154,9 +154,9 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-starlight-500 hover:text-starlight-300 transition-colors"
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-starlight-500 hover:text-white transition-colors"
                                 >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
                             {fieldErrors.password && (
@@ -184,7 +184,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full h-12 bg-electric-violet hover:bg-electric-indigo disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg shadow-neon-violet hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] transition-all duration-300 flex items-center justify-center gap-2"
+                            className="w-full h-12 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300 flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <span className="flex items-center gap-2">
@@ -194,14 +194,14 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                             ) : (
                                 <span className="flex items-center gap-2">
                                     {isLogin ? 'Sign In' : 'Create Account'}
-                                    <ArrowRight className="h-4 w-4" />
+                                    <ArrowRight className="h-5 w-5" />
                                 </span>
                             )}
                         </button>
                     </form>
 
                     {/* Divider + Social */}
-                    <div className="mt-6 pt-6 border-t border-white/[0.06] space-y-3">
+                    <div className="mt-6 pt-6 border-t border-white/6 space-y-3">
                         <button
                             className="w-full h-11 bg-white text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
                             onClick={() => window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/google`}
@@ -231,7 +231,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
                     <div className="mt-6 text-center">
                         <button
                             onClick={onSuccess}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-honey/80 hover:text-honey bg-honey/[0.06] hover:bg-honey/[0.1] border border-honey/10 rounded-lg transition-all"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-honey/80 hover:text-honey bg-honey/6 hover:bg-honey/10 border border-honey/10 rounded-lg transition-all"
                         >
                             <Sparkles className="h-4 w-4" />
                             Try Demo Mode

@@ -119,7 +119,7 @@ app.route('/admin', adminRouter); // ✅ Mount Admin Router
 import { graph } from "./graph.js";
 
 // Import metrics
-import { register, recordAgentInvocation } from "./lib/metrics.js";
+import { register, recordAgentInvocation, httpRequestsTotal, agentInvocationsTotal } from "./lib/metrics.js";
 import { metricsMiddleware } from "./lib/metrics-middleware.js";
 
 // Import vector memory
@@ -141,6 +141,70 @@ app.route('/health', healthRouter);
 app.get('/metrics', async (c) => {
     c.header('Content-Type', register.contentType);
     return c.text(await register.metrics());
+});
+
+const formatUptime = (uptimeSeconds: number): string => {
+    const totalSeconds = Math.floor(uptimeSeconds);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const parts = [
+        days ? `${days}d` : null,
+        hours ? `${hours}h` : null,
+        minutes ? `${minutes}m` : null,
+        `${seconds}s`,
+    ].filter(Boolean);
+
+    return parts.join(' ');
+};
+
+/**
+ * ✅ JSON metrics summary for the dashboard UI
+ */
+app.get('/metrics/summary', async (c) => {
+    const uptime = process.uptime();
+    const memory = process.memoryUsage();
+
+    const httpMetric = await httpRequestsTotal.get();
+    const totalRequests = httpMetric.values.reduce((sum, entry) => sum + entry.value, 0);
+    const errorRequests = httpMetric.values.reduce((sum, entry) => {
+        const status = Number(entry.labels.status || 0);
+        return status >= 400 ? sum + entry.value : sum;
+    }, 0);
+    const errorRate = totalRequests ? errorRequests / totalRequests : 0;
+
+    const agentMetric = await agentInvocationsTotal.get();
+    const agents = agentMetric.values.reduce<Record<string, { invocations: number; avgDuration: number; errorRate: number }>>(
+        (acc, entry) => {
+            const agent = entry.labels.agent || "Unknown";
+            acc[agent] = {
+                invocations: entry.value,
+                avgDuration: 0,
+                errorRate: 0,
+            };
+            return acc;
+        },
+        {},
+    );
+
+    return c.json({
+        system: {
+            uptime,
+            uptimeHuman: formatUptime(uptime),
+            memory: {
+                heapUsed: memory.heapUsed,
+                heapTotal: memory.heapTotal,
+            },
+        },
+        requests: {
+            total: totalRequests,
+            errors: errorRequests,
+            errorRate,
+        },
+        agents,
+    });
 });
 
 // JWT auth only applies AFTER /metrics so the scraper doesn't need credentials

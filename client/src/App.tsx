@@ -16,9 +16,8 @@ import {
   type OnEdgesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import './App.css';
 import { getAgentGraphData } from './lib/graph-layout';
-import { Docs } from './components/Docs';
+import { SessionList } from './components/SessionList';
 import { AgentNode } from './components/AgentNode';
 import { CustomEdge } from './components/CustomEdge';
 import { CodeBuildPreview } from './components/ui/code-build-preview';
@@ -35,7 +34,8 @@ import { Card } from './components/ui/card';
 import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
 import { AgentStatusPanel } from './components/AgentStatusPanel';
-import { Send, Book, Sparkles, StopCircle } from 'lucide-react';
+import { Send, StopCircle, MessageSquare, Puzzle } from 'lucide-react';
+import { cn } from './lib/utils';
 
 // Register custom node types
 const nodeTypes = {
@@ -60,17 +60,22 @@ const { nodes: initialNodes, edges: initialEdges } = getAgentGraphData();
 function ChatPanel({
   messages,
   onSend,
-  onOpenDocs,
   isLoading,
-  activeAgent
+  activeAgent,
+  currentSessionId,
+  onNewSession,
+  onSelectSession
 }: {
   messages: Message[];
   onSend: (msg: string) => void;
-  onOpenDocs: () => void;
   isLoading?: boolean;
   activeAgent?: string | null;
+  currentSessionId: string | null;
+  onNewSession: () => void;
+  onSelectSession: (id: string) => void;
 }) {
   const [input, setInput] = useState('');
+  const [activeView, setActiveView] = useState<'chat' | 'sessions'>('chat');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,109 +86,129 @@ function ChatPanel({
   };
 
   return (
-    <Card variant="default" className="flex flex-col h-full rounded-2xl border-white/5 overflow-hidden shadow-2xl bg-void-900/40 backdrop-blur-xl">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-white/[0.03]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 flex items-center justify-center bg-electric-violet/10 rounded-lg">
-            <span className="text-lg">💬</span>
-          </div>
-          <h2 className="font-semibold text-base text-starlight-100">Studio Chat</h2>
+    <Card
+      variant="default"
+      className="flex flex-col h-full overflow-hidden bg-void-900/70 border border-white/10 shadow-2xl"
+    >
+      {/* Header — Tabs */}
+      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-white/6 bg-void-900/60 min-h-12">
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+          {[
+            { id: 'chat' as const, label: 'Studio Chat', icon: MessageSquare },
+            { id: 'sessions' as const, label: 'Sessions', icon: MessageSquare },
+          ].map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeView === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveView(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition",
+                  isActive
+                    ? "bg-white/8 text-white"
+                    : "text-starlight-400 hover:text-white hover:bg-white/6"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onOpenDocs}
-          title="Getting Started"
-          className="text-starlight-400 hover:text-white hover:bg-white/5 px-3 py-1.5 h-auto"
+      </div>
+
+      {activeView === 'chat' ? (
+        <div
+          role="log"
+          aria-live="polite"
+          aria-label="Chat messages"
+          className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar min-h-0"
         >
-          <Book className="h-4 w-4 mr-1.5" />
-          <span className="text-sm">Docs</span>
-        </Button>
-      </div>
-
-      <div
-        role="log"
-        aria-live="polite"
-        aria-label="Chat messages"
-        className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
-      >
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center px-6 py-8 space-y-5">
-            <div className="w-16 h-16 flex items-center justify-center bg-electric-violet/10 rounded-2xl ring-1 ring-electric-violet/20">
-              <span className="text-4xl">🐝</span>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-starlight-50">Welcome to HIVE-R Studio!</h3>
-              <p className="text-sm text-starlight-400 max-w-[280px] leading-relaxed">
-                I coordinate a team of 13 AI specialists. What would you like to build today?
-              </p>
-            </div>
-            <div className="flex flex-col items-center gap-2.5 w-full max-w-[220px]">
-              {[
-                "Build a landing page",
-                "Create a Python game",
-                "Analyze data"
-              ].map((label) => (
-                <Button
-                  key={label}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onSend(label)}
-                  className="w-full h-9 px-4 text-sm bg-white/[0.02] border-white/10 hover:bg-electric-violet/10 hover:border-electric-violet/30 hover:text-electric-violet transition-all"
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-            <div className={`flex items-start max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${msg.role === 'user' ? 'bg-primary ml-2' : 'bg-secondary mr-2'}`}>
-                {msg.role === 'user' ? '👤' : '🤖'}
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full text-center px-6 py-8 space-y-5">
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-white">Welcome to HIVE-R Studio!</h3>
+                <p className="text-sm text-starlight-400 max-w-[280px] leading-relaxed">
+                  I coordinate a team of 13 AI specialists. What would you like to build today?
+                </p>
               </div>
-              <div className={`p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-card border border-white/10 rounded-tl-none'}`}>
-                {msg.agentName && <span className="block text-xs font-bold mb-1 opacity-70 uppercase tracking-wide">{msg.agentName}</span>}
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+              <div className="flex flex-col items-center gap-3 w-full max-w-[220px]">
+                {[
+                  "Build a landing page",
+                  "Create a Python game",
+                  "Analyze data"
+                ].map((label) => (
+                  <Button
+                    key={label}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onSend(label)}
+                    className="w-full h-10 px-5 text-sm bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/15 hover:text-white transition-all rounded-lg"
+                  >
+                    {label}
+                  </Button>
+                ))}
               </div>
             </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex items-center gap-2 text-primary text-sm p-4">
-            {activeAgent && <span className="font-semibold">{activeAgent}</span>}
-            <span className="flex gap-1">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Input Area */}
-      <div className="p-4 border-t border-white/5 bg-white/[0.02]">
-        <form className="relative" onSubmit={handleSubmit}>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="What would you like to build?"
-            disabled={isLoading}
-            className="pl-5 pr-14 h-12 bg-void-950/50 border-white/10 focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 rounded-xl text-sm text-starlight-50 placeholder:text-starlight-600 shadow-inner"
+          )}
+          {messages.map((msg) => (
+            <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div className={`flex items-start max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${msg.role === 'user' ? 'bg-electric-violet ml-2' : 'bg-void-800 mr-2'}`}>
+                  {msg.role === 'user' ? '👤' : '🤖'}
+                </div>
+                <div className={`p-4 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-electric-violet text-white rounded-tr-none' : 'bg-void-900/60 border border-white/10 rounded-tl-none'}`}>
+                  {msg.agentName && <span className="block text-xs font-bold mb-1 opacity-70 uppercase tracking-wide text-starlight-400">{msg.agentName}</span>}
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex items-center gap-2 text-electric-violet text-sm p-4">
+              {activeAgent && <span className="font-semibold">{activeAgent}</span>}
+              <span className="flex gap-1">
+                <span className="w-1.5 h-1.5 bg-electric-violet rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 bg-electric-violet rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 bg-electric-violet rounded-full animate-bounce" />
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0">
+          <SessionList
+            selectedId={currentSessionId}
+            onSelectSession={onSelectSession}
+            onNewChat={onNewSession}
           />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={isLoading || !input.trim()}
-            aria-label={isLoading ? 'Sending message' : 'Send message'}
-            className="absolute right-1.5 top-1.5 h-9 w-9 bg-electric-violet hover:bg-electric-indigo text-white shadow-neon-violet transition-all duration-200 hover:scale-105 disabled:opacity-30"
-          >
-            {isLoading ? <StopCircle className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </form>
-      </div>
+        </div>
+      )}
+
+      {/* Input Area — padding and send button inset so nothing overlaps */}
+      {activeView === 'chat' && (
+        <div className="p-4 border-t border-white/6 bg-void-900/60">
+          <form className="relative" onSubmit={handleSubmit}>
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="What would you like to build?"
+              disabled={isLoading}
+              className="pl-5 pr-13 h-12"
+            />
+            <Button
+              type="submit"
+              size="icon"
+              disabled={isLoading || !input.trim()}
+              aria-label={isLoading ? 'Sending message' : 'Send message'}
+              className="absolute right-2 top-2 h-9 w-9"
+            >
+              {isLoading ? <StopCircle className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </form>
+        </div>
+      )}
     </Card>
   );
 }
@@ -204,7 +229,6 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [nodes, setNodes] = useState(initialNodes);
   const [edges, setEdges] = useState(initialEdges);
-  const [showDocs, setShowDocs] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
@@ -389,18 +413,21 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
         onSelectSession: switchSession,
         onDeleteSession: deleteSession,
         onNavigate: (path) => navigate(path),
-        activePath: 'studio'
+        activePath: 'studio',
+        hideSessions: true
       }}
     >
-      <div className="flex h-full gap-6 p-4 md:p-6 overflow-hidden">
+      <div className="flex h-full gap-2 p-2 md:p-3 overflow-hidden">
         {/* Chat Area - 30% */}
-        <div className="hidden md:flex flex-col w-[400px] h-full shrink-0 gap-4">
+        <div className="hidden md:flex flex-col w-[400px] h-full shrink-0 gap-2">
           <ChatPanel
             messages={displayMessages}
             onSend={handleSend}
-            onOpenDocs={() => setShowDocs(true)}
             isLoading={isProcessing}
             activeAgent={activeAgent}
+            currentSessionId={currentSessionId}
+            onNewSession={createNewSession}
+            onSelectSession={switchSession}
           />
 
           {/* Agent Status Panel */}
@@ -413,12 +440,7 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
         </div>
 
         {/* Graph Area - 70% */}
-        <Card variant="default" className="flex-1 relative h-full overflow-hidden border-white/5 shadow-2xl bg-void-950/30 glass">
-          <div className="absolute top-4 right-4 z-10 flex gap-2">
-            <Button variant="secondary" size="icon" onClick={() => setShowMarketplace(true)} title="Plugin Marketplace" className="bg-void-900/80 border-white/10 text-honey hover:text-honey-glow hover:border-honey/30">
-              <Sparkles className="h-4 w-4" />
-            </Button>
-          </div>
+        <Card variant="default" className="flex-1 relative h-full overflow-hidden border-0 shadow-none bg-void-900/30">
           <ReactFlow
             nodes={animatedNodes}
             edges={animatedEdges}
@@ -429,44 +451,35 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
             fitView
             className="bg-transparent"
           >
-            <Controls className="bg-void-900/80 border-white/10 fill-starlight-400" />
+            <Controls className="bg-void-900/80 border border-white/10 text-starlight-300 fill-starlight-300 rounded-lg" />
             <Background color="#6366F1" gap={30} size={1} style={{ opacity: 0.05 }} />
           </ReactFlow>
 
-          {/* Builder Preview Overlay */}
+          {/* Builder Preview Overlay — inset from edges */}
           {activeAgent === 'Builder' && (
-            <div className="absolute bottom-8 left-8 z-20 animate-in slide-in-from-bottom-4 fade-in duration-500">
+            <div className="absolute bottom-12 left-12 z-20 animate-in slide-in-from-bottom-4 fade-in duration-500">
               <CodeBuildPreview />
             </div>
           )}
         </Card>
       </div>
 
-      {showDocs && <Docs onClose={() => setShowDocs(false)} />}
       {showConfig && <AgentConfigPage onClose={() => setShowConfig(false)} />}
       {showMarketplace && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-6xl h-[85vh] bg-background-elevated rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-            <Marketplace
-              onClose={() => setShowMarketplace(false)}
-              onOpenBuilder={() => {
-                setShowMarketplace(false);
-                setShowPluginBuilder(true);
-              }}
-              accessToken={localStorage.getItem('accessToken')}
-            />
-          </div>
-        </div>
+        <Marketplace
+          onClose={() => setShowMarketplace(false)}
+          onOpenBuilder={() => {
+            setShowMarketplace(false);
+            setShowPluginBuilder(true);
+          }}
+          accessToken={localStorage.getItem('accessToken')}
+        />
       )}
       {showPluginBuilder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-6xl h-[85vh] bg-background-elevated rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-            <PluginBuilder
-              onClose={() => setShowPluginBuilder(false)}
-              onSave={handleSavePlugin}
-            />
-          </div>
-        </div>
+        <PluginBuilder
+          onClose={() => setShowPluginBuilder(false)}
+          onSave={handleSavePlugin}
+        />
       )}
     </LayoutShell>
   );

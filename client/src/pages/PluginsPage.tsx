@@ -45,6 +45,7 @@ export function PluginsPage() {
             onClose={handleClose}
             onOpenBuilder={handleOpenBuilder}
             accessToken={null}
+            variant="page"
         />
     );
 }

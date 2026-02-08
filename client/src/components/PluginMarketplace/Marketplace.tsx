@@ -4,6 +4,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
+import { cn } from '../../lib/utils';
 
 interface AgentPlugin {
     id: string;
@@ -32,12 +33,13 @@ interface PluginListResponse {
 }
 
 interface MarketplaceProps {
-    onClose: () => void;
+    onClose?: () => void;
     onOpenBuilder: () => void;
-    accessToken: string | null;
+    accessToken?: string | null;
+    variant?: 'modal' | 'page';
 }
 
-export function Marketplace({ onClose, onOpenBuilder }: MarketplaceProps) {
+export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: MarketplaceProps) {
     const [plugins, setPlugins] = useState<AgentPlugin[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -115,12 +117,28 @@ export function Marketplace({ onClose, onOpenBuilder }: MarketplaceProps) {
         'Planner', 'Security', 'Builder', 'Reviewer', 'Tester', 'TechWriter', 'SRE'
     ];
 
+    const isModal = variant === 'modal';
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <Card variant="glassmorphic" className="w-full max-w-6xl h-[85vh] flex flex-col overflow-hidden border-white/10 shadow-2xl relative bg-background-elevated/95">
+        <div className={cn(
+            isModal && "fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200",
+            !isModal && "w-full"
+        )}>
+            <Card
+                variant="glassmorphic"
+                className={cn(
+                    "w-full flex flex-col overflow-hidden shadow-2xl relative",
+                    isModal
+                        ? "max-w-6xl h-[85vh] border-white/10 bg-background-elevated/95"
+                        : "max-w-none min-h-[70vh] border-white/6 bg-void-900/40"
+                )}
+            >
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5 backdrop-blur-sm">
+                <div className={cn(
+                    "flex items-center justify-between p-6 border-b backdrop-blur-sm",
+                    isModal ? "border-white/5 bg-white/5" : "border-white/6 bg-void-900/60"
+                )}>
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
                             <Sparkles className="h-6 w-6 text-primary" />
@@ -134,14 +152,19 @@ export function Marketplace({ onClose, onOpenBuilder }: MarketplaceProps) {
                         <Button variant="secondary" onClick={onOpenBuilder}>
                             + Create Plugin
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
-                            <X className="h-5 w-5" />
-                        </Button>
+                        {isModal && onClose && (
+                            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
+                                <X className="h-5 w-5" />
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="p-4 border-b border-white/5 bg-black/20 flex flex-wrap gap-4 items-center">
+                <div className={cn(
+                    "p-4 border-b flex flex-wrap gap-4 items-center",
+                    isModal ? "border-white/5 bg-black/20" : "border-white/6 bg-void-900/40"
+                )}>
                     <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -286,7 +309,7 @@ function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: 
             <div className="max-w-4xl mx-auto space-y-8">
                 {/* Header Section */}
                 <div className="flex items-start gap-6">
-                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center text-5xl border border-white/10 shadow-2xl">
+                    <div className="w-24 h-24 rounded-2xl bg-linear-to-br from-primary/20 to-purple-500/20 flex items-center justify-center text-5xl border border-white/10 shadow-2xl">
                         {plugin.icon || '🔌'}
                     </div>
                     <div className="flex-1">
