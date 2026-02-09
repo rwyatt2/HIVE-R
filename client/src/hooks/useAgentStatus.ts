@@ -5,7 +5,7 @@
  * Works alongside useAgentStream for SSE event processing.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { StreamEvent } from './useAgentStream';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -43,6 +43,7 @@ export function useAgentStatus() {
     const [queue, setQueue] = useState<QueuedTask[]>([]);
     const [completed, setCompleted] = useState<CompletedTask[]>([]);
     const [events, setEvents] = useState<StreamEvent[]>([]);
+    const lastCompletionRef = useRef<Record<string, number>>({});
 
     /**
      * Process a stream event and update state accordingly.
@@ -74,6 +75,13 @@ export function useAgentStatus() {
             case 'agent_end':
                 setActiveAgent(prev => {
                     if (!prev || prev.name !== event.agent) return null;
+
+                    const now = Date.now();
+                    const lastCompletion = lastCompletionRef.current[prev.name] || 0;
+                    if (now - lastCompletion < 500) {
+                        return null;
+                    }
+                    lastCompletionRef.current[prev.name] = now;
 
                     // Add to completed
                     setCompleted(prevCompleted => [

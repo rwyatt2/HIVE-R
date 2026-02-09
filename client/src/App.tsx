@@ -404,6 +404,7 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
   return (
     <LayoutShell
       noScroll
+      isDemo={demoMode}
       sidebarProps={{
         collapsed: sidebarCollapsed,
         onToggle: () => setSidebarCollapsed(!sidebarCollapsed),

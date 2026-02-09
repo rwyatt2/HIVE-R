@@ -1,15 +1,15 @@
 /**
- * HIVE-R Landing Page — "The Awakening"
+ * HIVE-R Landing Page - "The Awakening"
  * 
  * Award-winning landing page using Bionic Minimalism design system.
- * No external CSS — fully Tailwind with design tokens.
+ * No external CSS - fully Tailwind with design tokens.
  */
 
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ArrowRight, Zap, Shield, Rocket, Code2, Users, Eye, Layers, Bot, ChevronRight, Play, Star,
+    ArrowRight, Zap, Shield, Rocket, Code2, Users, Eye, Layers, Bot, ChevronRight, Play, Star, Activity,
     Globe, Briefcase, ClipboardList, Search, Palette, Accessibility, GitBranch, ShieldCheck,
     Hammer, FlaskConical, FileText, Hexagon, MessageCircle, DollarSign, CalendarClock, BrainCircuit,
     CheckCircle2, X, type LucideIcon
@@ -17,20 +17,20 @@ import {
 
 
 // ─── Agent Data ─────────────────────────────────────────────────────────────
-const agents: { name: string; Icon: LucideIcon; role: string; color: string }[] = [
-    { name: 'Router', Icon: Globe, role: 'Orchestrator', color: '#6366F1' },
-    { name: 'Founder', Icon: Briefcase, role: 'Strategy', color: '#8B5CF6' },
-    { name: 'PM', Icon: ClipboardList, role: 'Requirements', color: '#A78BFA' },
-    { name: 'UX Researcher', Icon: Search, role: 'User Insights', color: '#C4B5FD' },
-    { name: 'Designer', Icon: Palette, role: 'UI/UX', color: '#F472B6' },
-    { name: 'A11y', Icon: Accessibility, role: 'Accessibility', color: '#34D399' },
-    { name: 'Planner', Icon: GitBranch, role: 'Architecture', color: '#06B6D4' },
-    { name: 'Security', Icon: ShieldCheck, role: 'Security', color: '#EF4444' },
-    { name: 'Builder', Icon: Hammer, role: 'Code Gen', color: '#F59E0B' },
-    { name: 'Reviewer', Icon: Eye, role: 'Code Review', color: '#10B981' },
-    { name: 'Tester', Icon: FlaskConical, role: 'QA', color: '#3B82F6' },
-    { name: 'Tech Writer', Icon: FileText, role: 'Docs', color: '#64748B' },
-    { name: 'SRE', Icon: Rocket, role: 'Deploy', color: '#F97316' },
+const agents: { id: string; name: string; Icon: LucideIcon; role: string; color: string }[] = [
+    { id: 'router', name: 'Router', Icon: Globe, role: 'Orchestrator', color: '#6366F1' },
+    { id: 'founder', name: 'Founder', Icon: Briefcase, role: 'Strategy', color: '#8B5CF6' },
+    { id: 'pm', name: 'PM', Icon: ClipboardList, role: 'Requirements', color: '#A78BFA' },
+    { id: 'ux', name: 'UX Researcher', Icon: Search, role: 'User Insights', color: '#C4B5FD' },
+    { id: 'designer', name: 'Designer', Icon: Palette, role: 'UI/UX', color: '#F472B6' },
+    { id: 'a11y', name: 'A11y', Icon: Accessibility, role: 'Accessibility', color: '#34D399' },
+    { id: 'planner', name: 'Planner', Icon: GitBranch, role: 'Architecture', color: '#06B6D4' },
+    { id: 'security', name: 'Security', Icon: ShieldCheck, role: 'Security', color: '#EF4444' },
+    { id: 'builder', name: 'Builder', Icon: Hammer, role: 'Code Gen', color: '#F59E0B' },
+    { id: 'reviewer', name: 'Reviewer', Icon: Eye, role: 'Code Review', color: '#10B981' },
+    { id: 'tester', name: 'Tester', Icon: FlaskConical, role: 'QA', color: '#3B82F6' },
+    { id: 'writer', name: 'Tech Writer', Icon: FileText, role: 'Docs', color: '#64748B' },
+    { id: 'sre', name: 'SRE', Icon: Rocket, role: 'Deploy', color: '#F97316' },
 ];
 
 const metrics = [
@@ -42,9 +42,73 @@ const metrics = [
 
 const steps = [
     { num: '01', title: 'Describe', desc: 'Describe your product idea like you would to a co-founder. No technical knowledge needed.', icon: Bot },
-    { num: '02', title: 'Collaborate', desc: 'Watch your AI team design screens, write code, run security checks, and test everything — live.', icon: Users },
+    { num: '02', title: 'Collaborate', desc: 'Watch your AI team design screens, write code, run security checks, and test everything - live.', icon: Users },
     { num: '03', title: 'Ship', desc: 'Get a production-ready app with monitoring, security, and everything needed to go live.', icon: Rocket },
 ];
+
+const stepVisuals: Record<string, JSX.Element> = {
+    Describe: (
+        <div className="rounded-2xl border border-white/6 bg-void-900/50 backdrop-blur-xl p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs text-starlight-400">
+                <span>Product Brief</span>
+                <span className="px-2 py-0.5 rounded-full bg-electric-violet/10 text-electric-violet">Draft</span>
+            </div>
+            <div className="space-y-2">
+                <div className="h-2 w-3/4 rounded-full bg-white/10" />
+                <div className="h-2 w-5/6 rounded-full bg-white/10" />
+                <div className="h-2 w-2/3 rounded-full bg-white/10" />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-starlight-400">
+                <div className="h-2 w-2 rounded-full bg-electric-violet animate-pulse" />
+                HIVE-R is listening…
+            </div>
+        </div>
+    ),
+    Collaborate: (
+        <div className="rounded-2xl border border-white/6 bg-void-900/50 backdrop-blur-xl p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs text-starlight-400">
+                <span>Live Collaboration</span>
+                <span className="px-2 py-0.5 rounded-full bg-cyber-cyan/10 text-cyber-cyan">Active</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+                {['UX', 'Builder', 'Security', 'Reviewer', 'Tester', 'SRE'].map(label => (
+                    <div key={label} className="rounded-lg border border-white/6 bg-white/4 px-2 py-1 text-[10px] text-starlight-300 text-center">
+                        {label}
+                    </div>
+                ))}
+            </div>
+            <div className="h-2 w-full rounded-full bg-white/6 overflow-hidden">
+                <div className="h-full w-2/3 bg-linear-to-r from-electric-violet to-cyber-cyan" />
+            </div>
+        </div>
+    ),
+    Ship: (
+        <div className="rounded-2xl border border-white/6 bg-void-900/50 backdrop-blur-xl p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs text-starlight-400">
+                <span>Deployment</span>
+                <span className="px-2 py-0.5 rounded-full bg-plasma-green/10 text-plasma-green">Ready</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg border border-white/6 bg-white/4 px-2 py-2 text-center">
+                    <Rocket className="w-4 h-4 text-honey mx-auto mb-1" />
+                    <div className="text-[10px] text-starlight-300">Deploy</div>
+                </div>
+                <div className="rounded-lg border border-white/6 bg-white/4 px-2 py-2 text-center">
+                    <ShieldCheck className="w-4 h-4 text-electric-violet mx-auto mb-1" />
+                    <div className="text-[10px] text-starlight-300">Secure</div>
+                </div>
+                <div className="rounded-lg border border-white/6 bg-white/4 px-2 py-2 text-center">
+                    <Activity className="w-4 h-4 text-cyber-cyan mx-auto mb-1" />
+                    <div className="text-[10px] text-starlight-300">Monitor</div>
+                </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-starlight-400">
+                <div className="h-2 w-2 rounded-full bg-plasma-green" />
+                Production healthy
+            </div>
+        </div>
+    ),
+};
 
 // ─── Animated Counter ───────────────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
@@ -77,220 +141,109 @@ function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: str
     return <span ref={ref}>{display}{suffix}</span>;
 }
 
-// ─── Orbital Agent Ring ─────────────────────────────────────────────────────
-function AgentOrbit() {
-    const [activeIdx, setActiveIdx] = useState(0);
+import { NeuralHoneycomb } from '../components/NeuralHoneycomb';
+import { NeuralAgentCluster } from '../components/NeuralAgentCluster';
+import { NeuralHexNode } from '../components/NeuralHexNode';
 
-    useEffect(() => {
-        const interval = setInterval(() => setActiveIdx(prev => (prev + 1) % agents.length), 2000);
-        return () => clearInterval(interval);
-    }, []);
+// ─── Main Landing Page ──────────────────────────────────────────────────────
+export function LandingPage() {
+    const [activeSwarmAgent, setActiveSwarmAgent] = useState<typeof agents[0] | null>(null);
 
     return (
-        <div className="relative w-[500px] h-[500px] lg:w-[600px] lg:h-[600px]">
-            {/* Orbital rings */}
-            <div className="absolute inset-[60px] rounded-full border border-white/[0.04]" />
-            <div className="absolute inset-[120px] rounded-full border border-white/[0.06]" />
-            <div className="absolute inset-[180px] rounded-full border border-white/[0.03] animate-[spin_60s_linear_infinite]" />
+        <div className="min-h-screen bg-transparent text-white overflow-x-hidden selection:bg-electric-violet/30 selection:text-white">
+            {/* ─── HERO ─────────────────────────────────────────────── */}
+            <NeuralHoneycomb />
 
-            {/* Center core */}
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative">
-                    <div className="absolute -inset-8 bg-electric-violet/20 rounded-full blur-2xl animate-pulse" />
-                    <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] flex items-center justify-center shadow-[0_0_60px_rgba(99,102,241,0.4)] border border-white/20">
-                        <Hexagon className="w-10 h-10 text-white" strokeWidth={1.5} />
+            <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 pt-32 pb-20 pointer-events-none min-h-screen flex items-center">
+                <div className="grid lg:grid-cols-2 gap-16 items-center pointer-events-auto w-full">
+                    {/* Left: Copy */}
+                    <div className="space-y-8 text-left">
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/4 border border-white/8 backdrop-blur-sm text-sm">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-starlight-400">Now in Public Beta</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-starlight-400" />
+                        </div>
+
+                        <motion.h1
+                            className="text-5xl lg:text-7xl font-bold leading-[1.05] tracking-tight"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                        >
+                            <span className="block text-white">Your Portable</span>
+                            <span className="block bg-linear-to-r from-[#6366F1] to-[#F59E0B] bg-clip-text text-transparent">
+                                AI Software
+                            </span>
+                            <span className="block text-white">Team.</span>
+                        </motion.h1>
+
+                        <motion.p
+                            className="text-lg lg:text-xl text-starlight-400 max-w-lg leading-relaxed"
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+                        >
+                            Stop paying $15k–50k for an MVP that takes months. Describe your idea in plain English
+                            and 13 AI specialists will design, build, test, and deploy it - in about 15 minutes.
+                        </motion.p>
+
+                        {/* CTA Group */}
+                        <motion.div
+                            className="flex flex-col sm:flex-row gap-4 pt-2"
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+                        >
+                            <Link
+                                to="/demo"
+                                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] rounded-xl font-semibold text-white shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300 hover:-translate-y-0.5"
+                            >
+                                <Play className="w-4 h-4 fill-current" />
+                                Try Live Demo
+                                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                            </Link>
+                            <Link
+                                to="/docs"
+                                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/4 border border-white/10 rounded-xl font-medium text-starlight-400 hover:text-white hover:bg-white/8 hover:border-white/15 transition-all duration-300"
+                            >
+                                Documentation
+                            </Link>
+                        </motion.div>
+
+                        {/* Social proof */}
+                        <div className="flex items-center gap-6 pt-4">
+                            <div className="flex -space-x-2">
+                                {['#6366F1', '#F59E0B', '#06B6D4', '#EF4444', '#10B981'].map((c, i) => (
+                                    <div key={i} className="w-8 h-8 rounded-full border-2 border-void-950 flex items-center justify-center text-xs" style={{ background: c }}>
+                                        {['R', 'F', 'P', 'D', 'B'][i]}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="text-sm text-starlight-400">
+                                <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
+                                </div>
+                                <span>Loved by 500+ founders</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-mono text-starlight-400 whitespace-nowrap tracking-widest uppercase">
-                        HIVE-R Core
+
+                    {/* Right: Neural Agent Cluster (New Graphic) */}
+                    <div className="hidden lg:flex items-center justify-center pointer-events-auto">
+                        <NeuralAgentCluster />
                     </div>
                 </div>
             </div>
 
-            {/* Orbiting agents */}
-            {agents.map((agent, i) => {
-                const angle = (i * (360 / agents.length) - 90) * (Math.PI / 180);
-                const radius = 210;
-                const x = Math.cos(angle) * radius;
-                const y = Math.sin(angle) * radius;
-                const isActive = i === activeIdx;
-
-                return (
-                    <div
-                        key={agent.name}
-                        className="absolute transition-all duration-700 ease-out"
-                        style={{
-                            left: `calc(50% + ${x}px)`,
-                            top: `calc(50% + ${y}px)`,
-                            transform: 'translate(-50%, -50%)',
-                        }}
-                    >
-                        {/* Connection line to center */}
-                        {isActive && (
-                            <svg className="absolute pointer-events-none" style={{ left: '50%', top: '50%', width: '1px', height: '1px', overflow: 'visible' }}>
-                                <line x1="0" y1="0" x2={-x} y2={-y} stroke={agent.color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="4 4">
-                                    <animate attributeName="stroke-dashoffset" from="0" to="-8" dur="0.5s" repeatCount="indefinite" />
-                                </line>
-                            </svg>
-                        )}
-
-                        <div className={`
-                            group relative flex items-center justify-center rounded-full transition-all duration-500 cursor-default
-                            ${isActive
-                                ? 'w-14 h-14 bg-void-900/90 border-2 shadow-lg scale-110 z-10'
-                                : 'w-11 h-11 bg-void-900/60 border border-white/10 hover:border-white/20 hover:scale-105'
-                            }
-                        `}
-                            style={{
-                                borderColor: isActive ? agent.color : undefined,
-                                boxShadow: isActive ? `0 0 30px ${agent.color}40` : undefined,
-                            }}
-                        >
-                            <agent.Icon
-                                className={`transition-all duration-300 ${isActive ? 'w-6 h-6' : 'w-5 h-5'}`}
-                                style={{ color: agent.color }}
-                            />
-
-                            {/* Tooltip */}
-                            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                <div className="bg-void-900/95 backdrop-blur-xl border border-white/10 rounded-lg px-3 py-1.5 text-xs whitespace-nowrap shadow-xl">
-                                    <span className="font-semibold text-white">{agent.name}</span>
-                                    <span className="text-starlight-400 ml-1.5">· {agent.role}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
-
-// ─── Main Landing Page ──────────────────────────────────────────────────────
-export function LandingPage() {
-    const [scrollY, setScrollY] = useState(0);
-
-    useEffect(() => {
-        const handleScroll = () => setScrollY(window.scrollY);
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    return (
-        <div className="min-h-screen bg-void-950 text-white overflow-x-hidden selection:bg-electric-violet/30 selection:text-white">
-            {/* ─── HERO ─────────────────────────────────────────────── */}
-            <section className="relative min-h-screen flex items-center overflow-hidden">
-                {/* Background layers */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.15),transparent)]" />
-                <div className="absolute inset-0 bg-neural-mesh" />
-                <div
-                    className="absolute inset-0 opacity-20"
-                    style={{
-                        backgroundImage: `radial-gradient(circle at 20% 80%, rgba(6,182,212,0.08) 0%, transparent 50%),
-                                          radial-gradient(circle at 80% 20%, rgba(139,92,246,0.08) 0%, transparent 50%)`,
-                        transform: `translateY(${scrollY * 0.1}px)`,
-                    }}
-                />
-
-                {/* Grid lines */}
-                <div className="absolute inset-0" style={{
-                    backgroundImage: `linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)`,
-                    backgroundSize: '64px 64px',
-                }} />
-
-                <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 pt-32 pb-20">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
-                        {/* Left: Copy */}
-                        <div className="space-y-8">
-                            {/* Badge */}
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm text-sm">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                                <span className="text-starlight-400">Now in Public Beta</span>
-                                <ChevronRight className="w-3.5 h-3.5 text-starlight-400" />
-                            </div>
-
-                            <motion.h1
-                                className="text-5xl lg:text-7xl font-bold leading-[1.05] tracking-tight"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, ease: 'easeOut' }}
-                            >
-                                <span className="block text-white">Your Portable</span>
-                                <span className="block bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#06B6D4] bg-clip-text text-transparent">
-                                    AI Software
-                                </span>
-                                <span className="block text-white">Team.</span>
-                            </motion.h1>
-
-                            <motion.p
-                                className="text-lg lg:text-xl text-starlight-400 max-w-lg leading-relaxed"
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
-                            >
-                                Stop paying $15k–50k for an MVP that takes months. Describe your idea in plain English
-                                and 13 AI specialists will design, build, test, and deploy it — in about 15 minutes.
-                            </motion.p>
-
-                            {/* CTA Group */}
-                            <motion.div
-                                className="flex flex-col sm:flex-row gap-4 pt-2"
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-                            >
-                                <Link
-                                    to="/demo"
-                                    className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] rounded-xl font-semibold text-white shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300 hover:-translate-y-0.5"
-                                >
-                                    <Play className="w-4 h-4 fill-current" />
-                                    Try Live Demo
-                                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                                </Link>
-                                <Link
-                                    to="/docs"
-                                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/[0.04] border border-white/[0.1] rounded-xl font-medium text-starlight-400 hover:text-white hover:bg-white/[0.08] hover:border-white/[0.15] transition-all duration-300"
-                                >
-                                    Documentation
-                                </Link>
-                            </motion.div>
-
-                            {/* Social proof */}
-                            <div className="flex items-center gap-6 pt-4">
-                                <div className="flex -space-x-2">
-                                    {['#6366F1', '#F59E0B', '#06B6D4', '#EF4444', '#10B981'].map((c, i) => (
-                                        <div key={i} className="w-8 h-8 rounded-full border-2 border-void-950 flex items-center justify-center text-xs" style={{ background: c }}>
-                                            {['R', 'F', 'P', 'D', 'B'][i]}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="text-sm text-starlight-400">
-                                    <div className="flex items-center gap-1">
-                                        {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
-                                    </div>
-                                    <span>Loved by 500+ founders</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right: Agent Orbit */}
-                        <div className="hidden lg:flex items-center justify-center">
-                            <AgentOrbit />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bottom gradient fade */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-void-950 to-transparent" />
-            </section>
-
             {/* ─── METRICS BAR ──────────────────────────────────────── */}
             <section className="relative z-10 -mt-16">
                 <div className="max-w-5xl mx-auto px-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-2xl overflow-hidden bg-white/[0.06] border border-white/[0.06] backdrop-blur-xl shadow-2xl">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {metrics.map((m) => {
                             const Icon = m.icon;
                             return (
-                                <div key={m.label} className="bg-void-900/80 backdrop-blur-xl p-6 text-center group hover:bg-void-800/80 transition-colors">
+                                <div key={m.label} className="bg-void-900/70 backdrop-blur-xl border border-white/6 rounded-2xl p-6 text-center group hover:bg-void-800/80 transition-colors">
                                     <Icon className="w-5 h-5 mx-auto mb-3 text-starlight-400 group-hover:text-electric-violet transition-colors" />
                                     <div className="text-2xl lg:text-3xl font-bold text-white mb-1 font-mono tracking-tight">
                                         <AnimatedCounter target={m.value} />
@@ -316,14 +269,14 @@ export function LandingPage() {
                         {[
                             { Icon: MessageCircle, pain: '"I explained my idea 5 times and still got the wrong thing built"', label: 'Translation gap' },
                             { Icon: DollarSign, pain: '"I spent $30k on a freelancer and the app breaks every week"', label: 'Wasted budget' },
-                            { Icon: CalendarClock, pain: '"My MVP was supposed to take 6 weeks — it\'s been 4 months"', label: 'Timeline creep' },
+                            { Icon: CalendarClock, pain: '"My MVP was supposed to take 6 weeks - it\'s been 4 months"', label: 'Timeline creep' },
                             { Icon: BrainCircuit, pain: '"React? Vue? PostgreSQL? I just want my product to work"', label: 'Tech overwhelm' },
                             { Icon: ShieldCheck, pain: '"How do I know my app is secure enough to launch?"', label: 'Production anxiety' },
                             { Icon: CheckCircle2, pain: '"HIVE-R built what I described in 15 minutes. It just works."', label: 'The HIVE-R moment', highlight: true },
                         ].map(item => (
-                            <div key={item.label} className={`rounded-2xl p-6 border transition-all duration-300 ${item.highlight
-                                ? 'bg-electric-violet/[0.08] border-electric-violet/25 hover:border-electric-violet/40'
-                                : 'bg-void-900/40 border-white/[0.06] hover:border-white/[0.12]'
+                            <div key={item.label} className={`rounded-2xl p-6 border backdrop-blur-xl transition-all duration-300 ${item.highlight
+                                ? 'bg-void-900/70 border-electric-violet/40 hover:border-electric-violet/60 shadow-[0_0_30px_rgba(99,102,241,0.15)]'
+                                : 'bg-void-900/70 border-white/6 hover:border-white/10'
                                 }`}>
                                 <item.Icon className={`w-6 h-6 mb-3 ${item.highlight ? 'text-electric-violet' : 'text-starlight-400'}`} />
                                 <p className={`text-sm leading-relaxed italic mb-3 ${item.highlight ? 'text-white' : 'text-starlight-400'}`}>
@@ -366,7 +319,7 @@ export function LandingPage() {
                                         <div className="hidden md:block absolute top-12 left-[calc(50%+60px)] w-[calc(100%-120px)] h-px bg-gradient-to-r from-white/10 to-white/5" />
                                     )}
 
-                                    <div className="relative bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 hover:border-white/[0.12] hover:bg-void-900/60 transition-all duration-500 group-hover:-translate-y-1">
+                                <div className="relative bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 hover:border-white/[0.12] hover:bg-void-900/60 transition-all duration-500 group-hover:-translate-y-1">
                                         {/* Step number */}
                                         <div className="flex items-center justify-between mb-6">
                                             <span className="text-5xl font-bold text-white/[0.06] font-mono">{step.num}</span>
@@ -374,6 +327,9 @@ export function LandingPage() {
                                                 <Icon className="w-6 h-6 text-electric-violet" />
                                             </div>
                                         </div>
+                                    <div className="mb-6">
+                                        {stepVisuals[step.title]}
+                                    </div>
                                         <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
                                         <p className="text-starlight-400 text-sm leading-relaxed">{step.desc}</p>
                                     </div>
@@ -397,13 +353,13 @@ export function LandingPage() {
                         </h2>
                         <p className="text-lg text-starlight-400 max-w-2xl mx-auto">
                             No more waiting months for an MVP. No more burning through your runway on freelancers who miss deadlines.
-                            HIVE-R gives you the output of a full dev team — instantly.
+                            HIVE-R gives you the output of a full dev team - instantly.
                         </p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                         {/* Traditional path */}
-                        <div className="bg-void-900/40 border border-white/[0.06] rounded-2xl p-8 space-y-5">
+                        <div className="bg-void-900/40 border border-white/[0.06] rounded-2xl p-8 space-y-5 backdrop-blur-xl">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
                                     <DollarSign className="w-5 h-5 text-starlight-400" />
@@ -413,7 +369,7 @@ export function LandingPage() {
                                     <div className="text-xs text-starlight-700">Freelancers &amp; agencies</div>
                                 </div>
                             </div>
-                            {['2–3 months for a basic MVP', '$15k–$50k minimum investment', 'Scope creep & missed deadlines', 'Lost in translation — your vision gets diluted'].map(item => (
+                            {['2–3 months for a basic MVP', '$15k–$50k minimum investment', 'Scope creep & missed deadlines', 'Lost in translation - your vision gets diluted'].map(item => (
                                 <div key={item} className="flex items-center gap-3 text-sm text-starlight-400">
                                     <div className="w-5 h-5 rounded-full bg-reactor-red/10 flex items-center justify-center">
                                         <X className="w-3 h-3 text-reactor-red" />
@@ -424,7 +380,7 @@ export function LandingPage() {
                         </div>
 
                         {/* HIVE-R */}
-                        <div className="bg-electric-violet/[0.06] border border-electric-violet/20 rounded-2xl p-8 space-y-5 relative overflow-hidden">
+                        <div className="bg-electric-violet/[0.06] border border-electric-violet/20 rounded-2xl p-8 space-y-5 relative overflow-hidden backdrop-blur-xl">
                             <div className="absolute -top-20 -right-20 w-40 h-40 bg-electric-violet/10 rounded-full blur-3xl" />
                             <div className="relative flex items-center gap-3 mb-2">
                                 <div className="w-10 h-10 rounded-xl bg-electric-violet/15 border border-electric-violet/30 flex items-center justify-center">
@@ -437,9 +393,9 @@ export function LandingPage() {
                             </div>
                             {[
                                 'Idea to production-ready app in 15 minutes',
-                                '$0 — free during beta',
+                                '$0 - free during beta',
                                 'Built-in security, monitoring, and testing',
-                                'Describe in plain English — no technical jargon needed',
+                                'Describe in plain English - no technical jargon needed',
                             ].map(item => (
                                 <div key={item} className="relative flex items-center gap-3 text-sm text-white">
                                     <div className="w-5 h-5 rounded-full bg-electric-violet/20 border border-electric-violet/30 flex items-center justify-center">
@@ -454,50 +410,139 @@ export function LandingPage() {
             </section>
 
             {/* ─── AGENT SHOWCASE ────────────────────────────────────── */}
-            <section className="relative py-32 overflow-hidden">
+            <section className="relative py-32 overflow-hidden min-h-[900px] flex items-center justify-center">
                 {/* Background accent */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(99,102,241,0.06),transparent)]" />
+                <div className="absolute inset-0 bg-hex-pattern opacity-[0.08] pointer-events-none" />
 
-                <div className="relative max-w-6xl mx-auto px-6 lg:px-12">
-                    <div className="text-center mb-16 space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-honey/10 border border-honey/20 text-sm text-honey font-medium">
-                            <Users className="w-3.5 h-3.5" />
-                            The Swarm
-                        </div>
-                        <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">
-                            13 agents. <span className="bg-gradient-to-r from-honey to-[#FBBF24] bg-clip-text text-transparent">One mission.</span>
-                        </h2>
-                        <p className="text-lg text-starlight-400 max-w-2xl mx-auto">
-                            Every agent is a specialist. Together they cover every discipline of software engineering.
-                        </p>
+                <div className="relative w-full max-w-[1400px] mx-auto px-6 h-full flex flex-col items-center justify-center">
+                    
+                    {/* Center Text Block / Agent Info Hub */}
+                    <div className="absolute z-20 flex flex-col items-center justify-center text-center max-w-xl pointer-events-none min-h-[300px]">
+                        <AnimatePresence mode="wait">
+                            {activeSwarmAgent ? (
+                                <motion.div
+                                    key="agent-info"
+                                    initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
+                                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                                    exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+                                    transition={{ duration: 0.3 }}
+                                    className="flex flex-col items-center"
+                                >
+                                    <div 
+                                        className="w-24 h-24 rounded-2xl bg-void-900/50 backdrop-blur-xl border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(99,102,241,0.2)]"
+                                        style={{ borderColor: activeSwarmAgent.color }}
+                                    >
+                                        <activeSwarmAgent.Icon 
+                                            className="w-12 h-12" 
+                                            style={{ color: activeSwarmAgent.color, filter: `drop-shadow(0 0 10px ${activeSwarmAgent.color})` }} 
+                                        />
+                                    </div>
+                                    <h3 className="text-5xl font-bold text-white mb-3 tracking-tight">{activeSwarmAgent.name}</h3>
+                                    <div className="text-xl text-starlight-400 uppercase tracking-[0.2em] mb-6 font-mono" style={{ color: activeSwarmAgent.color }}>
+                                        {activeSwarmAgent.role}
+                                    </div>
+                                    <p className="text-xl text-starlight-300 italic max-w-md leading-relaxed">
+                                        "I handle {activeSwarmAgent.role.toLowerCase()} tasks for your project."
+                                    </p>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="default-title"
+                                    initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
+                                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                                    exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
+                                    transition={{ duration: 0.3 }}
+                                    className="flex flex-col items-center"
+                                >
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-honey/10 border border-honey/20 text-sm text-honey font-medium mb-6 backdrop-blur-md">
+                                        <Users className="w-3.5 h-3.5" />
+                                        The Swarm
+                                    </div>
+                                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+                                        13 agents. <br />
+                                        <span className="bg-linear-to-r from-honey to-[#FBBF24] bg-clip-text text-transparent">One mission.</span>
+                                    </h2>
+                                    <p className="text-lg text-starlight-400 leading-relaxed drop-shadow-md">
+                                        Every agent is a specialist. Together they cover every discipline of software engineering.
+                                    </p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
-                    {/* Agent grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                        {agents.map((agent) => (
-                            <div
-                                key={agent.name}
-                                className="group relative bg-void-900/40 border border-white/[0.06] rounded-xl p-4 hover:border-white/[0.12] hover:bg-void-900/60 transition-all duration-300 cursor-default"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className="w-10 h-10 rounded-lg flex items-center justify-center border border-white/10 shrink-0"
-                                        style={{ background: `${agent.color}15` }}
-                                    >
-                                        <agent.Icon className="w-5 h-5" style={{ color: agent.color }} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="text-sm font-medium text-white truncate">{agent.name}</div>
-                                        <div className="text-xs text-starlight-400 truncate">{agent.role}</div>
-                                    </div>
-                                </div>
-                                {/* Hover glow */}
-                                <div
-                                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                                    style={{ boxShadow: `inset 0 0 30px ${agent.color}08` }}
+                    {/* Agents - Organically placed around the text */}
+                    {/* Using a relative container for absolute positioning of agents */}
+                    <div className="relative w-[1400px] h-[1000px] hidden lg:block">
+                        {agents.map((agent, i) => {
+                            // Organic coordinates relative to center (0,0)
+                            // We place them in a broken ring/cloud formation
+                            // Left Side Clump
+                            const positions = [
+                                { x: -550, y: -220 },  // Top Left
+                                { x: -500, y: 0 },     // Mid Left
+                                { x: -550, y: 220 },   // Bottom Left
+                                { x: -350, y: -320 },  // High Top Left
+                                { x: -350, y: 320 },   // Low Bottom Left
+                                { x: -180, y: -420 },  // Top Spread
+                                { x: -180, y: 420 },   // Bottom Spread
+                                
+                                // Right Side Clump
+                                { x: 550, y: -220 },   // Top Right
+                                { x: 500, y: 0 },      // Mid Right
+                                { x: 550, y: 220 },    // Bottom Right
+                                { x: 350, y: -320 },   // High Top Right
+                                { x: 350, y: 320 },    // Low Bottom Right
+                                { x: 180, y: -420 },   // Top Spread
+                            ];
+
+                            const pos = positions[i] || { x: 0, y: 0 };
+                            
+                            return (
+                                <motion.div 
+                                    key={agent.name}
+                                    className="absolute left-1/2 top-1/2 pointer-events-auto"
+                                    style={{ 
+                                        x: pos.x, 
+                                        y: pos.y,
+                                        marginLeft: -86, // Half of width (173)
+                                        marginTop: -100   // Half of height (200)
+                                    }}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    viewport={{ once: true }}
+                                    transition={{ 
+                                        duration: 0.8, 
+                                        delay: i * 0.1, 
+                                        type: "spring",
+                                        bounce: 0.4
+                                    }}
+                                >
+                                    <NeuralHexNode 
+                                        agent={agent} 
+                                        width={173} 
+                                        height={200} 
+                                        showLabel={false}
+                                        onHoverStart={() => setActiveSwarmAgent(agent)}
+                                        onHoverEnd={() => setActiveSwarmAgent(null)}
+                                    />
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Mobile Grid Fallback */}
+                    <div className="lg:hidden grid grid-cols-2 gap-4 mt-12 w-full max-w-md">
+                         {agents.map((agent) => (
+                            <div key={agent.name} className="flex justify-center">
+                                <NeuralHexNode 
+                                    agent={agent} 
+                                    width={100} 
+                                    height={115} 
+                                    showLabel={true}
                                 />
                             </div>
-                        ))}
+                         ))}
                     </div>
                 </div>
             </section>
@@ -588,7 +633,7 @@ export function LandingPage() {
             </section>
 
             {/* ─── FOOTER ───────────────────────────────────────────── */}
-            <footer className="border-t border-white/[0.06] py-16">
+            <footer className="relative z-10 border-t border-white/[0.06] bg-void-900/40 backdrop-blur-xl py-16">
                 <div className="max-w-6xl mx-auto px-6 lg:px-12">
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
                         {/* Brand */}

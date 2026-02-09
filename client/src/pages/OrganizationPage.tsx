@@ -90,8 +90,8 @@ function InviteModal({ onClose, onInvite }: {
                             onChange={(e) => setRole(e.target.value as MemberRole)}
                             className="w-full h-12 px-4 bg-void-800/60 border border-white/10 rounded-lg text-white focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30"
                         >
-                            <option value="member">Member — Can use agents</option>
-                            <option value="admin">Admin — Can manage members</option>
+                            <option value="member">Member - Can use agents</option>
+                            <option value="admin">Admin - Can manage members</option>
                         </select>
                     </div>
 

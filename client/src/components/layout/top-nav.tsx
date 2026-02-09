@@ -15,9 +15,10 @@ import { useAuth } from "../../contexts/AuthContext"
 interface TopNavProps {
     onMenuClick?: () => void
     showLogo?: boolean
+    isDemo?: boolean
 }
 
-export function TopNav({ onMenuClick, showLogo = false }: TopNavProps) {
+export function TopNav({ onMenuClick, showLogo = false, isDemo = false }: TopNavProps) {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
     const [menuOpen, setMenuOpen] = useState(false)
@@ -81,6 +82,11 @@ export function TopNav({ onMenuClick, showLogo = false }: TopNavProps) {
 
             {/* Right - Actions & Profile (breathing room from edge) */}
             <div className="relative flex items-center gap-4 ml-4 shrink-0" ref={menuRef}>
+                {isDemo && (
+                    <span className="hidden md:inline-flex items-center rounded-full border border-honey/30 bg-honey/10 px-3 py-1 text-xs font-semibold text-honey">
+                        Demo Mode
+                    </span>
+                )}
                 <Button
                     variant="ghost"
                     size="icon"

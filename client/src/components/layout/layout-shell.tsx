@@ -8,9 +8,10 @@ interface LayoutShellProps {
     sidebarProps?: React.ComponentProps<typeof SideNav>
     noScroll?: boolean
     constrainWidth?: boolean
+    isDemo?: boolean
 }
 
-export function LayoutShell({ children, sidebarProps, noScroll = false, constrainWidth = true }: LayoutShellProps) {
+export function LayoutShell({ children, sidebarProps, noScroll = false, constrainWidth = true, isDemo = false }: LayoutShellProps) {
     const [collapsed, setCollapsed] = React.useState(false)
     const [mobileOpen, setMobileOpen] = React.useState(false)
 
@@ -75,7 +76,7 @@ export function LayoutShell({ children, sidebarProps, noScroll = false, constrai
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative z-10 transition-all duration-300">
-                <TopNav onMenuClick={() => setMobileOpen(true)} />
+                <TopNav onMenuClick={() => setMobileOpen(true)} isDemo={isDemo} />
 
                 <main className={cn(
                     "flex-1 relative",

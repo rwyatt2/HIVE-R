@@ -1,5 +1,5 @@
 /**
- * CostDashboard — LLM Cost Visualization
+ * CostDashboard - LLM Cost Visualization
  *
  * Fetches from /admin/costs/* endpoints and renders:
  *   - Big number cards (today, month, projection)
@@ -212,7 +212,7 @@ export function CostDashboard() {
         return (
             <div className="cost-dashboard">
                 <div className="cost-error">
-                    ⚠️ {error} — costs may require admin access
+                    ⚠️ {error} - costs may require admin access
                 </div>
             </div>
         );

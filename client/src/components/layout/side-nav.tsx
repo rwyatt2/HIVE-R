@@ -45,7 +45,11 @@ export function SideNav({
         >
             {/* ── Logo Area ── */}
             <div className="flex items-center justify-between h-[72px] pl-8 pr-5 py-4 border-b border-white/6 shrink-0 relative">
-                <div className="flex items-center gap-3 min-w-0">
+                <button
+                    className="flex items-center gap-3 min-w-0 hover:opacity-90 transition"
+                    onClick={() => onNavigate('/')}
+                    aria-label="Go to landing page"
+                >
                     {/* Hexagon Logo - same as landing page */}
                     <div className="relative">
                         <Hexagon
@@ -62,7 +66,7 @@ export function SideNav({
                             HIVE<span className="text-electric-violet">-R</span>
                         </span>
                     )}
-                </div>
+                </button>
 
                 {/* Toggle Button */}
                 <Button

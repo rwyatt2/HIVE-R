@@ -129,13 +129,16 @@ export function useAgentStream({ onEvent, onMessage }: UseAgentStreamOptions): U
                                     });
                                     break;
 
-                                case 'agent_end':
+                                case 'agent_end': {
+                                    const agentName = data.agent || currentAgent;
                                     onEvent({
                                         type: 'agent_end',
-                                        agent: currentAgent,
+                                        agent: agentName,
                                         timestamp: data.timestamp
                                     });
+                                    currentAgent = agentName;
                                     break;
+                                }
 
                                 case 'handoff':
                                     onEvent({
@@ -152,6 +155,14 @@ export function useAgentStream({ onEvent, onMessage }: UseAgentStreamOptions): U
                                         messageBuffer += data.content;
                                         onEvent({ type: 'chunk', content: data.content, agent: currentAgent });
                                     }
+                                    break;
+                                case 'complete':
+                                    if (messageBuffer.trim()) {
+                                        onMessage(messageBuffer.trim(), currentAgent);
+                                        messageBuffer = '';
+                                    }
+                                    onEvent({ type: 'done' });
+                                    abortControllerRef.current?.abort();
                                     break;
 
                                 default:
