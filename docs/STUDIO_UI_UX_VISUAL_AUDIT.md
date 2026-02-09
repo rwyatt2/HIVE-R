@@ -1,4 +1,6 @@
-# Studio UI, UX & Visual Audit
+# Studio UI, UX & Visual Audit (ARCHIVED)
+
+> **Note**: This audit was conducted to guide the "Neural Glass" redesign (Feb 2026). All critical issues have been resolved. See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for current standards.
 
 **Scope:** HIVE-R Studio (layout shell, top nav, side nav, chat panel, graph area).  
 **Principles:** 4px grid, visual hierarchy (3 levels), token-first, sufficient breathing room, no overlap.

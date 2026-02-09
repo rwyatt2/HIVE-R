@@ -1,65 +1,77 @@
-# Design Frameworks & Tokens
+# HIVE-R Studio Design System
 
-HIVE-R enforces world-class design principles while letting you bring your own tokens.
+The visual language of the HIVE-R Studio interface.
 
-## Quick Start
+## 1. Core Identity
+- **Theme**: "Neural Honeycomb" (Dark Mode Only).
+- **Primary Background**: `bg-background` (`#020617` / `void-950`).
+- **Accent Colors**: Electric Violet (`#7C3AED`), Honey (`#F59E0B`), Cyan (`#06B6D4`).
+- **Glassmorphism**: Heavy usage of backdrop blur and semi-transparent backgrounds to create depth.
 
-```bash
-# Default (Tailwind)
-npm run dev
+## 2. Color Palette
 
-# With Custom Tokens
-HIVE_DESIGN_TOKENS=./my-tokens.json npm run dev
+### Base
+| Token | Tailwind Class | Hex | Usage |
+|-------|----------------|-----|-------|
+| Background | `bg-background` / `bg-void-950` | `#020617` | Main app background |
+| Surface (Glass) | `bg-void-950/95` | `#020617` (95% op) | Cards, Sidebars, Headers |
+| Border | `border-white/6` | `#FFFFFF` (6% op) | Subtle borders |
 
-# Switch Framework
-HIVE_DESIGN_FRAMEWORK=chakra npm run dev
+### Accents
+| Name | Hex | Usage |
+|------|-----|-------|
+| **Electric Violet** | `#7C3AED` | Primary Actions, Active States |
+| **Honey** | `#F59E0B` | Highlights, Warnings, "Neural" effects |
+| **Cyan** | `#06B6D4` | Info, Data streams |
+| **Plasma Green** | `#10B981` | Success, Active Agents |
+| **Reactor Core** | `#EF4444` | Errors, Critical alerts |
+
+## 3. Layout & Spacing
+
+- **Global Layout**: `LayoutShell` component wraps all pages.
+- **Padding**: Consistent `p-6 md:p-8` for main content areas.
+- **Max Width**:
+  - **Dashboard/Settings/Docs/Marketplace**: Constrained (previously `max-w-6xl`, now often full-width `w-full` with padding).
+  - **Studio**: Full width (`constrainWidth={false}`).
+
+## 4. Components
+
+### Cards (Glassmorphic)
+Standard container for content.
+```tsx
+<Card variant="glassmorphic" className="bg-void-950/95 backdrop-blur-2xl border-white/6">
+  {/* content */}
+</Card>
 ```
 
-## 🌍 World-Class Principles (Built-in)
+### Plugin Builder (Drawer)
+- **Behavior**: Slides in from the right (`animate-in slide-in-from-right`).
+- **Position**: `absolute inset-0 z-50` (inside Marketplace container).
+- **Style**: Full height, `rounded-l-2xl`, `border-y-0 border-r-0`.
+- **Backdrop**: `bg-black/5 backdrop-blur-sm` (keeps underlying content visible but blurred).
 
-Every agent automatically follows these 8 core pillars:
+### Navigation
+- **Top Nav**: `bg-void-950/95 backdrop-blur-2xl border-b border-white/6`.
+- **Side Nav**: `bg-void-950/95 backdrop-blur-2xl border-r border-white/6`.
+- **Icons**: Lucide React icons (Hexagon, LayoutDashboard, Puzzle, BookOpen, Settings).
 
-1.  **Core Experience**: Speed (<100ms), Fitts's Law, Feedback Loops.
-2.  **Visual Hierarchy**: 3 distinct levels, 4px grid rhythm.
-3.  **Typography**: Harmonious scales, readable line lengths (50-75 chars).
-4.  **Color**: 60-30-10 rule, semantic naming, accessible contrast.
-5.  **Interaction**: Physics-based motion, optimistic UI.
-6.  **Accessibility**: WCAG AA, focus management, semantic HTML.
-7.  **Content**: F-pattern scanning, front-loaded keywords.
-8.  **Engineering**: Component-driven, token-first implementation.
+### Empty States
+- **Icon**: `Puzzle` (for plugins), `LayoutDashboard` (for sessions).
+- **Style**: Large icon (`h-16 w-16`), opacity-20, centered text.
 
-## 🎨 Design Tokens
+## 5. Typography
 
-Your `tokens.json` drives the entire UI. HIVE-R supports a comprehensive schema:
+- **Font Family**: Inter (Sans), JetBrains Mono (Code).
+- **Headings**: `tracking-tight`, `font-bold`.
+- **Text Colors**:
+  - Primary: `text-white`
+  - Secondary: `text-starlight-400`
+  - Muted: `text-starlight-500`
 
-```json
-{
-  "brand": "My App",
-  "colors": {
-    "primitives": { ... }, // Base palettes (slate, blue, etc)
-    "semantic": {
-      "primary": { "default": "$colors.primitives.blue.600" },
-      "status": { "success": "..." }
-    }
-  },
-  "typography": { "scale": { "base": "1rem" }, "weights": ... },
-  "spacing": { "base": 4, "scale": ... },
-  "layout": { "breakpoints": ..., "zIndices": ... },
-  "animation": { "duration": ..., "easing": ... }
-}
-```
-
-### Full Example
-See [`design-systems/tokens.example.json`](../design-systems/tokens.example.json) for the complete schema.
-
-## Frameworks Supported
-
-| Framework | Best For |
-|-----------|----------|
-| `tailwind` | Utility-first, rapid prototyping |
-| `shadcn` | Beautiful accessible components |
-| `chakra` | Simple modular components |
-| `mui` | Material Design, enterprise |
-| `radix` | Headless primitives |
-| `ant` | Enterprise dashboards |
-| `bootstrap` | Quick responsive layouts |
+## 6. Icons
+Consistently used icons from `lucide-react`:
+- **Dashboard**: `LayoutDashboard`
+- **Plugins**: `Puzzle`
+- **Docs**: `BookOpen`
+- **Settings**: `Settings`
+- **Studio**: `Hexagon`

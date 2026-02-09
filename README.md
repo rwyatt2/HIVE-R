@@ -68,7 +68,8 @@ Plug HIVE-R's brain into your existing workflow.
 
 ### 🎨 Visual Studio
 - **Real-time Graph**: See the agents "thinking" and handing off tasks.
-- **Plugin Marketplace**: Extend the swarm with custom plugins.
+- **Neural Glass UI**: Unified dark-mode aesthetic with glassmorphism and "Neural Honeycomb" visuals.
+- **Plugin Marketplace**: Extend the swarm with custom plugins via the integrated builder drawer.
 - **Voice Control**: Speak to your team directly.
 
 ---
@@ -92,6 +93,7 @@ HIVE-R/
 ## Documentation
 
 - **[How to Use Agents](./HOW_TO_USE_AGENTS.md)**: Detailed guide for new projects.
+- **[Design System](./docs/DESIGN_SYSTEM.md)**: UI standards, colors, and component patterns.
 - **[MCP Server Setup](./README_MCP.md)**: Connect to Cursor/Claude.
 - **[Deployment](./deploy/README.md)**: Ship the HIVE-R server to production.
 - **[Testing Guide](./docs/development/testing.md)**: How to run, write, and debug tests.

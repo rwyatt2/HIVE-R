@@ -1,73 +1,36 @@
-# React + TypeScript + Vite
+# HIVE-R Studio Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The visual interface for the HIVE-R autonomous agent swarm.
 
-Currently, two official plugins are available:
+## Tech Stack
+- **Framework**: React 18 + Vite
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + PostCSS
+- **Animation**: Framer Motion
+- **State/Graph**: React Flow
+- **Icons**: Lucide React
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Visual Identity: "Neural Glass"
 
-## React Compiler
+The application uses a consistent dark-mode aesthetic characterized by:
+- **Background**: Deep Void (`bg-void-950` / `#020617`).
+- **Surfaces**: Glassmorphism (`bg-void-950/95` + `backdrop-blur-2xl`).
+- **Borders**: Subtle white borders (`border-white/6`).
+- **Accents**: Electric Violet (`#7C3AED`) and Honey (`#F59E0B`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Project Structure
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+client/
+├── src/
+│   ├── components/
+│   │   ├── ui/          # Core atoms (Button, Card, Input)
+│   │   ├── layout/      # LayoutShell, SideNav, TopNav
+│   │   ├── Plugin.../   # Marketplace & Builder features
+│   │   └── Neural.../   # "Neural Honeycomb" visualizations
+│   ├── pages/           # Route components (Dashboard, Studio, etc.)
+│   └── lib/             # Utilities and helpers
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Documentation
+See [**Design System**](../docs/DESIGN_SYSTEM.md) for detailed UI standards.

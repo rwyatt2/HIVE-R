@@ -1,16 +1,8 @@
-# HIVE-R Design System
+# HIVE-R Design System (Implementation)
 
-Glassmorphic design system with accessibility-first components.
+Implementation details for the "Neural Glass" design system.
 
-## Quick Start
-
-```bash
-# Run Storybook
-npm run storybook
-
-# Build static Storybook
-npm run build-storybook
-```
+For high-level standards and guidelines, see [**docs/DESIGN_SYSTEM.md**](../../../docs/DESIGN_SYSTEM.md).
 
 ## Usage
 
@@ -21,37 +13,32 @@ function Example() {
     return (
         <Card variant="glassmorphic" className="p-6">
             <Input placeholder="Email" />
-            <Button variant="gradient">Submit</Button>
+            <Button variant="honey">Deploy Agent</Button>
         </Card>
     );
 }
 ```
 
-## Design Tokens
+## Core Tokens (Tailwind)
 
-All design values in `tokens.ts`:
-
-- **Colors**: Primary (indigo), semantic (success, error, warning)
-- **Spacing**: 4px grid system (1=4px, 2=8px, 4=16px, etc.)
-- **Typography**: Inter font, 12-36px scale
-- **Shadows**: sm, md, lg, glass, glow
-- **Border Radius**: sm, md, lg, xl, full
+- **Colors**:
+  - `void-950` (#020617) - Main Background
+  - `electric-violet-600` (#7C3AED) - Primary Brand
+  - `honey-500` (#F59E0B) - Secondary/Accent
+- **Spacing**: 4px grid system.
+- **Typography**: Inter (UI) and JetBrains Mono (Code).
 
 ## Components
 
 | Component | Variants |
 |-----------|----------|
-| Button | default, secondary, ghost, destructive, gradient, honey, glass |
-| Card | default, glass, glassmorphic, surface, elevated |
-| Badge | default, secondary, success, warning, error, outline |
-| Input | text, email, password, number, search |
-| Skeleton | default, text, circle |
-| Progress | determinate, indeterminate |
+| **Button** | `default`, `secondary`, `ghost`, `destructive`, `outline`, `link`, `gradient`, `honey`, `glass` |
+| **Card** | `default`, `glass` (legacy), `glassmorphic` (standard), `agent`, `metric` |
+| **Badge** | `default`, `secondary`, `success`, `warning`, `error`, `outline` |
+| **LayoutShell**| Wraps all pages. Use `constrainWidth={false}` for full-width. |
 
 ## Accessibility
 
-All components include:
-- Keyboard navigation
-- ARIA attributes
-- Focus indicators
-- Color contrast (WCAG AA)
+- All interactive elements must have a minimum touch target of 44px.
+- Use `aria-label` for icon-only buttons.
+- Ensure text contrast meets WCAG AA standards (automatically handled by `starlight-400` on `void-950`).
