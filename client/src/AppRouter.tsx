@@ -72,7 +72,7 @@ function DocsPage() {
                 onSelectSession: () => { },
             }}
         >
-            <div className="h-full w-full py-4 md:py-6">
+            <div className="h-full w-full">
                 <PageSuspense>
                     <Docs variant="page" />
                 </PageSuspense>

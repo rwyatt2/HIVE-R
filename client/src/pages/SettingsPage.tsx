@@ -33,8 +33,8 @@ export function SettingsPage() {
     }, [searchParams]);
 
     return (
-        <div className="h-full w-full py-4 md:py-6">
-            <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
+        <div className="h-full w-full">
+            <div className="w-full space-y-6 md:space-y-8">
                 {/* Header */}
                 <div className="space-y-2">
                     <h1 className="text-3xl font-bold text-white tracking-tight">Settings</h1>
@@ -42,9 +42,9 @@ export function SettingsPage() {
                 </div>
 
                 {/* Layout */}
-                <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Sidebar Nav */}
-                    <nav className="lg:w-56 shrink-0 space-y-1">
+                <div className="flex flex-col gap-6">
+                    {/* Horizontal Nav */}
+                    <nav className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
                         {tabs.map(tab => {
                             const Icon = tab.icon;
                             return (
@@ -54,12 +54,12 @@ export function SettingsPage() {
                                         setActiveTab(tab.id)
                                         setSearchParams(tab.id === 'profile' ? {} : { tab: tab.id })
                                     }}
-                                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${activeTab === tab.id
                                             ? 'bg-electric-violet/10 text-electric-violet border border-electric-violet/20'
-                                            : 'text-starlight-400 hover:text-white hover:bg-white/6'
+                                            : 'text-starlight-400 hover:text-white hover:bg-white/6 border border-transparent'
                                         }`}
                                 >
-                                    <Icon className="w-5 h-5" />
+                                    <Icon className="w-4 h-4" />
                                     {tab.label}
                                 </button>
                             );
@@ -68,7 +68,7 @@ export function SettingsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                        <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6 lg:p-8">
+                        <div className="bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 lg:p-8">
                             {/* Profile */}
                             {activeTab === 'profile' && (
                                 <div className="space-y-6">
@@ -90,20 +90,20 @@ export function SettingsPage() {
                                     <div className="grid gap-4">
                                         <div className="space-y-2">
                                             <label className="text-xs font-medium text-starlight-400 uppercase tracking-wider">Email</label>
-                                            <input
-                                                type="email"
-                                                value={user?.email || ''}
-                                                disabled
-                                                className="w-full h-12 px-4 bg-void-800/60 border border-white/10 rounded-lg text-sm text-starlight-400 cursor-not-allowed"
-                                            />
+                                        <input
+                                            type="email"
+                                            value={user?.email || ''}
+                                            disabled
+                                            className="w-full h-12 px-4 bg-void-950/50 border border-white/10 rounded-lg text-sm text-starlight-400 cursor-not-allowed"
+                                        />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-xs font-medium text-starlight-400 uppercase tracking-wider">Display Name</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Your name"
-                                                className="w-full h-12 px-4 bg-void-800/60 border border-white/10 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
-                                            />
+                                        <input
+                                            type="text"
+                                            placeholder="Your name"
+                                            className="w-full h-12 px-4 bg-void-950/50 border border-white/10 rounded-lg text-sm text-white placeholder-starlight-500 focus:outline-none focus:border-electric-violet/50 focus:ring-1 focus:ring-electric-violet/30 transition-all"
+                                        />
                                         </div>
                                     </div>
 
@@ -145,7 +145,7 @@ export function SettingsPage() {
                                     </div>
 
                                     {/* Current Plan */}
-                                    <div className="bg-void-800/40 border border-white/6 rounded-2xl p-5 flex items-center justify-between">
+                                    <div className="bg-void-950/50 border border-white/6 rounded-2xl p-5 flex items-center justify-between">
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <h3 className="text-sm font-semibold text-white">Free Plan</h3>
@@ -219,7 +219,7 @@ export function SettingsPage() {
                                         ].map(item => (
                                             <label
                                                 key={item.label}
-                                                className="flex items-center justify-between gap-4 p-4 rounded-xl border border-white/6 bg-void-900/40 hover:border-white/12 transition"
+                                                className="flex items-center justify-between gap-4 p-4 rounded-xl border border-white/6 bg-void-950/95 hover:border-white/12 transition"
                                             >
                                                 <div className="space-y-1">
                                                     <div className="text-sm font-medium text-white">{item.label}</div>

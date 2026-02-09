@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, X, Search, Filter, Star, Download, Check } from 'lucide-react';
+import { Sparkles, X, Search, Filter, Star, Download, Check, Puzzle } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { cn } from '../../lib/utils';
+
+import { PluginBuilder } from '../PluginBuilder';
 
 interface AgentPlugin {
     id: string;
@@ -42,6 +44,7 @@ interface MarketplaceProps {
 export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: MarketplaceProps) {
     const [plugins, setPlugins] = useState<AgentPlugin[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showBuilder, setShowBuilder] = useState(false);
     const [search, setSearch] = useState('');
     const [agentFilter, setAgentFilter] = useState('');
     const [sortBy, setSortBy] = useState<'downloads' | 'rating' | 'newest'>('newest');
@@ -121,49 +124,62 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
 
     return (
         <div className={cn(
-            isModal && "fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200",
-            !isModal && "w-full"
+            isModal && "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200",
+            !isModal && "h-full w-full"
         )}>
+            {!isModal && (
+                <div className="w-full space-y-2 mb-6 md:mb-8">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white tracking-tight">Plugin Marketplace</h1>
+                            <p className="text-starlight-400">Discover and extend your agents' capabilities</p>
+                        </div>
+                        <Button variant="secondary" onClick={() => setShowBuilder(true)}>
+                            + Create Plugin
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             <Card
                 variant="glassmorphic"
                 className={cn(
                     "w-full flex flex-col overflow-hidden shadow-2xl relative",
                     isModal
-                        ? "max-w-6xl h-[85vh] border-white/10 bg-background-elevated/95"
-                        : "max-w-none min-h-[70vh] border-white/6 bg-void-900/40"
+                        ? "max-w-6xl h-[85vh] border-white/10 bg-void-950/95"
+                        : "flex-1 border-white/6 bg-void-950/95"
                 )}
             >
 
-                {/* Header */}
-                <div className={cn(
-                    "flex items-center justify-between p-6 border-b backdrop-blur-sm",
-                    isModal ? "border-white/5 bg-white/5" : "border-white/6 bg-void-900/60"
-                )}>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Sparkles className="h-6 w-6 text-primary" />
+                {/* Header (Modal Only) */}
+                {isModal && (
+                    <div className="flex items-center justify-between p-6 border-b backdrop-blur-sm border-white/5 bg-void-950/95">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <Sparkles className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold">Plugin Marketplace</h2>
+                                <p className="text-sm text-muted-foreground">Discover and extend your agents' capabilities</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-xl font-bold">Plugin Marketplace</h2>
-                            <p className="text-sm text-muted-foreground">Discover and extend your agents' capabilities</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="secondary" onClick={onOpenBuilder}>
-                            + Create Plugin
-                        </Button>
-                        {isModal && onClose && (
-                            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
-                                <X className="h-5 w-5" />
+                        <div className="flex items-center gap-2">
+                            <Button variant="secondary" onClick={() => setShowBuilder(true)}>
+                                + Create Plugin
                             </Button>
-                        )}
+                            {onClose && (
+                                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
+                                    <X className="h-5 w-5" />
+                                </Button>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Filters */}
                 <div className={cn(
                     "p-4 border-b flex flex-wrap gap-4 items-center",
-                    isModal ? "border-white/5 bg-black/20" : "border-white/6 bg-void-900/40"
+                    isModal ? "border-white/5 bg-void-950/95" : "border-white/6 bg-void-950/95"
                 )}>
                     <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -171,7 +187,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search plugins..."
-                            className="bg-black/20 pl-9 border-white/10 focus:border-primary/50"
+                            className="bg-white/5 pl-9 border-white/10 focus:border-primary/50"
                         />
                     </div>
 
@@ -180,7 +196,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                         <select
                             value={agentFilter}
                             onChange={(e) => setAgentFilter(e.target.value)}
-                            className="h-10 px-3 rounded-lg bg-black/20 border border-white/10 text-sm focus:border-primary/50 outline-none hover:bg-white/5 cursor-pointer"
+                            className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-sm focus:border-primary/50 outline-none hover:bg-white/5 cursor-pointer"
                         >
                             <option value="">All Agents</option>
                             {agents.map(agent => (
@@ -190,7 +206,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                            className="h-10 px-3 rounded-lg bg-black/20 border border-white/10 text-sm focus:border-primary/50 outline-none hover:bg-white/5 cursor-pointer"
+                            className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-sm focus:border-primary/50 outline-none hover:bg-white/5 cursor-pointer"
                         >
                             <option value="newest">Newest</option>
                             <option value="downloads">Most Downloads</option>
@@ -214,14 +230,17 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                             <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
                         </div>
                     ) : plugins.length === 0 ? (
-                        <div className="flex-1 h-full flex flex-col items-center justify-center text-muted-foreground">
-                            <Sparkles className="h-12 w-12 mb-4 opacity-20" />
-                            <h3 className="text-lg font-medium text-foreground">No plugins found</h3>
-                            <p className="mb-6">Be the first to create one!</p>
-                            <Button onClick={onOpenBuilder}>Create Plugin</Button>
+                        <div className="flex-1 h-full flex flex-col items-center justify-center text-muted-foreground p-12">
+                            <Puzzle className="h-16 w-16 mb-6 opacity-20 text-foreground" />
+                            <h3 className="text-lg font-medium text-foreground mb-2">No plugins found</h3>
+                            <p className="mb-8 text-starlight-400">Be the first to create one!</p>
+                            <Button onClick={onOpenBuilder} size="lg" className="px-8">Create Plugin</Button>
                         </div>
                     ) : (
-                        <div className="h-full overflow-y-auto custom-scrollbar p-6">
+                        <div className={cn(
+                            "p-6",
+                            isModal ? "h-full overflow-y-auto custom-scrollbar" : ""
+                        )}>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {plugins.map(plugin => (
                                     <PluginCard
@@ -237,6 +256,16 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                     ))}
                 </div>
             </Card>
+
+            {showBuilder && (
+                <PluginBuilder
+                    onClose={() => setShowBuilder(false)}
+                    onSave={(plugin: any) => {
+                        console.log('Saving plugin:', plugin);
+                        setShowBuilder(false);
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -244,7 +273,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
 function PluginCard({ plugin, isInstalled, onClick, onInstall }: { plugin: AgentPlugin, isInstalled: boolean, onClick: () => void, onInstall: () => void }) {
     return (
         <Card
-            variant="glass"
+            variant="glassmorphic"
             className="p-5 cursor-pointer group hover:bg-white/5 transition-all border-white/5 hover:border-primary/30 flex flex-col h-full"
             onClick={onClick}
         >
@@ -343,17 +372,17 @@ function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: 
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-4 gap-4">
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
+                    <div className="p-4 rounded-xl bg-void-950/95 border border-white/5 text-center">
                         <div className="text-2xl font-bold mb-1">{plugin.downloads || 0}</div>
                         <div className="text-xs text-muted-foreground uppercase tracking-wider">Downloads</div>
                     </div>
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
+                    <div className="p-4 rounded-xl bg-void-950/95 border border-white/5 text-center">
                         <div className="text-2xl font-bold mb-1 flex items-center justify-center gap-1">
                             {plugin.averageRating?.toFixed(1) || '-'} <Star className="w-4 h-4 text-warning fill-current" />
                         </div>
                         <div className="text-xs text-muted-foreground uppercase tracking-wider">{plugin.ratingCount || 0} Reviews</div>
                     </div>
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center col-span-2 flex items-center justify-center gap-3">
+                    <div className="p-4 rounded-xl bg-void-950/95 border border-white/5 text-center col-span-2 flex items-center justify-center gap-3">
                         <div className="text-right">
                             <div className="text-xs text-muted-foreground uppercase tracking-wider">Target Agent</div>
                             <div className="font-bold text-lg">{plugin.agentName}</div>
@@ -378,7 +407,7 @@ function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: 
                 {plugin.systemPromptExtension && (
                     <div className="space-y-4">
                         <h3 className="text-lg font-bold">System Prompt Extension</h3>
-                        <Card variant="glass" className="bg-black/40 font-mono text-xs p-4 overflow-x-auto border-white/10">
+                        <Card variant="glass" className="bg-void-950/95 font-mono text-xs p-4 overflow-x-auto border-white/10">
                             <pre className="text-muted-foreground">{plugin.systemPromptExtension}</pre>
                         </Card>
                     </div>

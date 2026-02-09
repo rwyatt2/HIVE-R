@@ -168,7 +168,7 @@ export function AgentStatusPanel({
     const hasActivity = activeAgent || queue.length > 0 || completed.length > 0;
 
     return (
-        <div className="bg-void-900/60 backdrop-blur-xl border border-white/[0.06] rounded-xl p-5">
+        <div className="bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-xl p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-white flex items-center gap-2">

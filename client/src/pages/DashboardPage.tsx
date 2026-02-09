@@ -61,7 +61,7 @@ function StatCard({ icon: Icon, label, value, subtitle, color = 'electric-violet
     };
 
     return (
-        <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6 hover:border-white/12 transition-all group">
+        <div className="bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6 hover:border-white/12 transition-all group">
             <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-medium text-starlight-400 tracking-wide uppercase">{label}</span>
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colorMap[color] || colorMap['electric-violet']}`}>
@@ -148,8 +148,8 @@ export function DashboardPage() {
     const agentEntries = metrics?.agents ? Object.entries(metrics.agents) : [];
 
     return (
-        <div className="h-full w-full py-4 md:py-6">
-            <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
+        <div className="h-full w-full">
+            <div className="w-full space-y-6 md:space-y-8">
                 {/* Header */}
                 <div className="space-y-2">
                     <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
@@ -190,7 +190,7 @@ export function DashboardPage() {
                 {/* Memory + Performance Row */}
                 <div className="grid lg:grid-cols-2 gap-6">
                     {/* Memory Usage */}
-                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6">
+                    <div className="bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-cyber-cyan/10 border border-cyber-cyan/20 flex items-center justify-center">
@@ -216,7 +216,7 @@ export function DashboardPage() {
                     </div>
 
                     {/* Quick Stats */}
-                    <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl p-6">
+                    <div className="bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 rounded-xl bg-electric-violet/10 border border-electric-violet/20 flex items-center justify-center">
                                 <BarChart3 className="w-5 h-5 text-electric-violet" />
@@ -240,7 +240,7 @@ export function DashboardPage() {
                 </div>
 
                 {/* Agent Activity Table */}
-                <div className="bg-void-900/40 backdrop-blur-xl border border-white/6 rounded-2xl overflow-hidden">
+                <div className="bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-2xl overflow-hidden">
                     <div className="flex items-center justify-between p-6 border-b border-white/6">
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-honey/10 border border-honey/20 flex items-center justify-center">

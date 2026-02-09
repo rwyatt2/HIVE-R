@@ -88,10 +88,10 @@ function ChatPanel({
   return (
     <Card
       variant="default"
-      className="flex flex-col h-full overflow-hidden bg-void-900/70 border border-white/10 shadow-2xl"
+      className="flex flex-col h-full overflow-hidden shadow-2xl"
     >
       {/* Header — Tabs */}
-      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-white/6 bg-void-900/60 min-h-12">
+      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-white/6 bg-void-950/95 min-h-12">
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           {[
             { id: 'chat' as const, label: 'Studio Chat', icon: MessageSquare },
@@ -186,9 +186,9 @@ function ChatPanel({
         </div>
       )}
 
-      {/* Input Area — padding and send button inset so nothing overlaps */}
+      {/* Input Area - padding and send button inset so nothing overlaps */}
       {activeView === 'chat' && (
-        <div className="p-4 border-t border-white/6 bg-void-900/60">
+        <div className="p-4 border-t border-white/6 bg-void-950/95">
           <form className="relative" onSubmit={handleSubmit}>
             <Input
               value={input}
@@ -236,12 +236,6 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
   const [demoMode, setDemoMode] = useState(initialDemoMode);
   const [showConfig, setShowConfig] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(showMarketplaceOnLoad);
-  const [showPluginBuilder, setShowPluginBuilder] = useState(false);
-
-  const handleSavePlugin = (plugin: any) => {
-    console.log('Saving plugin:', plugin);
-    setShowPluginBuilder(false);
-  };
 
   // Chat persistence
   const {
@@ -404,6 +398,7 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
   return (
     <LayoutShell
       noScroll
+      constrainWidth={false}
       isDemo={demoMode}
       sidebarProps={{
         collapsed: sidebarCollapsed,
@@ -418,9 +413,9 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
         hideSessions: true
       }}
     >
-      <div className="flex h-full gap-2 p-2 md:p-3 overflow-hidden">
+      <div className="flex h-full gap-4 md:gap-6 p-6 md:p-8 overflow-hidden">
         {/* Chat Area - 30% */}
-        <div className="hidden md:flex flex-col w-[400px] h-full shrink-0 gap-2">
+        <div className="hidden md:flex flex-col w-[400px] h-full shrink-0 gap-4">
           <ChatPanel
             messages={displayMessages}
             onSend={handleSend}
@@ -453,7 +448,7 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
             className="bg-transparent"
           >
             <Controls className="bg-void-900/80 border border-white/10 text-starlight-300 fill-starlight-300 rounded-lg" />
-            <Background color="#6366F1" gap={30} size={1} style={{ opacity: 0.05 }} />
+            <Background color="#ffffff" gap={24} size={1} style={{ opacity: 0.1 }} />
           </ReactFlow>
 
           {/* Builder Preview Overlay — inset from edges */}
@@ -469,17 +464,8 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
       {showMarketplace && (
         <Marketplace
           onClose={() => setShowMarketplace(false)}
-          onOpenBuilder={() => {
-            setShowMarketplace(false);
-            setShowPluginBuilder(true);
-          }}
+          onOpenBuilder={() => {}}
           accessToken={localStorage.getItem('accessToken')}
-        />
-      )}
-      {showPluginBuilder && (
-        <PluginBuilder
-          onClose={() => setShowPluginBuilder(false)}
-          onSave={handleSavePlugin}
         />
       )}
     </LayoutShell>

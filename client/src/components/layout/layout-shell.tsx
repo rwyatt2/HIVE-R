@@ -20,11 +20,9 @@ export function LayoutShell({ children, sidebarProps, noScroll = false, constrai
     const onToggle = sidebarProps?.onToggle ?? (() => setCollapsed(prev => !prev))
 
     return (
-        <div className="relative flex h-screen w-full overflow-hidden bg-void-950 font-sans text-white p-0 gap-0">
+        <div className="relative flex h-screen w-full overflow-hidden bg-background font-sans text-white p-0 gap-0">
             {/* Background Pattern */}
-            <div className="absolute inset-0 z-0 bg-neural-mesh pointer-events-none" />
-            <div className="absolute inset-0 z-0 gradient-mesh opacity-20 pointer-events-none" />
-            <div className="absolute inset-0 z-0 bg-vignette pointer-events-none" />
+            <div className="absolute inset-0 z-0 bg-background pointer-events-none" />
 
             {/* Sidebar (Desktop) */}
             <div className="hidden md:flex h-full shrink-0 z-40">
@@ -80,7 +78,7 @@ export function LayoutShell({ children, sidebarProps, noScroll = false, constrai
 
                 <main className={cn(
                     "flex-1 relative",
-                    !noScroll && "overflow-y-auto overflow-x-hidden p-6 md:p-8 lg:p-10 scrollbar-custom",
+                    !noScroll && "overflow-y-auto overflow-x-hidden p-6 md:p-8 scrollbar-custom",
                     noScroll && "overflow-hidden"
                 )}>
                     <div className={cn(

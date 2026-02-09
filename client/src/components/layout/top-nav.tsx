@@ -41,7 +41,7 @@ export function TopNav({ onMenuClick, showLogo = false, isDemo = false }: TopNav
     }
 
     return (
-        <div className="sticky top-0 left-0 right-0 z-30 flex items-center h-[72px] px-5 md:px-8 bg-void-900/70 backdrop-blur-xl border-b border-white/6">
+        <div className="sticky top-0 left-0 right-0 z-30 flex items-center h-[72px] px-5 md:px-8 bg-void-950/95 backdrop-blur-2xl border-b border-white/6">
             {/* Mobile Menu Trigger & Logo */}
             <div className="flex items-center gap-4 min-w-0">
                 <Button

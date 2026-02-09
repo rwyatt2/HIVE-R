@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Check, AlertCircle, Sparkles, Terminal, Code, Download, ChevronRight } from 'lucide-react';
+import { X, Check, AlertCircle, Sparkles, Terminal, Code, Download, ChevronRight, ChevronDown } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -135,15 +135,18 @@ export function PluginBuilder({ onClose, onSave }: PluginBuilderProps) {
 
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Target Agent</label>
-                    <select
-                        className="w-full h-10 px-3 rounded-md bg-black/20 border border-input text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        value={formData.agentName}
-                        onChange={(e) => setFormData({ ...formData, agentName: e.target.value })}
-                    >
-                        {agents.map(agent => (
-                            <option key={agent} value={agent}>{agent}</option>
-                        ))}
-                    </select>
+                    <div className="relative">
+                        <select
+                            className="w-full h-10 px-3 pr-10 rounded-md bg-black/20 border border-input text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 appearance-none"
+                            value={formData.agentName}
+                            onChange={(e) => setFormData({ ...formData, agentName: e.target.value })}
+                        >
+                            {agents.map(agent => (
+                                <option key={agent} value={agent}>{agent}</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
+                    </div>
                 </div>
 
                 <div className="space-y-2">
@@ -315,8 +318,8 @@ export function PluginBuilder({ onClose, onSave }: PluginBuilderProps) {
     );
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <Card variant="glassmorphic" className="w-full max-w-2xl overflow-hidden border-white/10 shadow-2xl relative bg-background-elevated/95">
+        <div className="absolute inset-0 z-50 flex justify-end bg-black/5 backdrop-blur-sm animate-in fade-in duration-200">
+            <Card variant="glassmorphic" className="w-full max-w-2xl h-full rounded-none rounded-l-2xl border-y-0 border-r-0 border-l border-white/10 shadow-2xl relative bg-void-950/95 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
                     <div>
@@ -342,7 +345,7 @@ export function PluginBuilder({ onClose, onSave }: PluginBuilderProps) {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 min-h-[400px]">
+                <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                     {step === 1 && renderStep1()}
                     {step === 2 && renderStep2()}
                     {step === 3 && renderStep3()}

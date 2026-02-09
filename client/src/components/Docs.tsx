@@ -14,40 +14,51 @@ export function Docs({ onClose, variant = 'modal' }: DocsProps) {
     return (
         <div className={cn(
             isModal && "fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200",
-            !isModal && "w-full"
+            !isModal && "h-full w-full"
         )}>
+            {!isModal && (
+                <div className="w-full space-y-2 mb-6 md:mb-8">
+                    <h1 className="text-3xl font-bold text-white tracking-tight">Documentation</h1>
+                    <p className="text-starlight-400">Getting started with HIVE-R Studio</p>
+                </div>
+            )}
+
             <Card
                 variant="glassmorphic"
                 className={cn(
-                    "w-full flex flex-col overflow-hidden shadow-2xl relative",
+                    "w-full flex flex-col relative",
                     isModal
-                        ? "max-w-4xl h-[85vh] border-white/10 bg-background-elevated/95"
-                        : "max-w-none min-h-[70vh] border-white/6 bg-void-900/40"
+                        ? "overflow-hidden shadow-2xl max-w-4xl h-[85vh] border-white/10 bg-void-950/95"
+                        : "border-white/6 bg-void-950/95"
                 )}
             >
-                {/* Header */}
-                <div className={cn(
-                    "flex items-center justify-between p-6 border-b",
-                    isModal ? "border-white/6 bg-void-900/60" : "border-white/6 bg-void-900/60"
-                )}>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-electric-violet/10 rounded-lg">
-                            <Book className="h-6 w-6 text-electric-violet" />
+                {/* Header (Modal Only) */}
+                {isModal && (
+                    <div className={cn(
+                        "flex items-center justify-between p-6 border-b border-white/6 bg-void-900/60"
+                    )}>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-electric-violet/10 rounded-lg">
+                                <Book className="h-6 w-6 text-electric-violet" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white">Documentation</h2>
+                                <p className="text-sm text-starlight-400">Getting started with HIVE-R Studio</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-white">Documentation</h2>
-                            <p className="text-sm text-starlight-400">Getting started with HIVE-R Studio</p>
-                        </div>
+                        {onClose && (
+                            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/6">
+                                <X className="h-5 w-5" />
+                            </Button>
+                        )}
                     </div>
-                    {isModal && onClose && (
-                        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/6">
-                            <X className="h-5 w-5" />
-                        </Button>
-                    )}
-                </div>
+                )}
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-10">
+                <div className={cn(
+                    "p-8 space-y-10",
+                    isModal && "flex-1 overflow-y-auto custom-scrollbar"
+                )}>
                     {/* Quick Start */}
                     <section className="space-y-4">
                         <h3 className="text-xl font-bold flex items-center gap-2 text-electric-violet">
@@ -122,7 +133,7 @@ export function Docs({ onClose, variant = 'modal' }: DocsProps) {
 
 function AgentDescription({ icon: Icon, name, description }: { icon: any, name: string, description: string }) {
     return (
-        <div className="flex gap-4 p-4 rounded-2xl bg-void-900/40 border border-white/6 hover:border-electric-violet/30 transition-colors">
+        <div className="flex gap-4 p-4 rounded-2xl bg-void-950/95 border border-white/6 hover:border-electric-violet/30 transition-colors">
             <div className="shrink-0 mt-1">
                 <Icon className="h-5 w-5 text-electric-violet" />
             </div>

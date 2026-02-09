@@ -13,12 +13,12 @@ const Card = React.forwardRef<
         ref={ref}
         className={cn(
             "rounded-2xl text-white transition-all duration-300",
-            variant === "default" && "bg-void-900/40 backdrop-blur-xl border border-white/6 shadow-2xl",
-            variant === "glass" && "bg-void-900/40 backdrop-blur-xl border border-white/6 shadow-2xl",
-            variant === "glassmorphic" && "bg-void-900/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl",
+            variant === "default" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 shadow-2xl",
+            variant === "glass" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 shadow-2xl",
+            variant === "glassmorphic" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-2xl shadow-2xl",
             variant === "agent" &&
-            "bg-void-900/40 backdrop-blur-xl border border-white/6 hover:border-white/12",
-            variant === "metric" && "bg-void-900/40 backdrop-blur-xl border border-white/6 relative overflow-hidden",
+            "bg-void-950/95 backdrop-blur-2xl border border-white/6 hover:border-white/12",
+            variant === "metric" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 relative overflow-hidden",
             className
         )}
         {...props}
