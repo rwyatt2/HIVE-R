@@ -1,5 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+let nhInstanceCounter = 0;
+let nhActiveGeneration = 0;
+const NH_GLOBAL_KEY = "__honeycombActive";
+
+declare global {
+    interface Window {
+        __honeycombActive?: number;
+        __hivePageId?: string;
+    }
+}
+
 interface Pulse {
     x: number;
     y: number;
@@ -11,7 +22,7 @@ interface Pulse {
     hue: number;
 }
 
-export const NeuralHoneycomb: React.FC = () => {
+export const NeuralHoneycomb: React.FC<{ staticMode?: boolean }> = ({ staticMode = false }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -20,6 +31,25 @@ export const NeuralHoneycomb: React.FC = () => {
 
         const ctx = canvas.getContext('2d', { alpha: false });
         if (!ctx) return;
+        const runId = "pre-fix";
+        const logVersion = "nh_v4_parallax_snap";
+        const instanceId = ++nhInstanceCounter;
+        const pageId = window.__hivePageId || "unknown";
+        const generation = ++nhActiveGeneration;
+        let lastMouseLog = 0;
+        let lastRenderLog = 0;
+        let skippedFrames = 0;
+        let isActive = true;
+        if (window[NH_GLOBAL_KEY]) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "I", location: 'NeuralHoneycomb.tsx:init', message: 'nh_global_block', data: { instanceId, existing: window[NH_GLOBAL_KEY] }, timestamp: Date.now() }) }).catch(() => { });
+            // #endregion
+            return;
+        }
+        window[NH_GLOBAL_KEY] = instanceId;
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "A", location: 'NeuralHoneycomb.tsx:init', message: 'nh_init', data: { instanceId, generation, pageId, logVersion, staticMode, dpr: window.devicePixelRatio, visibility: document.visibilityState }, timestamp: Date.now() }) }).catch(() => { });
+        // #endregion
 
         // Configuration
         const HEX_SIZE = 100; // Even larger honeycombs (was 60, requested larger)
@@ -43,22 +73,69 @@ export const NeuralHoneycomb: React.FC = () => {
         // Pulses
         const pulses: Pulse[] = [];
 
-        // Resize handler
-        const handleResize = () => {
-            width = window.innerWidth;
-            height = window.innerHeight;
+        // Resize handler (rAF-throttled to prevent resize storm flicker)
+        let resizeRaf: number | null = null;
+        let pendingSize: { w: number; h: number } | null = null;
+        const applyResize = () => {
+            if (!pendingSize) {
+                resizeRaf = null;
+                return;
+            }
+            const nextW = pendingSize.w;
+            const nextH = pendingSize.h;
+            const deltaW = Math.abs(nextW - width);
+            const deltaH = Math.abs(nextH - height);
+            if (deltaW < 2 && deltaH < 2) {
+                resizeRaf = null;
+                return;
+            }
+            width = nextW;
+            height = nextH;
             canvas.width = width;
             canvas.height = height;
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "B", location: 'NeuralHoneycomb.tsx:resize', message: 'nh_resize', data: { instanceId, width, height, canvasWidth: canvas.width, canvasHeight: canvas.height, deltaW, deltaH, dpr: window.devicePixelRatio }, timestamp: Date.now() }) }).catch(() => { });
+            // #endregion
+            resizeRaf = null;
+        };
+        const handleResize = () => {
+            pendingSize = { w: window.innerWidth, h: window.innerHeight };
+            if (resizeRaf !== null) return;
+            resizeRaf = requestAnimationFrame(applyResize);
         };
         window.addEventListener('resize', handleResize);
         handleResize();
-
-        // Mouse move handler
-        const handleMouseMove = (e: MouseEvent) => {
-            targetLight.x = e.clientX;
-            targetLight.y = e.clientY;
+        const handleVisibility = () => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "K", location: 'NeuralHoneycomb.tsx:visibility', message: 'nh_visibility', data: { instanceId, pageId, visibility: document.visibilityState, hasFocus: document.hasFocus() }, timestamp: Date.now() }) }).catch(() => { });
+            // #endregion
         };
-        window.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        // Mouse move handler (throttled via rAF to prevent UI thrash)
+        let mouseRaf: number | null = null;
+        let pendingMouse: { x: number; y: number } | null = null;
+        const handleMouseMove = (e: MouseEvent) => {
+            pendingMouse = { x: e.clientX, y: e.clientY };
+            if (mouseRaf !== null) return;
+            mouseRaf = requestAnimationFrame(() => {
+                if (pendingMouse) {
+                    targetLight.x = pendingMouse.x;
+                    targetLight.y = pendingMouse.y;
+                }
+                const now = Date.now();
+                if (now - lastMouseLog > 500) {
+                    lastMouseLog = now;
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "C", location: 'NeuralHoneycomb.tsx:mousemove', message: 'nh_mouse_rAF', data: { instanceId, pageId, x: targetLight.x, y: targetLight.y }, timestamp: now }) }).catch(() => { });
+                    // #endregion
+                }
+                mouseRaf = null;
+            });
+        };
+        if (!staticMode) {
+            window.addEventListener('mousemove', handleMouseMove);
+        }
 
         // Helper: Snap to nearest grid vertex
         const snapToVertex = (x: number, y: number) => {
@@ -94,16 +171,37 @@ export const NeuralHoneycomb: React.FC = () => {
         }
 
         // Animation Loop
-        const render = () => {
+        const targetFps = 30;
+        const frameInterval = 1000 / targetFps;
+        let lastTime = 0;
+
+        const drawFrame = (time: number) => {
+            if (generation !== nhActiveGeneration) {
+                isActive = false;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "H", location: 'NeuralHoneycomb.tsx:render', message: 'nh_generation_block', data: { instanceId, generation, activeGeneration: nhActiveGeneration }, timestamp: Date.now() }) }).catch(() => { });
+                // #endregion
+                return;
+            }
+            if (!isActive) return;
+            const renderStart = performance.now();
+            if (!staticMode && time - lastTime < frameInterval) {
+                skippedFrames += 1;
+                animationId = requestAnimationFrame(drawFrame);
+                return;
+            }
+            lastTime = time;
             frame++;
 
             // Update lighting (Lerp)
             lightX += (targetLight.x - lightX) * 0.1;
             lightY += (targetLight.y - lightY) * 0.1;
 
-            // Parallax offset (reduced for subtlety)
-            const parallaxX = (lightX - width / 2) * 0.01;
-            const parallaxY = (lightY - height / 2) * 0.01;
+            // Parallax offset (snap to whole pixels to avoid shimmer/flicker)
+            const parallaxXRaw = (lightX - width / 2) * 0.01;
+            const parallaxYRaw = (lightY - height / 2) * 0.01;
+            const parallaxX = Math.round(parallaxXRaw);
+            const parallaxY = Math.round(parallaxYRaw);
 
             // Clear Background
             ctx.fillStyle = '#07070a';
@@ -119,6 +217,10 @@ export const NeuralHoneycomb: React.FC = () => {
             const endRow = Math.ceil(height / ROW_HEIGHT) + 2;
             const startCol = -2;
             const endCol = Math.ceil(width / HEX_WIDTH) + 2;
+            const hexCount = (endRow - startRow) * (endCol - startCol);
+            let drawnHexes = 0;
+            let minOpacity = 1;
+            let maxOpacity = 0;
 
             for (let r = startRow; r < endRow; r++) {
                 for (let q = startCol; q < endCol; q++) {
@@ -151,24 +253,26 @@ export const NeuralHoneycomb: React.FC = () => {
                     const gColor = 92 + (158 - 92) * normalizedPos;
                     const bColor = 246 + (11 - 246) * normalizedPos;
 
-                    if (finalOpacity > 0.005) {
-                        ctx.strokeStyle = `rgba(${Math.round(rColor)}, ${Math.round(gColor)}, ${Math.round(bColor)}, ${finalOpacity})`;
-                        ctx.beginPath();
-                        const currentRadius = HEX_SIZE * breathingScale;
-                        for (let i = 0; i < 6; i++) {
-                            const angle = (Math.PI / 180) * (30 + 60 * i);
-                            const vx = cx + currentRadius * Math.cos(angle);
-                            const vy = cy + currentRadius * Math.sin(angle);
-                            if (i === 0) ctx.moveTo(vx, vy);
-                            else ctx.lineTo(vx, vy);
-                        }
-                        ctx.closePath();
-                        ctx.stroke();
+                    drawnHexes += 1;
+                    if (finalOpacity < minOpacity) minOpacity = finalOpacity;
+                    if (finalOpacity > maxOpacity) maxOpacity = finalOpacity;
+                    ctx.strokeStyle = `rgba(${Math.round(rColor)}, ${Math.round(gColor)}, ${Math.round(bColor)}, ${finalOpacity})`;
+                    ctx.beginPath();
+                    const currentRadius = HEX_SIZE * breathingScale;
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (Math.PI / 180) * (30 + 60 * i);
+                        const vx = cx + currentRadius * Math.cos(angle);
+                        const vy = cy + currentRadius * Math.sin(angle);
+                        if (i === 0) ctx.moveTo(vx, vy);
+                        else ctx.lineTo(vx, vy);
                     }
+                    ctx.closePath();
+                    ctx.stroke();
                 }
             }
 
             // Update and Draw Pulses
+            let pulsesDrawn = 0;
             pulses.forEach(p => {
                 const dx = Math.cos(p.angle) * p.speed;
                 const dy = Math.sin(p.angle) * p.speed;
@@ -230,31 +334,67 @@ export const NeuralHoneycomb: React.FC = () => {
                 const alpha = proximity * 0.9; // Hide pulses in the dark
 
                 if (alpha > 0.01) {
+                    pulsesDrawn += 1;
+                    // Draw core
                     ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
                     ctx.fill();
 
-                    ctx.shadowBlur = 5 + proximity * 15;
-                    ctx.shadowColor = '#c084fc';
-                    ctx.fillStyle = `rgba(192, 132, 252, ${alpha})`;
+                    // Draw Bloom (Glow) - Optimized
+                    // Using simple arc with low alpha for bloom effect is much faster than gradients or shadowBlur
+                    ctx.fillStyle = `rgba(192, 132, 252, ${alpha * 0.3})`;
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, bloomSize, 0, Math.PI * 2);
+                    ctx.arc(p.x, p.y, bloomSize * 2, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.shadowBlur = 0;
                 }
             });
 
             ctx.restore();
-            requestAnimationFrame(render);
+            if (time - lastRenderLog > 1000) {
+                lastRenderLog = time;
+                const renderMs = performance.now() - renderStart;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "D", location: 'NeuralHoneycomb.tsx:render', message: 'nh_render', data: { instanceId, pageId, logVersion, frame, skippedFrames, renderMs, width, height, hexCount, drawnHexes, minOpacity, maxOpacity, pulseCount: PULSE_COUNT, pulsesDrawn, lightX, lightY, parallaxXRaw, parallaxYRaw, parallaxX, parallaxY, visibility: document.visibilityState, hasFocus: document.hasFocus() }, timestamp: Date.now() }) }).catch(() => { });
+                // #endregion
+                skippedFrames = 0;
+            }
+            if (!staticMode) {
+                animationId = requestAnimationFrame(drawFrame);
+            }
         };
 
-        const animationId = requestAnimationFrame(render);
+        let animationId = 0;
+        if (staticMode) {
+            drawFrame(0);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "N", location: 'NeuralHoneycomb.tsx:static', message: 'nh_static_draw', data: { instanceId, pageId }, timestamp: Date.now() }) }).catch(() => { });
+            // #endregion
+        } else {
+            animationId = requestAnimationFrame(drawFrame);
+        }
 
         return () => {
+            isActive = false;
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            if (mouseRaf !== null) {
+                cancelAnimationFrame(mouseRaf);
+            }
+            if (resizeRaf !== null) {
+                cancelAnimationFrame(resizeRaf);
+            }
             cancelAnimationFrame(animationId);
+            if (window[NH_GLOBAL_KEY] === instanceId) {
+                delete window[NH_GLOBAL_KEY];
+            }
+            if (generation === nhActiveGeneration) {
+                nhActiveGeneration = 0;
+            }
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "H", location: 'NeuralHoneycomb.tsx:cleanup', message: 'nh_cleanup', data: { instanceId, generation }, timestamp: Date.now() }) }).catch(() => { });
+            // #endregion
         };
     }, []);
 
@@ -263,7 +403,7 @@ export const NeuralHoneycomb: React.FC = () => {
         <canvas 
             ref={canvasRef} 
             className="fixed inset-0 block w-full h-full pointer-events-none z-0" 
-            style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0 }}
+            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}
         />
     );
 };

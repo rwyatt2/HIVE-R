@@ -60,13 +60,13 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
                 size="md"
                 className={cn(
                     "transition-transform duration-300",
-                    isActive && "scale-110 drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]",
+                    isActive && "scale-110",
                     selected && "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-full"
                 )}
             />
 
             {isThinking && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap animate-in fade-in zoom-in slide-in-from-bottom-2">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground px-2 py-1 rounded text-xs whitespace-nowrap animate-in fade-in zoom-in slide-in-from-bottom-2 shadow-md border border-border">
                     Thinking...
                 </div>
             )}

@@ -1,36 +1,141 @@
 /**
  * HIVE-R Landing Page - "The Awakening"
  * 
- * Award-winning landing page using Bionic Minimalism design system.
- * No external CSS - fully Tailwind with design tokens.
+ * Enterprise Minimal Design System (Vercel/Anthropic inspired).
+ * Clean, typography-driven, functional.
  */
 
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import {
     ArrowRight, Zap, Shield, Rocket, Code2, Users, Eye, Layers, Bot, ChevronRight, Play, Star, Activity,
     Globe, Briefcase, ClipboardList, Search, Palette, Accessibility, GitBranch, ShieldCheck,
     Hammer, FlaskConical, FileText, Hexagon, MessageCircle, DollarSign, CalendarClock, BrainCircuit,
     CheckCircle2, X, type LucideIcon
 } from 'lucide-react';
-
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 // ─── Agent Data ─────────────────────────────────────────────────────────────
-const agents: { id: string; name: string; Icon: LucideIcon; role: string; color: string }[] = [
-    { id: 'router', name: 'Router', Icon: Globe, role: 'Orchestrator', color: '#6366F1' },
-    { id: 'founder', name: 'Founder', Icon: Briefcase, role: 'Strategy', color: '#8B5CF6' },
-    { id: 'pm', name: 'PM', Icon: ClipboardList, role: 'Requirements', color: '#A78BFA' },
-    { id: 'ux', name: 'UX Researcher', Icon: Search, role: 'User Insights', color: '#C4B5FD' },
-    { id: 'designer', name: 'Designer', Icon: Palette, role: 'UI/UX', color: '#F472B6' },
-    { id: 'a11y', name: 'A11y', Icon: Accessibility, role: 'Accessibility', color: '#34D399' },
-    { id: 'planner', name: 'Planner', Icon: GitBranch, role: 'Architecture', color: '#06B6D4' },
-    { id: 'security', name: 'Security', Icon: ShieldCheck, role: 'Security', color: '#EF4444' },
-    { id: 'builder', name: 'Builder', Icon: Hammer, role: 'Code Gen', color: '#F59E0B' },
-    { id: 'reviewer', name: 'Reviewer', Icon: Eye, role: 'Code Review', color: '#10B981' },
-    { id: 'tester', name: 'Tester', Icon: FlaskConical, role: 'QA', color: '#3B82F6' },
-    { id: 'writer', name: 'Tech Writer', Icon: FileText, role: 'Docs', color: '#64748B' },
-    { id: 'sre', name: 'SRE', Icon: Rocket, role: 'Deploy', color: '#F97316' },
+const agents: { id: string; name: string; Icon: LucideIcon; role: string; description: string; capabilities?: string[]; color: string }[] = [
+    { 
+        id: 'router', 
+        name: 'Router', 
+        Icon: Globe, 
+        role: 'Orchestrator', 
+        description: "Coordinates the entire swarm.",
+        capabilities: ["Route requests", "Manage state", "Error handling"],
+        color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20"
+    },
+    { 
+        id: 'founder', 
+        name: 'Founder', 
+        Icon: Briefcase, 
+        role: 'Strategy', 
+        description: "Defines product vision and goals.",
+        capabilities: ["Market analysis", "Feature prioritization", "Roadmap planning"],
+        color: "text-amber-400 bg-amber-400/10 border-amber-400/20"
+    },
+    { 
+        id: 'pm', 
+        name: 'PM', 
+        Icon: ClipboardList, 
+        role: 'Requirements', 
+        description: "Translates vision into specs.",
+        capabilities: ["User stories", "Acceptance criteria", "Scope management"],
+        color: "text-amber-400 bg-amber-400/10 border-amber-400/20"
+    },
+    { 
+        id: 'ux', 
+        name: 'UX Researcher', 
+        Icon: Search, 
+        role: 'User Insights', 
+        description: "Analyzes user needs and flows.",
+        capabilities: ["User personas", "Journey mapping", "Usability testing"],
+        color: "text-pink-400 bg-pink-400/10 border-pink-400/20"
+    },
+    { 
+        id: 'designer', 
+        name: 'Designer', 
+        Icon: Palette, 
+        role: 'UI/UX', 
+        description: "Creates visual design systems.",
+        capabilities: ["Design systems", "Component libraries", "Responsive layouts"],
+        color: "text-pink-400 bg-pink-400/10 border-pink-400/20"
+    },
+    { 
+        id: 'a11y', 
+        name: 'A11y', 
+        Icon: Accessibility, 
+        role: 'Accessibility', 
+        description: "Ensures WCAG compliance.",
+        capabilities: ["WCAG audits", "Screen reader testing", "Contrast checks"],
+        color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+    },
+    { 
+        id: 'planner', 
+        name: 'Planner', 
+        Icon: GitBranch, 
+        role: 'Architecture', 
+        description: "Structures the codebase.",
+        capabilities: ["System design", "Database schema", "API design"],
+        color: "text-blue-400 bg-blue-400/10 border-blue-400/20"
+    },
+    { 
+        id: 'security', 
+        name: 'Security', 
+        Icon: ShieldCheck, 
+        role: 'Security', 
+        description: "Audits for vulnerabilities.",
+        capabilities: ["Dependency scanning", "Code analysis", "Penetration testing"],
+        color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+    },
+    { 
+        id: 'builder', 
+        name: 'Builder', 
+        Icon: Hammer, 
+        role: 'Code Gen', 
+        description: "Writes production-ready code.",
+        capabilities: ["React/TypeScript", "Node.js", "Tailwind CSS"],
+        color: "text-blue-400 bg-blue-400/10 border-blue-400/20"
+    },
+    { 
+        id: 'reviewer', 
+        name: 'Reviewer', 
+        Icon: Eye, 
+        role: 'Code Review', 
+        description: "Optimizes and refactors code.",
+        capabilities: ["Code quality", "Performance tuning", "Best practices"],
+        color: "text-blue-400 bg-blue-400/10 border-blue-400/20"
+    },
+    { 
+        id: 'tester', 
+        name: 'Tester', 
+        Icon: FlaskConical, 
+        role: 'QA', 
+        description: "Runs integration tests.",
+        capabilities: ["Unit testing", "E2E testing", "Regression testing"],
+        color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+    },
+    { 
+        id: 'writer', 
+        name: 'Tech Writer', 
+        Icon: FileText, 
+        role: 'Docs', 
+        description: "Generates documentation.",
+        capabilities: ["API docs", "User guides", "README generation"],
+        color: "text-violet-400 bg-violet-400/10 border-violet-400/20"
+    },
+    { 
+        id: 'sre', 
+        name: 'SRE', 
+        Icon: Rocket, 
+        role: 'Deploy', 
+        description: "Manages infrastructure.",
+        capabilities: ["CI/CD pipelines", "Cloud deployment", "Monitoring"],
+        color: "text-orange-400 bg-orange-400/10 border-orange-400/20"
+    },
 ];
 
 const metrics = [
@@ -46,661 +151,433 @@ const steps = [
     { num: '03', title: 'Ship', desc: 'Get a production-ready app with monitoring, security, and everything needed to go live.', icon: Rocket },
 ];
 
-const stepVisuals: Record<string, JSX.Element> = {
-    Describe: (
-        <div className="rounded-2xl border border-white/6 bg-void-900/50 backdrop-blur-xl p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs text-starlight-400">
-                <span>Product Brief</span>
-                <span className="px-2 py-0.5 rounded-full bg-electric-violet/10 text-electric-violet">Draft</span>
-            </div>
-            <div className="space-y-2">
-                <div className="h-2 w-3/4 rounded-full bg-white/10" />
-                <div className="h-2 w-5/6 rounded-full bg-white/10" />
-                <div className="h-2 w-2/3 rounded-full bg-white/10" />
-            </div>
-            <div className="flex items-center gap-2 text-xs text-starlight-400">
-                <div className="h-2 w-2 rounded-full bg-electric-violet animate-pulse" />
-                HIVE-R is listening…
-            </div>
-        </div>
-    ),
-    Collaborate: (
-        <div className="rounded-2xl border border-white/6 bg-void-900/50 backdrop-blur-xl p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs text-starlight-400">
-                <span>Live Collaboration</span>
-                <span className="px-2 py-0.5 rounded-full bg-cyber-cyan/10 text-cyber-cyan">Active</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-                {['UX', 'Builder', 'Security', 'Reviewer', 'Tester', 'SRE'].map(label => (
-                    <div key={label} className="rounded-lg border border-white/6 bg-white/4 px-2 py-1 text-[10px] text-starlight-300 text-center">
-                        {label}
-                    </div>
-                ))}
-            </div>
-            <div className="h-2 w-full rounded-full bg-white/6 overflow-hidden">
-                <div className="h-full w-2/3 bg-linear-to-r from-electric-violet to-cyber-cyan" />
-            </div>
-        </div>
-    ),
-    Ship: (
-        <div className="rounded-2xl border border-white/6 bg-void-900/50 backdrop-blur-xl p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs text-starlight-400">
-                <span>Deployment</span>
-                <span className="px-2 py-0.5 rounded-full bg-plasma-green/10 text-plasma-green">Ready</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-lg border border-white/6 bg-white/4 px-2 py-2 text-center">
-                    <Rocket className="w-4 h-4 text-honey mx-auto mb-1" />
-                    <div className="text-[10px] text-starlight-300">Deploy</div>
-                </div>
-                <div className="rounded-lg border border-white/6 bg-white/4 px-2 py-2 text-center">
-                    <ShieldCheck className="w-4 h-4 text-electric-violet mx-auto mb-1" />
-                    <div className="text-[10px] text-starlight-300">Secure</div>
-                </div>
-                <div className="rounded-lg border border-white/6 bg-white/4 px-2 py-2 text-center">
-                    <Activity className="w-4 h-4 text-cyber-cyan mx-auto mb-1" />
-                    <div className="text-[10px] text-starlight-300">Monitor</div>
-                </div>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-starlight-400">
-                <div className="h-2 w-2 rounded-full bg-plasma-green" />
-                Production healthy
-            </div>
-        </div>
-    ),
-};
-
-// ─── Animated Counter ───────────────────────────────────────────────────────
-function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
-    const [display, setDisplay] = useState(target);
-    const ref = useRef<HTMLSpanElement>(null);
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting) setVisible(true);
-        }, { threshold: 0.5 });
-        if (ref.current) observer.observe(ref.current);
-        return () => observer.disconnect();
-    }, []);
-
-    useEffect(() => {
-        if (!visible) return;
-        const num = parseInt(target.replace(/[^0-9]/g, ''));
-        if (isNaN(num)) { return; }
-        let current = 0;
-        const step = Math.ceil(num / 30);
-        const interval = setInterval(() => {
-            current += step;
-            if (current >= num) { current = num; clearInterval(interval); }
-            setDisplay(target.replace(/[0-9.]+/, current.toString()));
-        }, 40);
-        return () => clearInterval(interval);
-    }, [visible, target]);
-
-    return <span ref={ref}>{display}{suffix}</span>;
-}
-
-import { NeuralHoneycomb } from '../components/NeuralHoneycomb';
-import { NeuralAgentCluster } from '../components/NeuralAgentCluster';
-import { NeuralHexNode } from '../components/NeuralHexNode';
-
 // ─── Main Landing Page ──────────────────────────────────────────────────────
 export function LandingPage() {
-    const [activeSwarmAgent, setActiveSwarmAgent] = useState<typeof agents[0] | null>(null);
+    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+    const { scrollY } = useScroll();
+    const backgroundY = useTransform(scrollY, [0, 1000], [0, 200]);
+    const backgroundOpacity = useTransform(scrollY, [0, 300], [0.4, 0.1]);
+
+    const fadeInUp = {
+        hidden: { opacity: 0, y: 60 },
+        visible: { 
+            opacity: 1, 
+            y: 0, 
+            transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } 
+        }
+    };
+
+    const staggerContainer = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2
+            }
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-transparent text-white overflow-x-hidden selection:bg-electric-violet/30 selection:text-white">
+        <div className="min-h-screen bg-background text-foreground overflow-x-hidden font-sans selection:bg-primary/10">
+            {/* ─── Background Grid ─── */}
+            <motion.div 
+                style={{ y: backgroundY, opacity: backgroundOpacity }}
+                className="fixed inset-0 bg-honeycomb-pattern pointer-events-none z-0" 
+            />
+            <div className="fixed inset-0 bg-linear-to-b from-transparent via-background/50 to-background pointer-events-none z-0" />
+
             {/* ─── HERO ─────────────────────────────────────────────── */}
-            <NeuralHoneycomb />
-
-            <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 pt-32 pb-20 pointer-events-none min-h-screen flex items-center">
-                <div className="grid lg:grid-cols-2 gap-16 items-center pointer-events-auto w-full">
-                    {/* Left: Copy */}
-                    <div className="space-y-8 text-left">
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/4 border border-white/8 backdrop-blur-sm text-sm">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            <span className="text-starlight-400">Now in Public Beta</span>
-                            <ChevronRight className="w-3.5 h-3.5 text-starlight-400" />
-                        </div>
-
-                        <motion.h1
-                            className="text-5xl lg:text-7xl font-bold leading-[1.05] tracking-tight"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, ease: 'easeOut' }}
-                        >
-                            <span className="block text-white">Your Portable</span>
-                            <span className="block bg-linear-to-r from-[#6366F1] to-[#F59E0B] bg-clip-text text-transparent">
-                                AI Software
-                            </span>
-                            <span className="block text-white">Team.</span>
-                        </motion.h1>
-
-                        <motion.p
-                            className="text-lg lg:text-xl text-starlight-400 max-w-lg leading-relaxed"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
-                        >
-                            Stop paying $15k–50k for an MVP that takes months. Describe your idea in plain English
-                            and 13 AI specialists will design, build, test, and deploy it - in about 15 minutes.
-                        </motion.p>
-
-                        {/* CTA Group */}
-                        <motion.div
-                            className="flex flex-col sm:flex-row gap-4 pt-2"
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-                        >
-                            <Link
-                                to="/demo"
-                                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-linear-to-r from-[#6366F1] to-[#8B5CF6] rounded-xl font-semibold text-white shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300 hover:-translate-y-0.5"
-                            >
-                                <Play className="w-4 h-4 fill-current" />
-                                Try Live Demo
-                                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                            </Link>
-                            <Link
-                                to="/docs"
-                                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/4 border border-white/10 rounded-xl font-medium text-starlight-400 hover:text-white hover:bg-white/8 hover:border-white/15 transition-all duration-300"
-                            >
-                                Documentation
-                            </Link>
-                        </motion.div>
-
-                        {/* Social proof */}
-                        <div className="flex items-center gap-6 pt-4">
-                            <div className="flex -space-x-2">
-                                {['#6366F1', '#F59E0B', '#06B6D4', '#EF4444', '#10B981'].map((c, i) => (
-                                    <div key={i} className="w-8 h-8 rounded-full border-2 border-void-950 flex items-center justify-center text-xs" style={{ background: c }}>
-                                        {['R', 'F', 'P', 'D', 'B'][i]}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="text-sm text-starlight-400">
-                                <div className="flex items-center gap-1">
-                                    {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
-                                </div>
-                                <span>Loved by 500+ founders</span>
-                            </div>
-                        </div>
+            <div className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-32 pb-20 flex flex-col items-center text-center">
+                
+                {/* Badge */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="mb-8"
+                >
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-default">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        Public Beta
+                        <span className="mx-1 text-border">|</span>
+                        v1.0.0
                     </div>
+                </motion.div>
 
-                    {/* Right: Neural Agent Cluster (New Graphic) */}
-                    <div className="hidden lg:flex items-center justify-center pointer-events-auto">
-                        <NeuralAgentCluster />
-                    </div>
-                </div>
+                {/* Headline */}
+                <motion.h1
+                    className="text-5xl md:text-7xl font-bold tracking-tight mb-6 max-w-4xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                    Your Portable <br className="hidden md:block" />
+                    <span className="bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300 bg-clip-text text-transparent">AI Software Team.</span>
+                </motion.h1>
+
+                {/* Subtext */}
+                <motion.p
+                    className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                    Stop paying $15k–50k for an MVP that takes months. Describe your idea in plain English
+                    and 13 AI specialists will design, build, test, and deploy it — in about 15 minutes.
+                </motion.p>
+
+                {/* CTA Group */}
+                <motion.div
+                    className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                    <Link to="/demo">
+                        <Button size="lg" className="w-full sm:w-auto text-base h-12 px-8">
+                            Try Live Demo
+                            <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                    </Link>
+                    <Link to="/docs">
+                        <Button variant="outline" size="lg" className="w-full sm:w-auto text-base h-12 px-8 bg-background/50 backdrop-blur-sm">
+                            Documentation
+                        </Button>
+                    </Link>
+                </motion.div>
+
+                {/* Social Proof */}
+                <motion.div
+                    className="mt-12 pt-8 border-t border-border/40 w-full max-w-md flex justify-between items-center text-sm text-muted-foreground"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                >
+                   <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-foreground text-foreground" />
+                        <Star className="w-4 h-4 fill-foreground text-foreground" />
+                        <Star className="w-4 h-4 fill-foreground text-foreground" />
+                        <Star className="w-4 h-4 fill-foreground text-foreground" />
+                        <Star className="w-4 h-4 fill-foreground text-foreground" />
+                        <span className="ml-2 font-medium text-foreground">500+</span> Founders
+                   </div>
+                   <div className="h-4 w-px bg-border"></div>
+                   <div>
+                       <span className="font-medium text-foreground">$0</span> Beta Pricing
+                   </div>
+                </motion.div>
             </div>
 
             {/* ─── METRICS BAR ──────────────────────────────────────── */}
-            <section className="relative z-10 -mt-16">
-                <div className="max-w-5xl mx-auto px-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <section className="relative z-10 py-12 border-y border-border/40 bg-background/50 backdrop-blur-sm">
+                <div className="max-w-6xl mx-auto px-6">
+                    <motion.div 
+                        variants={staggerContainer}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-8"
+                    >
                         {metrics.map((m) => {
                             const Icon = m.icon;
                             return (
-                                <div key={m.label} className="bg-void-900/70 backdrop-blur-xl border border-white/6 rounded-2xl p-6 text-center group hover:bg-void-800/80 transition-colors">
-                                    <Icon className="w-5 h-5 mx-auto mb-3 text-starlight-400 group-hover:text-electric-violet transition-colors" />
-                                    <div className="text-2xl lg:text-3xl font-bold text-white mb-1 font-mono tracking-tight">
-                                        <AnimatedCounter target={m.value} />
+                                <motion.div key={m.label} variants={fadeInUp} className="flex flex-col items-center md:items-start space-y-2">
+                                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                        <Icon className="w-4 h-4 text-primary/60" />
+                                        <span className="text-sm font-medium uppercase tracking-wider">{m.label}</span>
                                     </div>
-                                    <div className="text-xs text-starlight-400 tracking-wide uppercase">{m.label}</div>
-                                </div>
+                                    <div className="text-3xl md:text-4xl font-bold text-foreground font-mono tracking-tighter">
+                                        {m.value}
+                                    </div>
+                                </motion.div>
                             );
                         })}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* ─── PAIN POINTS ─────────────────────────────────────── */}
-            <section id="features" className="relative py-24 lg:py-32">
-                <div className="max-w-5xl mx-auto px-6 lg:px-12">
-                    <div className="text-center mb-16 space-y-4">
-                        <h2 className="text-3xl lg:text-4xl font-bold tracking-tight">
-                            Sound <span className="bg-gradient-to-r from-[#F59E0B] to-[#F97316] bg-clip-text text-transparent">familiar?</span>
-                        </h2>
-                    </div>
-
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[
-                            { Icon: MessageCircle, pain: '"I explained my idea 5 times and still got the wrong thing built"', label: 'Translation gap' },
-                            { Icon: DollarSign, pain: '"I spent $30k on a freelancer and the app breaks every week"', label: 'Wasted budget' },
-                            { Icon: CalendarClock, pain: '"My MVP was supposed to take 6 weeks - it\'s been 4 months"', label: 'Timeline creep' },
-                            { Icon: BrainCircuit, pain: '"React? Vue? PostgreSQL? I just want my product to work"', label: 'Tech overwhelm' },
-                            { Icon: ShieldCheck, pain: '"How do I know my app is secure enough to launch?"', label: 'Production anxiety' },
-                            { Icon: CheckCircle2, pain: '"HIVE-R built what I described in 15 minutes. It just works."', label: 'The HIVE-R moment', highlight: true },
-                        ].map(item => (
-                            <div key={item.label} className={`rounded-2xl p-6 border backdrop-blur-xl transition-all duration-300 ${item.highlight
-                                ? 'bg-void-900/70 border-electric-violet/40 hover:border-electric-violet/60 shadow-[0_0_30px_rgba(99,102,241,0.15)]'
-                                : 'bg-void-900/70 border-white/6 hover:border-white/10'
-                                }`}>
-                                <item.Icon className={`w-6 h-6 mb-3 ${item.highlight ? 'text-electric-violet' : 'text-starlight-400'}`} />
-                                <p className={`text-sm leading-relaxed italic mb-3 ${item.highlight ? 'text-white' : 'text-starlight-400'}`}>
-                                    {item.pain}
-                                </p>
-                                <div className={`text-xs font-medium tracking-wide uppercase ${item.highlight ? 'text-electric-violet' : 'text-starlight-700'}`}>
-                                    {item.label}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ─── HOW IT WORKS ─────────────────────────────────────── */}
-            <section id="how-it-works" className="relative py-32 lg:py-40">
-                <div className="max-w-6xl mx-auto px-6 lg:px-12">
-                    {/* Section header */}
-                    <div className="text-center mb-20 space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-electric-violet/10 border border-electric-violet/20 text-sm text-electric-violet font-medium">
-                            <Layers className="w-3.5 h-3.5" />
-                            How It Works
-                        </div>
-                        <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">
-                            Three steps to <span className="bg-gradient-to-r from-[#6366F1] to-[#06B6D4] bg-clip-text text-transparent">production</span>
-                        </h2>
-                        <p className="text-lg text-starlight-400 max-w-2xl mx-auto">
-                            No coding required. No tech decisions. Just describe what you want and your AI team builds it.
+            {/* ─── FEATURES GRID ─────────────────────────────────────── */}
+            <section className="relative py-32 z-10">
+                <div className="max-w-6xl mx-auto px-6">
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={fadeInUp}
+                        className="mb-16"
+                    >
+                        <h2 className="text-3xl font-bold tracking-tight mb-4">The new standard for building software.</h2>
+                        <p className="text-lg text-muted-foreground max-w-2xl">
+                            Traditional agencies are slow, expensive, and opaque. HIVE-R is instant, transparent, and free during beta.
                         </p>
-                    </div>
+                    </motion.div>
 
-                    {/* Steps */}
-                    <div className="grid md:grid-cols-3 gap-8">
+                    <motion.div 
+                        variants={staggerContainer}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        className="grid md:grid-cols-3 gap-6"
+                    >
+                        {[
+                            { title: 'Zero Friction', desc: 'No setup, no configs. Just describe and deploy.', icon: Zap, color: 'text-amber-400 bg-amber-400/10' },
+                            { title: 'Full Transparency', desc: 'Watch code being written in real-time.', icon: Eye, color: 'text-blue-400 bg-blue-400/10' },
+                            { title: 'Enterprise Grade', desc: 'Security, testing, and docs included by default.', icon: ShieldCheck, color: 'text-emerald-400 bg-emerald-400/10' },
+                            { title: 'Design System', desc: 'Beautiful, accessible UI generated automatically.', icon: Palette, color: 'text-pink-400 bg-pink-400/10' },
+                            { title: 'Instant Deploy', desc: 'One-click deployment to global edge network.', icon: Rocket, color: 'text-orange-400 bg-orange-400/10' },
+                            { title: 'Cost Efficient', desc: 'Fraction of the cost of traditional dev teams.', icon: DollarSign, color: 'text-green-400 bg-green-400/10' },
+                        ].map((feature, i) => (
+                            <motion.div key={i} variants={fadeInUp}>
+                                <Card className="bg-background/40 hover:bg-secondary/40 transition-colors border-border/60 h-full group">
+                                    <CardContent className="p-6 space-y-4">
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${feature.color.split(' ')[1]}`}>
+                                            <feature.icon className={`w-5 h-5 ${feature.color.split(' ')[0]}`} />
+                                        </div>
+                                        <h3 className="font-semibold text-lg">{feature.title}</h3>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            {feature.desc}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ─── AGENT GRID (Replaces Swarm) ───────────────────────── */}
+            <section className="relative py-32 z-10 border-t border-border/40">
+                <div className="max-w-6xl mx-auto px-6">
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={fadeInUp}
+                        className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6"
+                    >
+                        <div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border text-xs font-medium text-muted-foreground mb-4">
+                                <Users className="w-3 h-3" />
+                                The Team
+                            </div>
+                            <h2 className="text-3xl font-bold tracking-tight mb-2">Meet the Swarm.</h2>
+                            <p className="text-muted-foreground max-w-xl">
+                                13 specialized AI agents working in concert to deliver your product.
+                            </p>
+                        </div>
+                    </motion.div>
+
+                    <motion.div 
+                        variants={staggerContainer}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-50px" }}
+                        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                    >
+                        {agents.map((agent) => (
+                            <motion.div 
+                                layoutId={`agent-card-${agent.id}`}
+                                variants={fadeInUp}
+                                key={agent.id}
+                                className="group relative p-4 rounded-xl border border-border/60 bg-background/40 hover:bg-secondary/60 hover:border-border transition-all duration-200 cursor-pointer"
+                                onClick={() => setSelectedAgentId(agent.id)}
+                            >
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className={`p-2 rounded-lg transition-colors ${agent.color.split(' ')[1]}`}>
+                                        <agent.Icon className={`w-5 h-5 ${agent.color.split(' ')[0]}`} />
+                                    </div>
+                                    <span className={`text-[10px] uppercase tracking-wider font-medium px-2 py-1 rounded bg-secondary/50 text-muted-foreground`}>
+                                        {agent.role}
+                                    </span>
+                                </div>
+                                <h3 className="font-semibold text-sm mb-1">{agent.name}</h3>
+                                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                    {agent.description}
+                                </p>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ─── AGENT DETAIL OVERLAY ──────────────────────────────── */}
+            <AnimatePresence>
+                {selectedAgentId && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                            onClick={() => setSelectedAgentId(null)}
+                        >
+                            {/* We animate the card layout based on the ID */}
+                            {agents.filter(a => a.id === selectedAgentId).map(agent => (
+                                <motion.div
+                                    layoutId={`agent-card-${agent.id}`}
+                                    key={agent.id}
+                                    className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden relative"
+                                    onClick={(e) => e.stopPropagation()} // Prevent closing when clicking card
+                                >
+                                    <button 
+                                        onClick={() => setSelectedAgentId(null)}
+                                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-secondary transition-colors"
+                                    >
+                                        <X className="w-4 h-4 text-muted-foreground" />
+                                    </button>
+
+                                    <div className="p-8">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${agent.color.split(' ')[1]}`}>
+                                                <agent.Icon className={`w-8 h-8 ${agent.color.split(' ')[0]}`} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-2xl font-bold">{agent.name}</h3>
+                                                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-secondary/50 text-xs font-medium text-muted-foreground border border-border mt-1">
+                                                    {agent.role}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Role Description</h4>
+                                                <p className="text-foreground leading-relaxed">
+                                                    {agent.description}
+                                                </p>
+                                            </div>
+
+                                            {agent.capabilities && (
+                                                <div>
+                                                    <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Capabilities</h4>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {agent.capabilities.map(cap => (
+                                                            <div key={cap} className={`flex items-center gap-2 text-sm text-foreground p-2 rounded-lg border ${agent.color.split(' ')[2]} bg-opacity-50`}>
+                                                                <CheckCircle2 className={`w-4 h-4 ${agent.color.split(' ')[0]}`} />
+                                                                {cap}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-8 pt-6 border-t border-border flex justify-end">
+                                            <Button onClick={() => setSelectedAgentId(null)}>
+                                                Close
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+             {/* ─── HOW IT WORKS ─────────────────────────────────────── */}
+             <section id="how-it-works" className="relative py-32 border-t border-border/40 bg-secondary/20">
+                <div className="max-w-6xl mx-auto px-6">
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={fadeInUp}
+                        className="text-center mb-20 max-w-2xl mx-auto"
+                    >
+                        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
+                            From prompt to production.
+                        </h2>
+                        <p className="text-lg text-muted-foreground">
+                            Three simple steps to launch your next big idea.
+                        </p>
+                    </motion.div>
+
+                    <motion.div 
+                        variants={staggerContainer}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        className="grid md:grid-cols-3 gap-8"
+                    >
                         {steps.map((step, i) => {
                             const Icon = step.icon;
                             return (
-                                <div key={step.num} className="group relative">
-                                    {/* Connector line */}
+                                <motion.div key={step.num} variants={fadeInUp} className="relative">
+                                    {/* Connector */}
                                     {i < steps.length - 1 && (
-                                        <div className="hidden md:block absolute top-12 left-[calc(50%+60px)] w-[calc(100%-120px)] h-px bg-gradient-to-r from-white/10 to-white/5" />
+                                        <div className="hidden md:block absolute top-8 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-px bg-border border-t border-dashed border-border/60" />
                                     )}
-
-                                <div className="relative bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-8 hover:border-white/[0.12] hover:bg-void-900/60 transition-all duration-500 group-hover:-translate-y-1">
-                                        {/* Step number */}
-                                        <div className="flex items-center justify-between mb-6">
-                                            <span className="text-5xl font-bold text-white/[0.06] font-mono">{step.num}</span>
-                                            <div className="w-12 h-12 rounded-xl bg-electric-violet/10 border border-electric-violet/20 flex items-center justify-center group-hover:bg-electric-violet/20 transition-colors">
-                                                <Icon className="w-6 h-6 text-electric-violet" />
-                                            </div>
+                                    
+                                    <div className="relative z-10 bg-background border border-border rounded-2xl p-8 h-full hover:shadow-lg transition-shadow duration-300">
+                                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6 text-primary">
+                                            <Icon className="w-6 h-6" />
                                         </div>
-                                    <div className="mb-6">
-                                        {stepVisuals[step.title]}
+                                        <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                                        <p className="text-muted-foreground leading-relaxed">
+                                            {step.desc}
+                                        </p>
                                     </div>
-                                        <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
-                                        <p className="text-starlight-400 text-sm leading-relaxed">{step.desc}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* ─── DIFFERENTIATOR ──────────────────────────────────── */}
-            <section className="relative py-32">
-                <div className="max-w-6xl mx-auto px-6 lg:px-12">
-                    <div className="text-center mb-16 space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-reactor-red/10 border border-reactor-red/20 text-sm text-reactor-red font-medium">
-                            <Zap className="w-3.5 h-3.5" />
-                            Why Founders Choose HIVE-R
-                        </div>
-                        <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">
-                            Skip the <span className="bg-gradient-to-r from-reactor-red to-[#F97316] bg-clip-text text-transparent">agency hamster wheel</span>
-                        </h2>
-                        <p className="text-lg text-starlight-400 max-w-2xl mx-auto">
-                            No more waiting months for an MVP. No more burning through your runway on freelancers who miss deadlines.
-                            HIVE-R gives you the output of a full dev team - instantly.
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                        {/* Traditional path */}
-                        <div className="bg-void-900/40 border border-white/[0.06] rounded-2xl p-8 space-y-5 backdrop-blur-xl">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                                    <DollarSign className="w-5 h-5 text-starlight-400" />
-                                </div>
-                                <div>
-                                    <div className="font-semibold text-starlight-400">Traditional Path</div>
-                                    <div className="text-xs text-starlight-700">Freelancers &amp; agencies</div>
-                                </div>
-                            </div>
-                            {['2–3 months for a basic MVP', '$15k–$50k minimum investment', 'Scope creep & missed deadlines', 'Lost in translation - your vision gets diluted'].map(item => (
-                                <div key={item} className="flex items-center gap-3 text-sm text-starlight-400">
-                                    <div className="w-5 h-5 rounded-full bg-reactor-red/10 flex items-center justify-center">
-                                        <X className="w-3 h-3 text-reactor-red" />
-                                    </div>
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* HIVE-R */}
-                        <div className="bg-electric-violet/[0.06] border border-electric-violet/20 rounded-2xl p-8 space-y-5 relative overflow-hidden backdrop-blur-xl">
-                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-electric-violet/10 rounded-full blur-3xl" />
-                            <div className="relative flex items-center gap-3 mb-2">
-                                <div className="w-10 h-10 rounded-xl bg-electric-violet/15 border border-electric-violet/30 flex items-center justify-center">
-                                    <Hexagon className="w-5 h-5 text-electric-violet" />
-                                </div>
-                                <div>
-                                    <div className="font-semibold text-white">HIVE-R</div>
-                                    <div className="text-xs text-electric-violet">Your AI software team</div>
-                                </div>
-                            </div>
-                            {[
-                                'Idea to production-ready app in 15 minutes',
-                                '$0 - free during beta',
-                                'Built-in security, monitoring, and testing',
-                                'Describe in plain English - no technical jargon needed',
-                            ].map(item => (
-                                <div key={item} className="relative flex items-center gap-3 text-sm text-white">
-                                    <div className="w-5 h-5 rounded-full bg-electric-violet/20 border border-electric-violet/30 flex items-center justify-center">
-                                        <CheckCircle2 className="w-3 h-3 text-electric-violet" />
-                                    </div>
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ─── AGENT SHOWCASE ────────────────────────────────────── */}
-            <section className="relative py-32 overflow-hidden min-h-[900px] flex items-center justify-center">
-                {/* Background accent */}
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(99,102,241,0.06),transparent)]" />
-                <div className="absolute inset-0 bg-hex-pattern opacity-[0.08] pointer-events-none" />
-
-                <div className="relative w-full max-w-[1400px] mx-auto px-6 h-full flex flex-col items-center justify-center">
-                    
-                    {/* Center Text Block / Agent Info Hub */}
-                    <div className="absolute z-20 flex flex-col items-center justify-center text-center max-w-xl pointer-events-none min-h-[300px]">
-                        <AnimatePresence mode="wait">
-                            {activeSwarmAgent ? (
-                                <motion.div
-                                    key="agent-info"
-                                    initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-                                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                    exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-                                    transition={{ duration: 0.3 }}
-                                    className="flex flex-col items-center"
-                                >
-                                    <div 
-                                        className="w-24 h-24 rounded-2xl bg-void-900/50 backdrop-blur-xl border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(99,102,241,0.2)]"
-                                        style={{ borderColor: activeSwarmAgent.color }}
-                                    >
-                                        <activeSwarmAgent.Icon 
-                                            className="w-12 h-12" 
-                                            style={{ color: activeSwarmAgent.color, filter: `drop-shadow(0 0 10px ${activeSwarmAgent.color})` }} 
-                                        />
-                                    </div>
-                                    <h3 className="text-5xl font-bold text-white mb-3 tracking-tight">{activeSwarmAgent.name}</h3>
-                                    <div className="text-xl text-starlight-400 uppercase tracking-[0.2em] mb-6 font-mono" style={{ color: activeSwarmAgent.color }}>
-                                        {activeSwarmAgent.role}
-                                    </div>
-                                    <p className="text-xl text-starlight-300 italic max-w-md leading-relaxed">
-                                        "I handle {activeSwarmAgent.role.toLowerCase()} tasks for your project."
-                                    </p>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="default-title"
-                                    initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-                                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                                    exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-                                    transition={{ duration: 0.3 }}
-                                    className="flex flex-col items-center"
-                                >
-                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-honey/10 border border-honey/20 text-sm text-honey font-medium mb-6 backdrop-blur-md">
-                                        <Users className="w-3.5 h-3.5" />
-                                        The Swarm
-                                    </div>
-                                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                                        13 agents. <br />
-                                        <span className="bg-linear-to-r from-honey to-[#FBBF24] bg-clip-text text-transparent">One mission.</span>
-                                    </h2>
-                                    <p className="text-lg text-starlight-400 leading-relaxed drop-shadow-md">
-                                        Every agent is a specialist. Together they cover every discipline of software engineering.
-                                    </p>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* Agents - Organically placed around the text */}
-                    {/* Using a relative container for absolute positioning of agents */}
-                    <div className="relative w-[1400px] h-[1000px] hidden lg:block">
-                        {agents.map((agent, i) => {
-                            // Organic coordinates relative to center (0,0)
-                            // We place them in a broken ring/cloud formation
-                            // Left Side Clump
-                            const positions = [
-                                { x: -550, y: -220 },  // Top Left
-                                { x: -500, y: 0 },     // Mid Left
-                                { x: -550, y: 220 },   // Bottom Left
-                                { x: -350, y: -320 },  // High Top Left
-                                { x: -350, y: 320 },   // Low Bottom Left
-                                { x: -180, y: -420 },  // Top Spread
-                                { x: -180, y: 420 },   // Bottom Spread
-                                
-                                // Right Side Clump
-                                { x: 550, y: -220 },   // Top Right
-                                { x: 500, y: 0 },      // Mid Right
-                                { x: 550, y: 220 },    // Bottom Right
-                                { x: 350, y: -320 },   // High Top Right
-                                { x: 350, y: 320 },    // Low Bottom Right
-                                { x: 180, y: -420 },   // Top Spread
-                            ];
-
-                            const pos = positions[i] || { x: 0, y: 0 };
-                            
-                            return (
-                                <motion.div 
-                                    key={agent.name}
-                                    className="absolute left-1/2 top-1/2 pointer-events-auto"
-                                    style={{ 
-                                        x: pos.x, 
-                                        y: pos.y,
-                                        marginLeft: -86, // Half of width (173)
-                                        marginTop: -100   // Half of height (200)
-                                    }}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ 
-                                        duration: 0.8, 
-                                        delay: i * 0.1, 
-                                        type: "spring",
-                                        bounce: 0.4
-                                    }}
-                                >
-                                    <NeuralHexNode 
-                                        agent={agent} 
-                                        width={173} 
-                                        height={200} 
-                                        showLabel={false}
-                                        onHoverStart={() => setActiveSwarmAgent(agent)}
-                                        onHoverEnd={() => setActiveSwarmAgent(null)}
-                                    />
                                 </motion.div>
                             );
                         })}
-                    </div>
-
-                    {/* Mobile Grid Fallback */}
-                    <div className="lg:hidden grid grid-cols-2 gap-4 mt-12 w-full max-w-md">
-                         {agents.map((agent) => (
-                            <div key={agent.name} className="flex justify-center">
-                                <NeuralHexNode 
-                                    agent={agent} 
-                                    width={100} 
-                                    height={115} 
-                                    showLabel={true}
-                                />
-                            </div>
-                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* ─── DEMO PREVIEW ─────────────────────────────────────── */}
-            <section className="relative py-32">
-                <div className="max-w-6xl mx-auto px-6 lg:px-12">
-                    <div className="text-center mb-16 space-y-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyber-cyan/10 border border-cyber-cyan/20 text-sm text-cyber-cyan font-medium">
-                            <Eye className="w-3.5 h-3.5" />
-                            See It In Action
-                        </div>
-                        <h2 className="text-4xl lg:text-5xl font-bold tracking-tight">
-                            Try a <span className="bg-gradient-to-r from-[#06B6D4] to-[#3B82F6] bg-clip-text text-transparent">prompt</span>
-                        </h2>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-4">
-                        {[
-                            { prompt: 'Build my SaaS landing page with signup', agents: ['Designer', 'Builder', 'Security'], time: '~4 min' },
-                            { prompt: 'Create a customer portal with billing', agents: ['Planner', 'Builder', 'Tester'], time: '~8 min' },
-                            { prompt: 'Build an internal dashboard for my team', agents: ['UX Researcher', 'Designer', 'Builder'], time: '~6 min' },
-                        ].map((demo) => (
-                            <Link
-                                key={demo.prompt}
-                                to={`/demo?prompt=${encodeURIComponent(demo.prompt)}`}
-                                className="group relative bg-void-900/40 backdrop-blur-xl border border-white/[0.06] rounded-2xl p-6 hover:border-electric-violet/30 hover:bg-void-900/60 transition-all duration-300 hover:-translate-y-0.5"
-                            >
-                                <div className="text-base font-medium text-white mb-4 group-hover:text-electric-violet transition-colors">
-                                    "{demo.prompt}"
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex -space-x-1.5">
-                                        {demo.agents.map(name => {
-                                            const agent = agents.find(a => a.name === name);
-                                            const IconComponent = agent?.Icon || Bot;
-                                            return (
-                                                <div key={name} className="w-7 h-7 rounded-full bg-void-800 border border-white/10 flex items-center justify-center">
-                                                    <IconComponent className="w-3.5 h-3.5" style={{ color: agent?.color || '#6366F1' }} />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-starlight-400">
-                                        <Zap className="w-3 h-3" />
-                                        {demo.time}
-                                    </div>
-                                </div>
-                                <div className="mt-4 flex items-center gap-1 text-sm text-electric-violet opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Try this prompt <ArrowRight className="w-3.5 h-3.5" />
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ─── FINAL CTA ────────────────────────────────────────── */}
-            <section className="relative py-32">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_50%_100%,rgba(99,102,241,0.1),transparent)]" />
-                <div className="relative max-w-3xl mx-auto px-6 text-center space-y-8">
-                    <h2 className="text-4xl lg:text-6xl font-bold tracking-tight">
-                        Ready to build<br />
-                        <span className="bg-gradient-to-r from-[#6366F1] via-[#8B5CF6] to-[#F59E0B] bg-clip-text text-transparent">
-                            something extraordinary?
-                        </span>
+            {/* ─── CTA ──────────────────────────────────────────────── */}
+            <section className="relative py-32 border-t border-border/40">
+                <motion.div 
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    variants={fadeInUp}
+                    className="max-w-4xl mx-auto px-6 text-center"
+                >
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8">
+                        Ready to build something extraordinary?
                     </h2>
-                    <p className="text-lg text-starlight-400 max-w-xl mx-auto">
-                        Your portable AI software team is standing by. No credit card required.
+                    <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+                        Your portable AI software team is standing by. Get started for free today.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link
-                            to="/login"
-                            className="group inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] rounded-xl font-semibold text-lg shadow-[0_0_40px_rgba(99,102,241,0.3)] hover:shadow-[0_0_60px_rgba(99,102,241,0.5)] transition-all duration-300 hover:-translate-y-0.5"
-                        >
-                            Get Started Free
-                            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                        <Link to="/login">
+                            <Button size="lg" className="h-14 px-8 text-lg rounded-full">
+                                Get Started Free
+                            </Button>
                         </Link>
-                        <Link
-                            to="/demo"
-                            className="inline-flex items-center gap-2 px-8 py-5 text-starlight-400 hover:text-white transition-colors"
-                        >
-                            <Play className="w-4 h-4" />
-                            Watch 2-Min Demo
+                        <Link to="/demo">
+                            <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full bg-transparent">
+                                <Play className="mr-2 w-4 h-4" />
+                                Watch Demo
+                            </Button>
                         </Link>
                     </div>
-                </div>
+                </motion.div>
             </section>
 
             {/* ─── FOOTER ───────────────────────────────────────────── */}
-            <footer className="relative z-10 border-t border-white/[0.06] bg-void-900/40 backdrop-blur-xl py-16">
-                <div className="max-w-6xl mx-auto px-6 lg:px-12">
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-                        {/* Brand */}
-                        <div className="space-y-4 lg:col-span-1">
-                            <div className="flex items-center gap-2">
-                                <Hexagon className="w-6 h-6 text-electric-violet" />
-                                <span className="text-lg font-bold">HIVE-R</span>
-                            </div>
-                            <p className="text-sm text-starlight-400 leading-relaxed">
-                                Your Portable AI Software Team.
-                            </p>
-                        </div>
-
-                        {/* Links */}
-                        {[
-                            {
-                                title: 'Product', links: [
-                                    { label: 'Studio', to: '/app' },
-                                    { label: 'Demo', to: '/demo' },
-                                    { label: 'Pricing', to: '#' },
-                                ]
-                            },
-                            {
-                                title: 'Resources', links: [
-                                    { label: 'Documentation', to: '/docs' },
-                                    { label: 'API Reference', to: '/docs' },
-                                    { label: 'Changelog', to: '#' },
-                                ]
-                            },
-                            {
-                                title: 'Community', links: [
-                                    { label: 'GitHub', to: 'https://github.com/rwyatt2/HIVE-R', external: true },
-                                    { label: 'Discord', to: 'https://discord.gg/hive-r', external: true },
-                                    { label: 'Twitter', to: 'https://twitter.com/hive_r_ai', external: true },
-                                ]
-                            },
-                        ].map(col => (
-                            <div key={col.title}>
-                                <h3 className="text-sm font-semibold text-white mb-4 tracking-wide">{col.title}</h3>
-                                <ul className="space-y-3">
-                                    {col.links.map(link => (
-                                        <li key={link.label}>
-                                            {'external' in link ? (
-                                                <a href={link.to} target="_blank" rel="noreferrer" className="text-sm text-starlight-400 hover:text-white transition-colors">
-                                                    {link.label}
-                                                </a>
-                                            ) : (
-                                                <Link to={link.to} className="text-sm text-starlight-400 hover:text-white transition-colors">
-                                                    {link.label}
-                                                </Link>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
+            <footer className="relative z-10 border-t border-border bg-card py-12 text-sm">
+                <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-2 font-bold">
+                        <Hexagon className="w-5 h-5 fill-foreground text-foreground" />
+                        HIVE-R
                     </div>
-
-                    <div className="mt-12 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-xs text-starlight-700">© 2026 HIVE-R. Open source under MIT License.</p>
-                        <div className="flex items-center gap-4 text-xs text-starlight-700">
-                            <a href="#" className="hover:text-starlight-400 transition-colors">Privacy</a>
-                            <a href="#" className="hover:text-starlight-400 transition-colors">Terms</a>
-                        </div>
+                    <div className="flex gap-8 text-zinc-400 font-medium">
+                        <Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
+                        <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
+                        <a href="https://github.com/rwyatt2/HIVE-R" className="hover:text-foreground transition-colors">GitHub</a>
+                        <a href="https://twitter.com" className="hover:text-foreground transition-colors">Twitter</a>
+                    </div>
+                    <div className="text-zinc-500">
+                        © 2026 HIVE-R. MIT License.
                     </div>
                 </div>
-            </footer >
-        </div >
+            </footer>
+        </div>
     );
 }

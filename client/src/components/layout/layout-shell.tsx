@@ -18,11 +18,11 @@ export function LayoutShell({ children, sidebarProps, noScroll = false, constrai
     // Handle props
     const isCollapsed = sidebarProps?.collapsed ?? collapsed
     const onToggle = sidebarProps?.onToggle ?? (() => setCollapsed(prev => !prev))
-
+    
     return (
-        <div className="relative flex h-screen w-full overflow-hidden bg-background font-sans text-white p-0 gap-0">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 z-0 bg-background pointer-events-none" />
+        <div className="relative flex h-screen w-full overflow-hidden bg-background font-sans text-foreground p-0 gap-0">
+            {/* Background Pattern - subtle grid everywhere */}
+            <div className="absolute inset-0 z-0 bg-honeycomb-pattern opacity-[0.15] pointer-events-none" />
 
             {/* Sidebar (Desktop) */}
             <div className="hidden md:flex h-full shrink-0 z-40">
@@ -43,7 +43,7 @@ export function LayoutShell({ children, sidebarProps, noScroll = false, constrai
             {/* Mobile Sidebar (Drawer) */}
             {mobileOpen && (
                 <div className="fixed inset-0 z-50 md:hidden">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
                     <div className="absolute left-0 top-0 bottom-0 w-[280px] z-50">
                         <SideNav
                             {...sidebarProps}
@@ -78,7 +78,7 @@ export function LayoutShell({ children, sidebarProps, noScroll = false, constrai
 
                 <main className={cn(
                     "flex-1 relative",
-                    !noScroll && "overflow-y-auto overflow-x-hidden p-6 md:p-8 scrollbar-custom",
+                    !noScroll && "overflow-y-auto overflow-x-hidden p-6 md:p-8 custom-scrollbar",
                     noScroll && "overflow-hidden"
                 )}>
                     <div className={cn(

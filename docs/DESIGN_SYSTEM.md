@@ -1,77 +1,77 @@
-# HIVE-R Studio Design System
+# HIVE-R Design System (Enterprise Minimal)
 
-The visual language of the HIVE-R Studio interface.
+## 1. Overview
+HIVE-R uses a clean, typography-driven design system inspired by Vercel, Anthropic, and Linear. The aesthetic prioritizes function, readability, and speed over decorative elements.
 
-## 1. Core Identity
-- **Theme**: "Neural Honeycomb" (Dark Mode Only).
-- **Primary Background**: `bg-background` (`#020617` / `void-950`).
-- **Accent Colors**: Electric Violet (`#7C3AED`), Honey (`#F59E0B`), Cyan (`#06B6D4`).
-- **Glassmorphism**: Heavy usage of backdrop blur and semi-transparent backgrounds to create depth.
+**Core Values:**
+- **Minimalism:** Remove unnecessary borders, glows, and gradients.
+- **Clarity:** Use typography (weight and size) to establish hierarchy.
+- **Performance:** CSS-first effects, no heavy canvas animations on the landing page.
+- **Consistency:** Unified spacing, radius, and color tokens.
 
 ## 2. Color Palette
+The system relies on a "Zinc" scale (neutral grays with a slight cool tint) for a professional look.
 
-### Base
-| Token | Tailwind Class | Hex | Usage |
-|-------|----------------|-----|-------|
-| Background | `bg-background` / `bg-void-950` | `#020617` | Main app background |
-| Surface (Glass) | `bg-void-950/95` | `#020617` (95% op) | Cards, Sidebars, Headers |
-| Border | `border-white/6` | `#FFFFFF` (6% op) | Subtle borders |
+### Dark Mode (Default)
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `bg-background` | `#09090b` | Main page background (Zinc 950) |
+| `bg-secondary` | `#27272a` | Secondary surfaces, hover states (Zinc 800) |
+| `bg-card` | `#09090b` | Card backgrounds (same as background for seamless look) |
+| `text-foreground` | `#fafafa` | Primary text (Zinc 50) |
+| `text-muted-foreground` | `#a1a1aa` | Secondary text (Zinc 400) |
+| `border-border` | `#27272a` | Subtle borders (Zinc 800) |
 
-### Accents
-| Name | Hex | Usage |
-|------|-----|-------|
-| **Electric Violet** | `#7C3AED` | Primary Actions, Active States |
-| **Honey** | `#F59E0B` | Highlights, Warnings, "Neural" effects |
-| **Cyan** | `#06B6D4` | Info, Data streams |
-| **Plasma Green** | `#10B981` | Success, Active Agents |
-| **Reactor Core** | `#EF4444` | Errors, Critical alerts |
+### Light Mode
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `bg-background` | `#ffffff` | Main page background |
+| `bg-secondary` | `#f4f4f5` | Secondary surfaces (Zinc 100) |
+| `text-foreground` | `#09090b` | Primary text |
+| `border-border` | `#e4e4e7` | Subtle borders (Zinc 200) |
 
-## 3. Layout & Spacing
-
-- **Global Layout**: `LayoutShell` component wraps all pages.
-- **Padding**: Consistent `p-6 md:p-8` for main content areas.
-- **Max Width**:
-  - **Dashboard/Settings/Docs/Marketplace**: Constrained (previously `max-w-6xl`, now often full-width `w-full` with padding).
-  - **Studio**: Full width (`constrainWidth={false}`).
+## 3. Typography
+- **Headings:** `Inter` (sans-serif), tracking-tight, bold weights.
+- **Body:** `Inter`, comfortable line-height (1.6).
+- **Code:** `JetBrains Mono`, accessible size (14px).
 
 ## 4. Components
 
-### Cards (Glassmorphic)
-Standard container for content.
+### Cards
+Cards are minimalist containers with a thin border and no heavy drop shadow in dark mode.
 ```tsx
-<Card variant="glassmorphic" className="bg-void-950/95 backdrop-blur-2xl border-white/6">
-  {/* content */}
+<Card className="bg-background border-border">
+  <CardHeader>
+    <CardTitle>Project Settings</CardTitle>
+    <CardDescription>Manage your deployment keys.</CardDescription>
+  </CardHeader>
+  <CardContent>...</CardContent>
 </Card>
 ```
 
-### Plugin Builder (Drawer)
-- **Behavior**: Slides in from the right (`animate-in slide-in-from-right`).
-- **Position**: `absolute inset-0 z-50` (inside Marketplace container).
-- **Style**: Full height, `rounded-l-2xl`, `border-y-0 border-r-0`.
-- **Backdrop**: `bg-black/5 backdrop-blur-sm` (keeps underlying content visible but blurred).
+### Buttons
+Buttons use solid colors without gradients.
+- **Primary:** White text on black (light mode) / Black text on white (dark mode).
+- **Secondary:** Gray background with hover state.
+- **Outline:** Transparent with border.
+- **Ghost:** Transparent with hover background.
 
-### Navigation
-- **Top Nav**: `bg-void-950/95 backdrop-blur-2xl border-b border-white/6`.
-- **Side Nav**: `bg-void-950/95 backdrop-blur-2xl border-r border-white/6`.
-- **Icons**: Lucide React icons (Hexagon, LayoutDashboard, Puzzle, BookOpen, Settings).
+```tsx
+<Button>Deploy</Button>
+<Button variant="secondary">Cancel</Button>
+<Button variant="outline">Docs</Button>
+```
 
-### Empty States
-- **Icon**: `Puzzle` (for plugins), `LayoutDashboard` (for sessions).
-- **Style**: Large icon (`h-16 w-16`), opacity-20, centered text.
+### Layout
+- **Sidebar:** Fixed width (280px), collapsible (80px). Background matches `bg-background` with a border-right.
+- **TopNav:** Sticky, backdrop-blur-xl, border-bottom.
+- **Shell:** `max-w-7xl` centered container for content.
 
-## 5. Typography
-
-- **Font Family**: Inter (Sans), JetBrains Mono (Code).
-- **Headings**: `tracking-tight`, `font-bold`.
-- **Text Colors**:
-  - Primary: `text-white`
-  - Secondary: `text-starlight-400`
-  - Muted: `text-starlight-500`
+## 5. Visual Effects
+- **Grid Pattern:** A subtle dot or line grid is used for backgrounds to add texture without noise.
+- **Glassmorphism:** Used sparingly on sticky headers (`backdrop-blur-xl`), but less intense than previous iterations.
 
 ## 6. Icons
-Consistently used icons from `lucide-react`:
-- **Dashboard**: `LayoutDashboard`
-- **Plugins**: `Puzzle`
-- **Docs**: `BookOpen`
-- **Settings**: `Settings`
-- **Studio**: `Hexagon`
+Lucide React icons are used throughout.
+- Stroke width: 1.5px (standard) or 2px (small sizes).
+- Color: `text-muted-foreground` by default, `text-foreground` on active/hover.

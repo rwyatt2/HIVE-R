@@ -29,9 +29,9 @@ export function AgentNode({
     };
 
     const statusColors = {
-        active: "bg-electric-violet shadow-neon-violet animate-pulse",
-        idle: "bg-starlight-700",
-        error: "bg-reactor-red shadow-neon-red", // Assuming neon-red exists or fallback
+        active: "bg-emerald-500 shadow-sm animate-pulse",
+        idle: "bg-muted-foreground",
+        error: "bg-destructive shadow-sm", 
     };
 
     return (
@@ -40,12 +40,12 @@ export function AgentNode({
             <div
                 className={cn(
                     "relative flex items-center justify-center rounded-full transition-all duration-300",
-                    "bg-void-900 border-2 border-white/10",
+                    "bg-card border-2 border-border shadow-sm",
                     sizeClasses[size],
                     // Hover Effects
-                    "group-hover:border-electric-violet/50 group-hover:shadow-neon-violet group-hover:scale-105",
+                    "group-hover:border-primary/50 group-hover:shadow-md group-hover:scale-105",
                     // Active State
-                    status === "active" && "border-electric-violet shadow-neon-violet ring-2 ring-electric-violet/20 ring-offset-2 ring-offset-void-950"
+                    status === "active" && "border-primary shadow-md ring-2 ring-primary/20 ring-offset-2 ring-offset-background"
                 )}
             >
                 {/* Icon */}
@@ -53,26 +53,26 @@ export function AgentNode({
                     className={cn(
                         "transition-colors duration-300",
                         iconSizeClasses[size],
-                        status === "active" ? "text-electric-violet" : "text-starlight-400 group-hover:text-starlight-50"
+                        status === "active" ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                     )}
                 />
 
                 {/* Status Indicator (Orbiting/Attached) */}
                 <div
                     className={cn(
-                        "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-void-950 z-10",
-                        statusColors[status] || "bg-starlight-700"
+                        "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background z-10",
+                        statusColors[status] || "bg-muted"
                     )}
                 />
 
                 {/* Shockwave Effect (Active Only) */}
                 {status === "active" && (
-                    <div className="absolute inset-0 rounded-full border border-electric-violet animate-shockwave opacity-0 pointer-events-none" />
+                    <div className="absolute inset-0 rounded-full border border-primary animate-ping opacity-20 pointer-events-none" />
                 )}
             </div>
 
             {/* Label (Always visible) */}
-            <div className="mt-2 px-2 py-0.5 rounded-md bg-void-950/80 backdrop-blur-sm text-[11px] font-medium text-starlight-300 whitespace-nowrap border border-white/5">
+            <div className="mt-2 px-2 py-0.5 rounded-md bg-card/80 backdrop-blur-sm text-[11px] font-medium text-foreground whitespace-nowrap border border-border shadow-sm">
                 {name}
             </div>
         </div>

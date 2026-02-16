@@ -39,31 +39,26 @@ export function SideNav({
     return (
         <div
             className={cn(
-                "relative flex flex-col h-screen bg-void-950/95 backdrop-blur-2xl border-r border-white/6 transition-all duration-300 z-40",
+                "relative flex flex-col h-screen bg-background/95 backdrop-blur-xl border-r border-border transition-all duration-300 z-40",
                 collapsed ? "w-[80px]" : "w-[280px]"
             )}
         >
             {/* ── Logo Area ── */}
-            <div className="flex items-center justify-between h-[72px] pl-8 pr-5 py-4 border-b border-white/6 shrink-0 relative">
+            <div className="flex items-center justify-between h-[72px] pl-8 pr-5 py-4 border-b border-border shrink-0 relative">
                 <button
                     className="flex items-center gap-3 min-w-0 hover:opacity-90 transition"
                     onClick={() => onNavigate('/')}
                     aria-label="Go to landing page"
                 >
-                    {/* Hexagon Logo - same as landing page */}
                     <div className="relative">
                         <Hexagon
-                            className="w-8 h-8 text-electric-violet fill-electric-violet/10"
+                            className="w-8 h-8 text-foreground fill-foreground/10"
                             strokeWidth={1.5}
-                        />
-                        <Hexagon
-                            className="absolute inset-0 w-8 h-8 text-electric-violet/60 m-auto scale-50"
-                            strokeWidth={2}
                         />
                     </div>
                     {!collapsed && (
-                        <span className="text-lg font-bold tracking-tight text-white">
-                            HIVE<span className="text-electric-violet">-R</span>
+                        <span className="text-lg font-bold tracking-tight text-foreground">
+                            HIVE-R
                         </span>
                     )}
                 </button>
@@ -73,7 +68,7 @@ export function SideNav({
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        "h-8 w-8 text-starlight-400 hover:text-white hover:bg-white/6 rounded-lg",
+                        "h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg",
                         collapsed && "opacity-0 pointer-events-none"
                     )}
                     onClick={onToggle}
@@ -87,7 +82,7 @@ export function SideNav({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-void-900/80 border border-white/10 text-starlight-400 hover:text-white hover:bg-void-900"
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-background border border-border text-muted-foreground hover:text-foreground shadow-sm"
                         onClick={onToggle}
                         aria-label="Expand sidebar"
                     >
@@ -101,7 +96,7 @@ export function SideNav({
                 {/* Platform Section */}
                 <div className="mb-6">
                     {!collapsed && (
-                        <h4 className="text-xs font-medium text-starlight-500 uppercase tracking-wider mb-4 pl-2">
+                        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4 pl-2">
                             Platform
                         </h4>
                     )}
@@ -141,19 +136,19 @@ export function SideNav({
                 {!hideSessions && (
                     <>
                         {/* Divider */}
-                        {!collapsed && <div className="mx-1 my-6 h-px bg-white/6" />}
+                        {!collapsed && <div className="mx-1 my-6 h-px bg-border" />}
 
                         {/* Sessions Section */}
                         <div>
                             {!collapsed && (
                                 <div className="flex items-center justify-between mb-4 pl-2">
-                                    <h4 className="text-xs font-medium text-starlight-500 uppercase tracking-wider">
+                                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Sessions
                                     </h4>
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 text-starlight-400 hover:text-white hover:bg-white/6 rounded-lg"
+                                        className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg"
                                         onClick={onNewSession}
                                     >
                                         <Plus className="h-4 w-4" />
@@ -162,7 +157,7 @@ export function SideNav({
                             )}
                             <nav className="space-y-1">
                                 {sessions.length === 0 && !collapsed && (
-                                    <p className="text-xs text-starlight-500 py-3 pl-8 pr-4">No sessions yet</p>
+                                    <p className="text-xs text-muted-foreground py-3 pl-8 pr-4">No sessions yet</p>
                                 )}
                                 {sessions.map(session => (
                                     <NavItem
@@ -179,8 +174,6 @@ export function SideNav({
                     </>
                 )}
             </div>
-
-            
         </div>
     )
 }
@@ -198,25 +191,19 @@ function NavItem({ icon: Icon, label, active, collapsed, onClick }: NavItemProps
         <button
             onClick={onClick}
             className={cn(
-                "relative w-full flex items-center h-12 pl-8 pr-6 gap-5 rounded-lg transition-all duration-200",
+                "relative w-full flex items-center h-10 pl-3 pr-3 gap-3 rounded-md transition-all duration-200",
                 active
-                    ? "text-white bg-white/6"
-                    : "text-starlight-400 hover:text-white hover:bg-white/6",
+                    ? "bg-secondary text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
                 collapsed && "justify-center pl-0 pr-0 gap-0 min-w-0"
             )}
         >
             <Icon className={cn(
-                "w-5 h-5 shrink-0 flex-none",
-                active && "text-electric-violet"
+                "w-4 h-4 shrink-0 flex-none",
+                active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
             )} />
             {!collapsed && (
-                <>
-                    <span className="truncate text-sm font-medium">{label}</span>
-                    {/* Active indicator - honey bar like landing page */}
-                    {active && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-honey rounded-l-full" aria-hidden />
-                    )}
-                </>
+                <span className="truncate text-sm">{label}</span>
             )}
         </button>
     )

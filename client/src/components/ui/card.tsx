@@ -12,13 +12,11 @@ const Card = React.forwardRef<
     <div
         ref={ref}
         className={cn(
-            "rounded-2xl text-white transition-all duration-300",
-            variant === "default" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 shadow-2xl",
-            variant === "glass" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 shadow-2xl",
-            variant === "glassmorphic" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 rounded-2xl shadow-2xl",
-            variant === "agent" &&
-            "bg-void-950/95 backdrop-blur-2xl border border-white/6 hover:border-white/12",
-            variant === "metric" && "bg-void-950/95 backdrop-blur-2xl border border-white/6 relative overflow-hidden",
+            "rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-200",
+            variant === "glass" && "bg-background/60 backdrop-blur-lg border-border/50",
+            variant === "glassmorphic" && "bg-background/60 backdrop-blur-lg border-border/50",
+            variant === "agent" && "hover:border-primary/20",
+            variant === "metric" && "bg-card relative overflow-hidden",
             className
         )}
         {...props}
@@ -49,7 +47,7 @@ const CardTitle = React.forwardRef<
     <h3
         ref={ref}
         className={cn(
-            "text-lg font-semibold leading-none tracking-tight text-hive-text-primary",
+            "text-lg font-semibold leading-none tracking-tight",
             className
         )}
         {...props}
@@ -65,7 +63,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <p
         ref={ref}
-        className={cn("text-sm text-hive-text-secondary", className)}
+        className={cn("text-sm text-muted-foreground", className)}
         {...props}
     />
 ))
@@ -114,32 +112,30 @@ const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
             {...props}
         >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-hive-text-secondary">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                     {title}
                 </CardTitle>
                 {icon && (
-                    <div className="text-hive-indigo h-5 w-5 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div className="text-muted-foreground h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity">
                         {icon}
                     </div>
                 )}
             </CardHeader>
             <CardContent>
-                <div className="text-h3 font-bold text-hive-text-primary">
+                <div className="text-2xl font-bold">
                     {value}
                 </div>
                 {trend && (
                     <p
                         className={cn(
                             "text-xs flex items-center gap-1 mt-1 font-medium",
-                            trendUp ? "text-hive-success" : "text-hive-error"
+                            trendUp ? "text-emerald-500" : "text-rose-500"
                         )}
                     >
                         {trendUp ? "↑" : "↓"} {trend}
                     </p>
                 )}
             </CardContent>
-            {/* Decorative glow */}
-            <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-hive-indigo/5 rounded-full blur-2xl group-hover:bg-hive-indigo/10 transition-colors" />
         </Card>
     )
 )

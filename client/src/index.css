@@ -5,7 +5,7 @@
 @config "../tailwind.config.ts";
 
 /* ============================================================================
-   INTELLIGENT HIVE DESIGN SYSTEM — CSS Foundation
+   ENTERPRISE MINIMAL DESIGN SYSTEM (Vercel/Anthropic Style)
    ============================================================================ */
 
 @layer base {
@@ -15,50 +15,65 @@
     --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 
     /* ── Light Mode ── */
-    --background: 240 6% 97%;
-    /* #F3F4F6 */
-    --foreground: 222 47% 11%;
-    /* #0F172A */
-  }
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
     
-    /* ... rest of light mode vars ... */
-
-  .dark {
-    /* ── Dark Mode (Default) ── */
-    --background: 222 47% 2%; 
-    /* #020617 - void-950 equivalent */
-    --foreground: 210 40% 98%;
-    /* #F7FAFC */
-
-    --card: 222 26% 14%;
-    /* #1A1F2E */
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 26% 14%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 239 84% 67%;
-    /* #6366F1 */
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 222 26% 17%;
-    /* slightly elevated surface */
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 222 26% 14%;
-    --muted-foreground: 215 16% 57%;
-    /* #718096 */
-
-    --accent: 222 26% 17%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 63% 31%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+ 
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+ 
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+ 
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+ 
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+ 
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 216 23% 26%;
-    /* #2D3748 */
-    --input: 222 26% 14%;
-    --ring: 239 84% 67%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+    
+  .dark {
+    /* ── Dark Mode (Enterprise Dark) ── */
+    --background: 240 10% 3.9%; /* #09090b */
+    --foreground: 0 0% 98%;
+ 
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+ 
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+ 
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+ 
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+ 
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+ 
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+ 
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 
   * {
@@ -76,7 +91,7 @@
     @apply bg-background text-foreground transition-colors duration-300;
   }
 
-  /* Default to dark mode — set via class on <html> in index.html */
+  /* Default to dark mode */
   html {
     color-scheme: dark;
   }
@@ -88,234 +103,65 @@
 
 @layer utilities {
 
-  /* ── Glassmorphism ── */
+  /* ── Subtle Glass (Vercel Style) ── */
   .glass {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(26, 31, 46, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .glass-panel {
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    background: rgba(26, 31, 46, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(9, 9, 11, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .glass-card {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(26, 31, 46, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(9, 9, 11, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease-in-out;
   }
 
   .glass-card:hover {
-    background: rgba(26, 31, 46, 0.85);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  }
-
-  /* High-contrast glass for text containers - WCAG compliant */
-  .glass-high-contrast {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid rgba(241, 245, 249, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    background: rgba(39, 39, 42, 0.5);
+    border-color: rgba(255, 255, 255, 0.15);
   }
 
   .glass-nav {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(10, 14, 20, 0.8);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(9, 9, 11, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  /* ── Text Gradients ── */
+  /* ── Text Gradients (Subtle) ── */
   .text-gradient-hero {
-    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #06B6D4 100%);
+    background: linear-gradient(to right, #ededed, #a1a1aa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .text-gradient-honey {
-    background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .text-gradient-indigo {
-    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* ── Neural / Mesh Backgrounds ── */
-  .bg-neural-mesh {
-    background-image:
-      radial-gradient(circle at 20% 20%, rgba(108, 120, 255, 0.045) 0, transparent 65%),
-      radial-gradient(circle at 80% 0%, rgba(92, 207, 230, 0.04) 0, transparent 65%),
-      radial-gradient(circle at 0% 80%, rgba(118, 106, 234, 0.035) 0, transparent 65%),
-      radial-gradient(circle at 60% 60%, rgba(255, 255, 255, 0.02) 0, transparent 70%);
-  }
-
-  .gradient-mesh {
-    background-image:
-      radial-gradient(circle at 20% 80%, rgba(92, 207, 230, 0.04) 0, transparent 70%),
-      radial-gradient(circle at 80% 20%, rgba(118, 106, 234, 0.04) 0, transparent 70%);
-  }
-
-  /* Subtle vignette to unify background */
-  .bg-vignette {
-    background-image:
-      radial-gradient(circle at 50% 0%, rgba(10, 14, 20, 0.2) 0, transparent 60%),
-      radial-gradient(circle at 50% 100%, rgba(5, 8, 12, 0.35) 0, transparent 55%),
-      radial-gradient(circle at 0% 50%, rgba(5, 8, 12, 0.25) 0, transparent 55%),
-      radial-gradient(circle at 100% 50%, rgba(5, 8, 12, 0.25) 0, transparent 55%);
-  }
-
-  /* ── Grid Pattern ── */
+  /* ── Grid Pattern (Subtle) ── */
   .bg-grid-pattern {
-    background-size: 24px 24px;
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-    mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
-    -webkit-mask-image: radial-gradient(circle at center, black 60%, transparent 100%);
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
   }
 
-  /* ── Hexagonal Background Pattern ── */
-  .bg-hex-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%236366F1' fill-opacity='0.05'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  }
-
-  .bg-hex-pattern-lg {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%236366F1' fill-opacity='0.08'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  }
-
-  /* ── Surface Gradient Background ── */
-  .bg-surface-glow {
-    background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.08), transparent),
-      hsl(var(--background));
-  }
-
-  /* ── Glow Effects ── */
-  .glow-indigo {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), 0 0 40px rgba(99, 102, 241, 0.1);
-  }
-
-  .glow-honey {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
-  }
-
-  .glow-cyan {
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3), 0 0 40px rgba(6, 182, 212, 0.1);
-  }
-
-  /* ── Scrollbar ── */
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 3px;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* ── Custom Scrollbar (Studio + panels) ── */
-  .custom-scrollbar::-webkit-scrollbar,
-  .scrollbar-custom::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track,
-  .scrollbar-custom::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb,
-  .scrollbar-custom::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 6px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover,
-  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  .custom-scrollbar,
-  .scrollbar-custom {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
-  }
-
-  /* ── ReactFlow Controls + Buttons ───────────────────────────── */
-  .react-flow__controls {
-    background: rgba(13, 17, 23, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  }
-
-  .react-flow__controls-button {
-    background: transparent !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  }
-
-  .react-flow__controls-button:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
-  }
-
-  .react-flow__controls-button svg {
-    fill: none;
-    stroke: #A0AEC0;
-  }
-
-  .react-flow__controls-button svg path {
-    stroke: #A0AEC0;
-  }
-
-  /* ── ReactFlow Controls: ensure icons visible on dark ── */
-  .react-flow__controls {
-    background: rgba(21, 25, 34, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .react-flow__controls-button {
-    background: transparent;
-  }
-
-  .react-flow__controls-button svg {
-    color: #CBD5E0;
-    fill: #CBD5E0;
-    stroke: #CBD5E0;
+  /* ── Honeycomb Pattern (Subtle & Small) ── */
+  .bg-honeycomb-pattern {
+    /* Original SVG was 28x49. We scale it down slightly for "small" look if desired, 
+       but 28px is already quite small. Let's keep it sharp at native resolution or use background-size. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
   }
 
   /* ── Layout Helpers ── */
@@ -327,19 +173,22 @@
     @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
   }
 
-  /* ── Skeleton Shimmer ── */
-  .skeleton-shimmer {
-    background: linear-gradient(90deg,
-        rgba(255, 255, 255, 0.03) 0%,
-        rgba(255, 255, 255, 0.08) 50%,
-        rgba(255, 255, 255, 0.03) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2s linear infinite;
+  /* ── Scrollbar ── */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
   }
 
-  /* ── Focus Ring ── */
-  .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
 
   /* ── Skip Navigation Link (Accessibility) ── */
@@ -351,7 +200,7 @@
     z-index: 9999;
     padding: 12px 24px;
     background: hsl(var(--primary));
-    color: white;
+    color: hsl(var(--primary-foreground));
     font-weight: 500;
     font-size: 14px;
     border-radius: 0 0 8px 8px;
@@ -361,90 +210,7 @@
 
   .skip-link:focus {
     top: 0;
-    outline: 2px solid white;
+    outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   ANIMATION KEYFRAMES
-   ═══════════════════════════════════════════════════════════════ */
-
-/* Hex spinner — sequential pulse for each hexagon */
-@keyframes hex-spinner-pulse {
-
-  0%,
-  100% {
-    opacity: 0.15;
-    transform: scale(0.85);
-  }
-
-  40% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-
-  60% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-}
-
-/* Ambient hexagonal grid drift */
-@keyframes hex-grid-drift {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-
-  25% {
-    transform: translate(3px, -2px) rotate(0.3deg);
-  }
-
-  50% {
-    transform: translate(-1px, 3px) rotate(-0.2deg);
-  }
-
-  75% {
-    transform: translate(-3px, -1px) rotate(0.2deg);
-  }
-
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-}
-
-.bg-hex-animated {
-  animation: hex-grid-drift 20s ease-in-out infinite;
-  will-change: transform;
-}
-
-/* Checkmark draw — for CSS-only fallback */
-@keyframes stroke-draw {
-  from {
-    stroke-dashoffset: 30;
-  }
-
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   ACCESSIBILITY: Reduced Motion
-   ═══════════════════════════════════════════════════════════════ */
-
-@media (prefers-reduced-motion: reduce) {
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  .bg-hex-animated {
-    animation: none;
   }
 }

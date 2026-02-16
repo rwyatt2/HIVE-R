@@ -51,7 +51,7 @@ export const NeuralAgentCluster = () => {
     const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
 
     return (
-        <div className="relative w-[800px] h-[800px] flex items-center justify-center select-none perspective-1000">
+        <div className="relative w-[800px] h-[800px] flex items-center justify-center select-none perspective-1000 pointer-events-none">
             
             {/* ─── Backlight/Mask ────────────────────────────────────────── */}
             {/* This gradient hides the misaligned global background behind the cluster so it looks seamless */}
@@ -73,20 +73,17 @@ export const NeuralAgentCluster = () => {
                 {/* Core Glows - Removed as requested */}
                 
                 <div 
-                    className="relative flex items-center justify-center w-32 h-36 bg-void-950/80 backdrop-blur-xl border border-electric-violet/50 shadow-[0_20px_50px_rgba(0,0,0,0.9)] z-20 group cursor-pointer"
+                    className="relative flex items-center justify-center w-32 h-36 bg-void-950/80 backdrop-blur-xl border border-electric-violet/50 shadow-[0_20px_50px_rgba(0,0,0,0.9)] z-20 group cursor-default"
                     style={{ 
                         width: HEX_WIDTH, 
                         height: HEX_HEIGHT,
                         clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' // Pointy top hex
                     }}
-                    onMouseEnter={() => setHoveredAgent('core')}
-                    onMouseLeave={() => setHoveredAgent(null)}
                 >
                     <div className="absolute inset-0 bg-linear-to-br from-electric-violet/20 to-cyber-cyan/20 opacity-50 group-hover:opacity-100 transition-opacity" />
                     <Hexagon className="w-12 h-12 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" strokeWidth={1.5} />
                     
-                    {/* Rotating Ring inside Core */}
-                    <div className="absolute inset-2 border border-white/10 rounded-full border-dashed animate-[spin_10s_linear_infinite]" />
+                    {/* Rotating Ring inside Core removed */}
                 </div>
                 
                 {/* HIVE-R CORE text removed */}
@@ -111,6 +108,7 @@ export const NeuralAgentCluster = () => {
                             width={HEX_WIDTH - 4} 
                             height={HEX_HEIGHT - 4} 
                             showLabel={false}
+                            interactive={false}
                         />
                     </motion.div>
                 );

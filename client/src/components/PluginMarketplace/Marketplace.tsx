@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, X, Search, Filter, Star, Download, Check, Puzzle } from 'lucide-react';
-import { Card } from '../ui/card';
+import { Sparkles, X, Search, Filter, Star, Download, Check, Puzzle, Zap } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
@@ -124,36 +124,36 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
 
     return (
         <div className={cn(
-            isModal && "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200",
+            isModal && "fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200",
             !isModal && "h-full w-full"
         )}>
             {!isModal && (
                 <div className="w-full space-y-2 mb-6 md:mb-8">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold text-white tracking-tight">Plugin Marketplace</h1>
-                            <p className="text-starlight-400">Discover and extend your agents' capabilities</p>
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground">Plugin Marketplace</h1>
+                            <p className="text-muted-foreground">Discover and extend your agents' capabilities</p>
                         </div>
-                        <Button variant="secondary" onClick={() => setShowBuilder(true)}>
-                            + Create Plugin
+                        <Button onClick={() => setShowBuilder(true)}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create Plugin
                         </Button>
                     </div>
                 </div>
             )}
 
             <Card
-                variant="glassmorphic"
                 className={cn(
-                    "w-full flex flex-col overflow-hidden shadow-2xl relative",
+                    "w-full flex flex-col overflow-hidden shadow-lg border-border bg-card",
                     isModal
-                        ? "max-w-6xl h-[85vh] border-white/10 bg-void-950/95"
-                        : "flex-1 border-white/6 bg-void-950/95"
+                        ? "max-w-6xl h-[85vh]"
+                        : "flex-1"
                 )}
             >
 
                 {/* Header (Modal Only) */}
                 {isModal && (
-                    <div className="flex items-center justify-between p-6 border-b backdrop-blur-sm border-white/5 bg-void-950/95">
+                    <div className="flex items-center justify-between p-6 border-b border-border bg-card">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-primary/10 rounded-lg">
                                 <Sparkles className="h-6 w-6 text-primary" />
@@ -164,11 +164,12 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="secondary" onClick={() => setShowBuilder(true)}>
-                                + Create Plugin
+                            <Button variant="outline" onClick={() => setShowBuilder(true)}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Create Plugin
                             </Button>
                             {onClose && (
-                                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
+                                <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
                                     <X className="h-5 w-5" />
                                 </Button>
                             )}
@@ -177,17 +178,14 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                 )}
 
                 {/* Filters */}
-                <div className={cn(
-                    "p-4 border-b flex flex-wrap gap-4 items-center",
-                    isModal ? "border-white/5 bg-void-950/95" : "border-white/6 bg-void-950/95"
-                )}>
+                <div className="p-4 border-b border-border bg-muted/30 flex flex-wrap gap-4 items-center">
                     <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search plugins..."
-                            className="bg-white/5 pl-9 border-white/10 focus:border-primary/50"
+                            className="pl-9 bg-background border-border"
                         />
                     </div>
 
@@ -196,7 +194,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                         <select
                             value={agentFilter}
                             onChange={(e) => setAgentFilter(e.target.value)}
-                            className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-sm focus:border-primary/50 outline-none hover:bg-white/5 cursor-pointer"
+                            className="h-10 px-3 rounded-md bg-background border border-border text-sm focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
                         >
                             <option value="">All Agents</option>
                             {agents.map(agent => (
@@ -206,7 +204,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                            className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-sm focus:border-primary/50 outline-none hover:bg-white/5 cursor-pointer"
+                            className="h-10 px-3 rounded-md bg-background border border-border text-sm focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
                         >
                             <option value="newest">Newest</option>
                             <option value="downloads">Most Downloads</option>
@@ -216,7 +214,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden relative">
+                <div className="flex-1 overflow-hidden relative bg-secondary/5">
                     {selectedPlugin ? (
                         <PluginDetails
                             plugin={selectedPlugin}
@@ -233,7 +231,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
                         <div className="flex-1 h-full flex flex-col items-center justify-center text-muted-foreground p-12">
                             <Puzzle className="h-16 w-16 mb-6 opacity-20 text-foreground" />
                             <h3 className="text-lg font-medium text-foreground mb-2">No plugins found</h3>
-                            <p className="mb-8 text-starlight-400">Be the first to create one!</p>
+                            <p className="mb-8 text-muted-foreground">Be the first to create one!</p>
                             <Button onClick={onOpenBuilder} size="lg" className="px-8">Create Plugin</Button>
                         </div>
                     ) : (
@@ -273,8 +271,7 @@ export function Marketplace({ onClose, onOpenBuilder, variant = 'modal' }: Marke
 function PluginCard({ plugin, isInstalled, onClick, onInstall }: { plugin: AgentPlugin, isInstalled: boolean, onClick: () => void, onInstall: () => void }) {
     return (
         <Card
-            variant="glassmorphic"
-            className="p-5 cursor-pointer group hover:bg-white/5 transition-all border-white/5 hover:border-primary/30 flex flex-col h-full"
+            className="p-5 cursor-pointer group hover:shadow-md transition-all border-border hover:border-primary/30 flex flex-col h-full bg-card"
             onClick={onClick}
         >
             <div className="flex items-start justify-between mb-4">
@@ -288,7 +285,7 @@ function PluginCard({ plugin, isInstalled, onClick, onInstall }: { plugin: Agent
                     </div>
                 </div>
                 {isInstalled && (
-                    <Badge variant="success" className="gap-1 px-1.5">
+                    <Badge variant="secondary" className="gap-1 px-1.5 bg-emerald-500/10 text-emerald-600 border-emerald-200">
                         <Check className="w-3 h-3" />
                     </Badge>
                 )}
@@ -296,18 +293,18 @@ function PluginCard({ plugin, isInstalled, onClick, onInstall }: { plugin: Agent
 
             <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">{plugin.description}</p>
 
-            <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
+            <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                         <Download className="w-3 h-3" /> {plugin.downloads || 0}
                     </span>
                     {plugin.averageRating && (
-                        <span className="flex items-center gap-1 text-warning">
+                        <span className="flex items-center gap-1 text-amber-500">
                             <Star className="w-3 h-3 fill-current" /> {plugin.averageRating.toFixed(1)}
                         </span>
                     )}
                 </div>
-                <div className="text-xs font-medium px-2 py-1 rounded bg-white/5 border border-white/5">
+                <div className="text-xs font-medium px-2 py-1 rounded bg-secondary text-secondary-foreground border border-border">
                     {plugin.agentName}
                 </div>
             </div>
@@ -317,9 +314,9 @@ function PluginCard({ plugin, isInstalled, onClick, onInstall }: { plugin: Agent
                     e.stopPropagation();
                     if (!isInstalled) onInstall();
                 }}
-                variant={isInstalled ? "ghost" : "secondary"}
+                variant={isInstalled ? "ghost" : "outline"}
                 size="sm"
-                className={`mt-4 w-full ${isInstalled ? 'text-success hover:text-success/80 pointer-events-none opacity-50' : ''}`}
+                className={`mt-4 w-full ${isInstalled ? 'text-emerald-600 hover:text-emerald-700 pointer-events-none opacity-50' : 'hover:border-primary/50'}`}
             >
                 {isInstalled ? 'Installed' : 'Install'}
             </Button>
@@ -329,8 +326,16 @@ function PluginCard({ plugin, isInstalled, onClick, onInstall }: { plugin: Agent
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: any) {
+    // Import Plus icon locally for this component scope
+    const Plus = ({ className }: { className?: string }) => (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+        </svg>
+    );
+
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar p-8 animate-in slide-in-from-right-4 duration-300">
+        <div className="h-full overflow-y-auto custom-scrollbar p-8 animate-in slide-in-from-right-4 duration-300 bg-background">
             <Button variant="ghost" onClick={onBack} className="mb-6 pl-0 hover:bg-transparent hover:text-primary">
                 ← Back to Browse
             </Button>
@@ -338,13 +343,13 @@ function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: 
             <div className="max-w-4xl mx-auto space-y-8">
                 {/* Header Section */}
                 <div className="flex items-start gap-6">
-                    <div className="w-24 h-24 rounded-2xl bg-linear-to-br from-primary/20 to-purple-500/20 flex items-center justify-center text-5xl border border-white/10 shadow-2xl">
+                    <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-5xl border border-border shadow-sm">
                         {plugin.icon || '🔌'}
                     </div>
                     <div className="flex-1">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-3xl font-bold mb-2">{plugin.name}</h2>
+                                <h2 className="text-3xl font-bold mb-2 text-foreground">{plugin.name}</h2>
                                 <div className="flex items-center gap-3 text-sm text-muted-foreground mb-6">
                                     <Badge variant="outline">v{plugin.version}</Badge>
                                     <span>by <span className="text-foreground font-medium">{plugin.author}</span></span>
@@ -353,10 +358,10 @@ function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: 
                                 </div>
                             </div>
                             <Button
-                                variant={isInstalled ? "destructive" : "gradient"}
+                                variant={isInstalled ? "destructive" : "default"}
                                 size="lg"
                                 onClick={isInstalled ? onUninstall : onInstall}
-                                className="min-w-[140px] shadow-glow"
+                                className="min-w-[140px]"
                             >
                                 {isInstalled ? 'Uninstall' : 'Install Plugin'}
                             </Button>
@@ -372,33 +377,33 @@ function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: 
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-4 gap-4">
-                    <div className="p-4 rounded-xl bg-void-950/95 border border-white/5 text-center">
+                    <Card className="p-4 text-center bg-card">
                         <div className="text-2xl font-bold mb-1">{plugin.downloads || 0}</div>
                         <div className="text-xs text-muted-foreground uppercase tracking-wider">Downloads</div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-void-950/95 border border-white/5 text-center">
+                    </Card>
+                    <Card className="p-4 text-center bg-card">
                         <div className="text-2xl font-bold mb-1 flex items-center justify-center gap-1">
-                            {plugin.averageRating?.toFixed(1) || '-'} <Star className="w-4 h-4 text-warning fill-current" />
+                            {plugin.averageRating?.toFixed(1) || '-'} <Star className="w-4 h-4 text-amber-500 fill-current" />
                         </div>
                         <div className="text-xs text-muted-foreground uppercase tracking-wider">{plugin.ratingCount || 0} Reviews</div>
-                    </div>
-                    <div className="p-4 rounded-xl bg-void-950/95 border border-white/5 text-center col-span-2 flex items-center justify-center gap-3">
+                    </Card>
+                    <Card className="p-4 text-center col-span-2 flex items-center justify-center gap-3 bg-card">
                         <div className="text-right">
                             <div className="text-xs text-muted-foreground uppercase tracking-wider">Target Agent</div>
                             <div className="font-bold text-lg">{plugin.agentName}</div>
                         </div>
-                        <div className="h-8 w-px bg-white/10" />
+                        <div className="h-8 w-px bg-border" />
                         <div className="text-3xl">🤖</div>
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Description */}
                 <div className="space-y-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2">
+                    <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
                         <Sparkles className="w-5 h-5 text-primary" />
                         About this Plugin
                     </h3>
-                    <div className="prose prose-invert max-w-none text-muted-foreground leading-relaxed">
+                    <div className="prose prose-zinc dark:prose-invert max-w-none text-muted-foreground leading-relaxed">
                         <p>{plugin.longDescription || plugin.description}</p>
                     </div>
                 </div>
@@ -406,9 +411,9 @@ function PluginDetails({ plugin, isInstalled, onBack, onInstall, onUninstall }: 
                 {/* Extension Code Preview */}
                 {plugin.systemPromptExtension && (
                     <div className="space-y-4">
-                        <h3 className="text-lg font-bold">System Prompt Extension</h3>
-                        <Card variant="glass" className="bg-void-950/95 font-mono text-xs p-4 overflow-x-auto border-white/10">
-                            <pre className="text-muted-foreground">{plugin.systemPromptExtension}</pre>
+                        <h3 className="text-lg font-bold text-foreground">System Prompt Extension</h3>
+                        <Card className="font-mono text-xs p-4 overflow-x-auto bg-muted/30 border-border">
+                            <pre className="text-foreground">{plugin.systemPromptExtension}</pre>
                         </Card>
                     </div>
                 )}

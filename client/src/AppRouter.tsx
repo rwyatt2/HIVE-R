@@ -6,7 +6,7 @@
  */
 
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { NavBar } from './components/NavBar';
 import { LayoutShell } from './components/layout/layout-shell';
@@ -14,6 +14,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { LoginPage } from './components/LoginPage';
 import { KeyboardManager } from './components/KeyboardManager';
+import { SmoothScroll } from './components/SmoothScroll';
 import './index.css';
 
 // ─── Lazy Loaded Pages ──────────────────────────────────────────────────────
@@ -85,6 +86,15 @@ function DocsPage() {
 function DemoPage() {
     return (
         <Layout hideNav>
+            <div className="fixed top-6 left-6 z-50">
+                <Link
+                    to="/"
+                    className="inline-flex items-center gap-2 rounded-full bg-void-950/90 backdrop-blur-xl border border-white/10 px-4 py-2 text-sm text-starlight-300 hover:text-white hover:border-white/20 hover:bg-void-950/95 transition"
+                >
+                    <span aria-hidden="true">←</span>
+                    Back to landing
+                </Link>
+            </div>
             <PageSuspense>
                 <StudioApp demoMode />
             </PageSuspense>
@@ -101,6 +111,12 @@ function LoginPageWrapper() {
 function AppRoutes() {
     const { isAuthenticated, isLoading } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const runId = "pre-fix";
+
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6cb4e89b-0acc-42d2-af40-20ee67361666', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runId, hypothesisId: "L", location: 'AppRouter.tsx:render', message: 'router_render', data: { path: location.pathname, href: window.location.href, isAuthenticated, isLoading }, timestamp: Date.now() }) }).catch(() => { });
+    // #endregion
 
     // Show loading while checking auth
     if (isLoading) {
@@ -266,9 +282,11 @@ function AppRoutes() {
 export function AppRouter() {
     return (
         <BrowserRouter>
-            <KeyboardManager>
-                <AppRoutes />
-            </KeyboardManager>
+            <SmoothScroll>
+                <KeyboardManager>
+                    <AppRoutes />
+                </KeyboardManager>
+            </SmoothScroll>
         </BrowserRouter>
     );
 }

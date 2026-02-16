@@ -2,6 +2,7 @@
  * HIVE-R Studio - Main Application
  * 
  * Phase 13: UI Redesign and Layout Overhaul
+ * Enterprise Minimal Design System
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -88,10 +89,10 @@ function ChatPanel({
   return (
     <Card
       variant="default"
-      className="flex flex-col h-full overflow-hidden shadow-2xl"
+      className="flex flex-col h-full overflow-hidden shadow-sm border-border bg-card"
     >
       {/* Header — Tabs */}
-      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-white/6 bg-void-950/95 min-h-12">
+      <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-border bg-card min-h-12">
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           {[
             { id: 'chat' as const, label: 'Studio Chat', icon: MessageSquare },
@@ -104,10 +105,10 @@ function ChatPanel({
                 key={tab.id}
                 onClick={() => setActiveView(tab.id)}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition",
+                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-white/8 text-white"
-                    : "text-starlight-400 hover:text-white hover:bg-white/6"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -128,8 +129,8 @@ function ChatPanel({
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center px-6 py-8 space-y-5">
               <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white">Welcome to HIVE-R Studio!</h3>
-                <p className="text-sm text-starlight-400 max-w-[280px] leading-relaxed">
+                <h3 className="text-xl font-bold text-foreground">Welcome to HIVE-R Studio!</h3>
+                <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
                   I coordinate a team of 13 AI specialists. What would you like to build today?
                 </p>
               </div>
@@ -144,7 +145,7 @@ function ChatPanel({
                     variant="outline"
                     size="sm"
                     onClick={() => onSend(label)}
-                    className="w-full h-10 px-5 text-sm bg-white/4 border border-white/10 hover:bg-white/8 hover:border-white/15 hover:text-white transition-all rounded-lg"
+                    className="w-full h-9 px-4 text-sm bg-background hover:bg-secondary transition-all rounded-md border-border"
                   >
                     {label}
                   </Button>
@@ -154,30 +155,30 @@ function ChatPanel({
           )}
           {messages.map((msg) => (
             <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className={`flex items-start max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${msg.role === 'user' ? 'bg-electric-violet ml-2' : 'bg-void-800 mr-2'}`}>
+              <div className={`flex items-start max-w-[90%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`flex items-center justify-center w-7 h-7 rounded-md shrink-0 border border-border ${msg.role === 'user' ? 'bg-primary text-primary-foreground ml-2' : 'bg-secondary text-secondary-foreground mr-2'}`}>
                   {msg.role === 'user' ? '👤' : '🤖'}
                 </div>
-                <div className={`p-4 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-electric-violet text-white rounded-tr-none' : 'bg-void-900/60 border border-white/10 rounded-tl-none'}`}>
-                  {msg.agentName && <span className="block text-xs font-bold mb-1 opacity-70 uppercase tracking-wide text-starlight-400">{msg.agentName}</span>}
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                <div className={`p-3 rounded-xl text-sm shadow-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-secondary/50 border border-border rounded-tl-none text-foreground'}`}>
+                  {msg.agentName && <span className="block text-[10px] font-bold mb-1 opacity-70 uppercase tracking-wide">{msg.agentName}</span>}
+                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                 </div>
               </div>
             </div>
           ))}
           {isLoading && (
-            <div className="flex items-center gap-2 text-electric-violet text-sm p-4">
-              {activeAgent && <span className="font-semibold">{activeAgent}</span>}
+            <div className="flex items-center gap-2 text-primary text-sm p-4">
+              {activeAgent && <span className="font-medium">{activeAgent}</span>}
               <span className="flex gap-1">
-                <span className="w-1.5 h-1.5 bg-electric-violet rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 bg-electric-violet rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 bg-electric-violet rounded-full animate-bounce" />
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
               </span>
             </div>
           )}
         </div>
       ) : (
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 bg-background/50">
           <SessionList
             selectedId={currentSessionId}
             onSelectSession={onSelectSession}
@@ -186,23 +187,23 @@ function ChatPanel({
         </div>
       )}
 
-      {/* Input Area - padding and send button inset so nothing overlaps */}
+      {/* Input Area */}
       {activeView === 'chat' && (
-        <div className="p-4 border-t border-white/6 bg-void-950/95">
+        <div className="p-4 border-t border-border bg-card">
           <form className="relative" onSubmit={handleSubmit}>
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="What would you like to build?"
               disabled={isLoading}
-              className="pl-5 pr-13 h-12"
+              className="pl-4 pr-12 h-11 bg-background border-border focus-visible:ring-primary/20"
             />
             <Button
               type="submit"
               size="icon"
               disabled={isLoading || !input.trim()}
               aria-label={isLoading ? 'Sending message' : 'Send message'}
-              className="absolute right-2 top-2 h-9 w-9"
+              className="absolute right-1.5 top-1.5 h-8 w-8 rounded-md"
             >
               {isLoading ? <StopCircle className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
             </Button>
@@ -436,7 +437,7 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
         </div>
 
         {/* Graph Area - 70% */}
-        <Card variant="default" className="flex-1 relative h-full overflow-hidden border-0 shadow-none bg-void-900/30">
+        <Card variant="default" className="flex-1 relative h-full overflow-hidden border-border shadow-sm bg-secondary/5">
           <ReactFlow
             nodes={animatedNodes}
             edges={animatedEdges}
@@ -447,8 +448,8 @@ function App({ demoMode: initialDemoMode = false, showMarketplaceOnLoad = false 
             fitView
             className="bg-transparent"
           >
-            <Controls className="bg-void-900/80 border border-white/10 text-starlight-300 fill-starlight-300 rounded-lg" />
-            <Background color="#ffffff" gap={24} size={1} style={{ opacity: 0.1 }} />
+            <Controls className="bg-background border-border text-foreground fill-foreground rounded-md shadow-md" />
+            <Background color="#71717a" gap={24} size={1} style={{ opacity: 0.1 }} />
           </ReactFlow>
 
           {/* Builder Preview Overlay — inset from edges */}
